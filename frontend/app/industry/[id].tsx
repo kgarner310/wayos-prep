@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { api, IndustryDetail } from '../services/api';
+import { api, IndustryDetail } from '../../services/api';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Section } from '../../components/Section';
