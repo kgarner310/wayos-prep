@@ -2,11 +2,11 @@
 
 **Better meetings. Better coverage.**
 
-WAYOS PREP is a meeting preparation engine for commercial insurance producers. It generates structured client risk briefs for any industry, helping producers walk into every meeting prepared.
+WAYOS PREP is a meeting preparation engine for commercial insurance producers, delivered as an **Outlook Add-in**. It generates structured client risk briefs for any industry — right inside the tool producers already use all day.
 
 ## Tech Stack
 
-- **Frontend:** React Native + Expo (Expo Go compatible) + Expo Router
+- **Frontend:** Outlook Add-in (Office.js + React + Vite)
 - **Backend:** Python + FastAPI + Pydantic + SQLAlchemy + Alembic
 - **Database:** PostgreSQL
 - **LLM:** OpenAI / Anthropic / None (deterministic mode)
@@ -20,49 +20,63 @@ cp .env.example .env
 # Edit .env if you want to use an LLM provider (optional)
 ```
 
-### 2. Start backend with Docker
+### 2. Start everything with Docker
 
 ```bash
 cd infra
 docker compose up --build
 ```
 
-This starts PostgreSQL and the FastAPI backend. On first run, it will:
-- Run database migrations
-- Seed 20 industry risk profiles
+This starts:
+- **PostgreSQL** on port 5432
+- **FastAPI backend** on port 8000 (runs migrations + seeds 20 industries)
+- **Vite dev server** on port 3000 (serves the Outlook Add-in)
 
-The API is available at `http://localhost:8000`.
-
-### 3. Verify the backend
+### 3. Verify
 
 ```bash
 curl http://localhost:8000/health
-# {"status":"ok","service":"wayos-prep"}
+# {"status":"ok","service":"wayos-prep","database":"connected"}
 
-curl http://localhost:8000/industries
-# Returns list of 20 industries
+# Open the task pane standalone in a browser:
+open http://localhost:3000
 ```
 
-### 4. Start the mobile app
+### 4. Sideload into Outlook
 
-```bash
-cd frontend
-npm install
-npx expo start
-```
+**For Outlook on the web (easiest for testing):**
 
-Scan the QR code with Expo Go on your phone. Make sure your phone can reach the backend (you may need to set `EXPO_PUBLIC_API_BASE_URL` to your machine's LAN IP).
+1. Open Outlook at https://outlook.office.com
+2. Click the **Get Add-ins** button (or **Manage Add-ins** from the ... menu)
+3. Click **My add-ins** → **Add a custom add-in** → **Add from file**
+4. Upload `frontend/public/manifest.xml`
+5. The **WAYOS PREP** button appears in the ribbon
 
-```bash
-# Example: set API URL to your machine's IP
-EXPO_PUBLIC_API_BASE_URL=http://192.168.1.100:8000 npx expo start
-```
+**For Outlook desktop:**
+
+1. Open Outlook → File → Manage Add-ins
+2. Under **Custom add-ins**, click **Add from file**
+3. Select `frontend/public/manifest.xml`
+
+**Note:** For production, update the URLs in `manifest.xml` from `https://localhost:3000` to your deployed domain.
+
+### 5. Standalone browser mode
+
+The add-in also works as a standalone web app at `http://localhost:3000`. Outside Outlook, the Send Pack buttons copy to clipboard instead of opening compose windows.
+
+## How It Works in Outlook
+
+1. **Open a calendar invite** for a client meeting → Click **WAYOS PREP** in the ribbon
+2. The add-in reads the appointment subject and suggests the industry
+3. **Generate a brief** with one click
+4. **Send Pack** opens a new email compose window pre-filled with the underwriter email or CSR note
+5. The producer never leaves Outlook
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check |
+| GET | `/health` | Health check (includes DB status) |
 | GET | `/industries` | List all industries |
 | GET | `/industries/{id}` | Get industry detail |
 | POST | `/briefs/ask` | Generate brief from a question |
@@ -89,10 +103,12 @@ Each brief includes:
 - **Conversation Starters** — questions producers can ask
 - **Quick Docs to Request** — standard document checklist
 
-### Send Pack (Viral Sharing)
-From any brief, share pre-formatted messages:
-- **Underwriter Email** — professional email to underwriters
-- **Internal Note** — CSR/team account prep summary
+### Send Pack (Outlook-Native Sharing)
+From any brief, launch pre-formatted messages:
+- **Underwriter Email** — opens Outlook compose with subject line and body pre-filled
+- **Internal Note** — opens compose with CSR-ready account prep summary
+
+When running outside Outlook (standalone browser), Send Pack copies to clipboard instead.
 
 ## LLM Configuration
 
@@ -111,7 +127,7 @@ The system works fully without any LLM — the seed data provides complete risk 
 ```bash
 cd backend
 pip install -r requirements.txt
-pytest tests/ -v
+DATABASE_URL=sqlite:///test.db pytest tests/ -v
 ```
 
 ## Project Structure
@@ -121,16 +137,29 @@ pytest tests/ -v
   /backend
     /app
       /models        # SQLAlchemy models
-      /services      # Business logic
+      /services      # Business logic (matching, brief rendering, LLM)
       /api           # FastAPI routes
     /tests           # pytest tests
     /alembic         # Database migrations
   /frontend
-    /app             # Expo Router screens
-    /components      # Shared UI components
-    /services        # API client and theme
+    /public          # manifest.xml (Office Add-in), taskpane.html
+    /src
+      /components    # Button, Card, Input, Section
+      /screens       # Home, Ask, Prep, Lookup, IndustryDetail, Brief
+      /services      # API client, Office.js helpers, theme
   /infra
     docker-compose.yml
   /docs
     demo.md
 ```
+
+## Manifest Configuration
+
+The add-in manifest (`frontend/public/manifest.xml`) registers WAYOS PREP for:
+
+- **Message Read** — prep while reading client emails
+- **Message Compose** — insert brief content into emails
+- **Appointment Organizer** — prep before meetings you scheduled
+- **Appointment Attendee** — prep before meetings you're invited to
+
+Update `<SourceLocation>` URLs for production deployment.

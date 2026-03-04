@@ -1,24 +1,11 @@
-import Constants from 'expo-constants';
-
-const getBaseUrl = (): string => {
-  // Allow override from Expo config
-  const extra = Constants.expirationDate; // dummy to avoid unused
-  return (
-    process.env.EXPO_PUBLIC_API_BASE_URL ||
-    'http://localhost:8000'
-  );
-};
-
-const BASE_URL = getBaseUrl();
+const BASE_URL = (window as any).__WAYOS_API_URL__ || 'http://localhost:8000';
 
 export interface IndustryListItem {
   id: number;
   industry_name: string;
 }
 
-export interface IndustryDetail {
-  id: number;
-  industry_name: string;
+export interface IndustryDetail extends IndustryListItem {
   synonyms: string[];
   top_workers_comp_claims: string[];
   commercial_auto_claims: string[];
@@ -55,25 +42,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `Request failed: ${res.status}`);
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(body.detail || res.statusText);
   }
   return res.json();
 }
 
 export const api = {
-  health: () => request<{ status: string }>('/health'),
-
   listIndustries: () => request<IndustryListItem[]>('/industries'),
-
   getIndustry: (id: number) => request<IndustryDetail>(`/industries/${id}`),
-
   askBrief: (question: string, location?: string) =>
     request<BriefResponse>('/briefs/ask', {
       method: 'POST',
       body: JSON.stringify({ question, location }),
     }),
-
   prepBrief: (data: {
     industry: string;
     location: string;
@@ -85,9 +67,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-
   getBrief: (id: number) => request<BriefResponse>(`/briefs/${id}`),
-
   submitFeedback: (data: {
     query_log_id: number;
     helpful_bool: boolean;

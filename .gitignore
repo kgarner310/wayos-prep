@@ -8,8 +8,8 @@ venv/
 
 # Node
 node_modules/
-.expo/
 *.tsbuildinfo
+frontend/dist/
 
 # Environment
 .env

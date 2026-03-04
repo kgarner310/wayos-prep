@@ -1,30 +1,22 @@
 {
-  "name": "wayos-prep",
+  "name": "wayos-prep-outlook",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "private": true,
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
-    "expo": "~52.0.0",
-    "expo-clipboard": "~7.0.0",
-    "expo-constants": "~17.0.0",
-    "expo-router": "~4.0.0",
-    "expo-status-bar": "~2.0.0",
-    "react": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "react-native-gesture-handler": "~2.20.2"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "babel-preset-expo": "~14.0.0",
-    "@types/react": "~18.3.0",
-    "typescript": "^5.3.0"
-  },
-  "private": true
+    "@types/office-js": "^1.0.413",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0"
+  }
 }
