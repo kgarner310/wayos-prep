@@ -1,7 +1,11 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.models.industry import IndustryRiskProfile
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def match_industry(query: str, db: Session) -> IndustryRiskProfile | None:
@@ -70,4 +74,5 @@ def _llm_classify(query: str, industry_names: list[str]) -> str | None:
             return None
         return result
     except Exception:
+        logger.exception("LLM classification failed for query: %s", query)
         return None

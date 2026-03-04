@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Industry ---
@@ -28,16 +28,16 @@ class IndustryListItem(BaseModel):
 # --- Brief ---
 
 class AskRequest(BaseModel):
-    question: str
-    location: str | None = None
+    question: str = Field(min_length=3, max_length=500)
+    location: str | None = Field(default=None, max_length=200)
 
 
 class PrepRequest(BaseModel):
-    industry: str
-    location: str
-    employee_count: int | None = None
-    mod: float | None = None
-    vehicle_exposure: str | None = None
+    industry: str = Field(min_length=1, max_length=200)
+    location: str = Field(min_length=1, max_length=200)
+    employee_count: int | None = Field(default=None, ge=0, le=1_000_000)
+    mod: float | None = Field(default=None, ge=0, le=10)
+    vehicle_exposure: str | None = Field(default=None, max_length=200)
 
 
 class BriefJson(BaseModel):

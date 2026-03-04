@@ -8,8 +8,13 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    cors_origins: str = "*"  # comma-separated origins, e.g. "http://localhost:8081,https://app.wayosprep.app"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 settings = Settings()

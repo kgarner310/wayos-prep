@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -21,8 +22,12 @@ router = APIRouter()
 
 
 @router.get("/health")
-def health():
-    return {"status": "ok", "service": "wayos-prep"}
+def health(db: Session = Depends(get_db)):
+    try:
+        db.execute(sa.text("SELECT 1"))
+        return {"status": "ok", "service": "wayos-prep", "database": "connected"}
+    except Exception:
+        return {"status": "degraded", "service": "wayos-prep", "database": "unavailable"}
 
 
 @router.get("/industries", response_model=list[IndustryListItem])

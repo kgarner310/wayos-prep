@@ -1,6 +1,9 @@
+import logging
 import time
 
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.models.industry import IndustryRiskProfile
 from app.models.query_log import QueryLog
@@ -45,8 +48,8 @@ def _enhance_with_llm(profile: IndustryRiskProfile, location: str | None) -> str
             )
             return resp.content[0].text.strip()
     except Exception:
+        logger.exception("LLM enhancement failed for %s in %s", profile.industry_name, location)
         return None
-    return None
 
 
 def generate_brief(
