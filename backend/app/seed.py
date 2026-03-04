@@ -1,4 +1,13 @@
-"""Seed the database with 20 industry risk profiles."""
+"""Seed the database with 220+ industry risk profiles.
+
+Priority tiers:
+  TIER 1 — Wayah Insurance Group specialties (high-value residential, STR, contractors,
+           municipalities, mining, tribal operations)
+  TIER 2 — Keystone Insurance / specialty program markets (environmental, public entities,
+           cyber, commercial dwellings, surety/construction, body shops, nonprofits)
+  TIER 3 — Southeast-relevant industries (agriculture, tourism, poultry, forestry, energy)
+  TIER 4 — Broad commercial classes filling out the full 200+
+"""
 from sqlalchemy.orm import Session
 from app.database import engine, SessionLocal
 from app.models.industry import IndustryRiskProfile
