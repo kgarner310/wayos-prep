@@ -92,6 +92,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <Button
+          title="Account Review"
+          onClick={() => onNavigate('accountReview')}
+          variant="accent"
+        />
+        <Button
           title="Ask Risk Question"
           onClick={() => onNavigate('ask')}
           variant="primary"
@@ -104,12 +109,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Button
           title="Loss Run Review"
           onClick={() => onNavigate('lossRuns')}
-          variant="primary"
+          variant="secondary"
         />
         <Button
           title="Experience Mod Review"
           onClick={() => onNavigate('experienceMod')}
-          variant="primary"
+          variant="secondary"
         />
         <Button
           title="Industry Lookup"

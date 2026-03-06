@@ -7,6 +7,7 @@ import { IndustryDetailScreen } from './screens/IndustryDetailScreen';
 import { BriefScreen } from './screens/BriefScreen';
 import { LossRunScreen } from './screens/LossRunScreen';
 import { ExperienceModScreen } from './screens/ExperienceModScreen';
+import { AccountReviewScreen } from './screens/AccountReviewScreen';
 
 interface NavState {
   screen: string;
@@ -68,6 +69,8 @@ export default function App() {
       return <LossRunScreen onNavigate={navigate} onBack={goBack} />;
     case 'experienceMod':
       return <ExperienceModScreen onNavigate={navigate} onBack={goBack} />;
+    case 'accountReview':
+      return <AccountReviewScreen onNavigate={navigate} onBack={goBack} />;
     default:
       return <HomeScreen onNavigate={navigate} />;
   }

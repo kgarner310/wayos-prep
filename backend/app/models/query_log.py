@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import String, Text, Integer, Float, DateTime, ForeignKey, func, JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -29,3 +29,7 @@ class QueryLog(Base):
 
     llm_used: Mapped[str | None] = mapped_column(String(50), nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Account link
+    account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    account = relationship("Account", back_populates="briefs")

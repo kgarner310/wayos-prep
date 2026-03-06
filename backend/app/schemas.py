@@ -176,6 +176,95 @@ class ExperienceModAnalysis(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# --- Account ---
+
+class AccountCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    industry: str | None = Field(default=None, max_length=200)
+    location: str | None = Field(default=None, max_length=255)
+    employee_count: int | None = Field(default=None, ge=0, le=1_000_000)
+    current_mod: float | None = Field(default=None, ge=0, le=10)
+    vehicle_exposure: str | None = Field(default=None, max_length=200)
+    policy_expiration: str | None = Field(default=None, max_length=20)
+    renewal_status: str | None = Field(default=None, max_length=50)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class AccountUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    industry: str | None = Field(default=None, max_length=200)
+    location: str | None = Field(default=None, max_length=255)
+    employee_count: int | None = Field(default=None, ge=0, le=1_000_000)
+    current_mod: float | None = Field(default=None, ge=0, le=10)
+    vehicle_exposure: str | None = Field(default=None, max_length=200)
+    policy_expiration: str | None = Field(default=None, max_length=20)
+    renewal_status: str | None = Field(default=None, max_length=50)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class AccountListItem(BaseModel):
+    id: int
+    name: str
+    industry: str | None = None
+    location: str | None = None
+    current_mod: float | None = None
+    policy_expiration: str | None = None
+    renewal_status: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class AccountOut(BaseModel):
+    id: int
+    name: str
+    industry: str | None = None
+    location: str | None = None
+    employee_count: int | None = None
+    current_mod: float | None = None
+    vehicle_exposure: str | None = None
+    policy_expiration: str | None = None
+    renewal_status: str | None = None
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LossRunSummary(BaseModel):
+    id: int
+    account_name: str
+    total_incurred: float | None = None
+    total_claims: int | None = None
+    loss_ratio: float | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ExperienceModSummary(BaseModel):
+    id: int
+    account_name: str
+    current_mod: float | None = None
+    prior_mod: float | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class BriefSummary(BaseModel):
+    id: int
+    brief_text: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class AccountDetail(AccountOut):
+    loss_run_reviews: list[LossRunSummary] = []
+    experience_mod_reviews: list[ExperienceModSummary] = []
+    briefs: list[BriefSummary] = []
+
+    model_config = {"from_attributes": True}
+
+
 # --- Feedback ---
 
 class FeedbackRequest(BaseModel):

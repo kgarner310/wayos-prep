@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from sqlalchemy import String, Text, Integer, Float, DateTime, ForeignKey, func, JSON
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -30,3 +29,7 @@ class LossRunReview(Base):
     total_incurred: Mapped[float | None] = mapped_column(Float, nullable=True)
     total_claims: Mapped[int | None] = mapped_column(Integer, nullable=True)
     loss_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Account link
+    account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    account = relationship("Account", back_populates="loss_run_reviews")

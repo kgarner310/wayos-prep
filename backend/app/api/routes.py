@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -10,6 +10,7 @@ from app.models.feedback import Feedback
 from app.models.state_profile import StateProfile
 from app.models.loss_run import LossRunReview
 from app.models.experience_mod import ExperienceModReview
+from app.models.account import Account
 from app.schemas import (
     IndustryOut,
     IndustryListItem,
@@ -24,6 +25,11 @@ from app.schemas import (
     LossRunAnalysis,
     ExperienceModRequest,
     ExperienceModAnalysis,
+    AccountCreate,
+    AccountUpdate,
+    AccountListItem,
+    AccountOut,
+    AccountDetail,
 )
 from app.services.industry_matcher import match_industry
 from app.services.brief_generator import generate_brief
@@ -31,6 +37,18 @@ from app.services.loss_run_analyzer import analyze_loss_runs, render_loss_run_te
 from app.services.experience_mod_analyzer import analyze_experience_mod, render_experience_mod_text
 
 router = APIRouter()
+
+
+def _find_or_create_account(account_name: str, db: Session) -> Account:
+    """Find an existing account by name or create a new one."""
+    account = db.query(Account).filter(
+        sa.func.lower(Account.name) == account_name.lower().strip()
+    ).first()
+    if not account:
+        account = Account(name=account_name.strip())
+        db.add(account)
+        db.flush()
+    return account
 
 
 @router.get("/health")
@@ -164,6 +182,160 @@ def get_state(
     return profile
 
 
+# --- Accounts ---
+
+
+@router.post("/accounts", response_model=AccountOut, status_code=201)
+def create_account(
+    req: AccountCreate,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    existing = db.query(Account).filter(
+        sa.func.lower(Account.name) == req.name.lower().strip()
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail=f"Account '{req.name}' already exists")
+
+    account = Account(**req.model_dump())
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    return account
+
+
+@router.get("/accounts", response_model=list[AccountListItem])
+def list_accounts(
+    renewal_status: str | None = Query(default=None, max_length=50),
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    q = db.query(Account).order_by(Account.name)
+    if renewal_status:
+        q = q.filter(Account.renewal_status == renewal_status)
+    return q.all()
+
+
+@router.get("/accounts/renewals", response_model=list[AccountListItem])
+def list_upcoming_renewals(
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    return (
+        db.query(Account)
+        .filter(Account.policy_expiration.isnot(None))
+        .order_by(Account.policy_expiration)
+        .all()
+    )
+
+
+@router.get("/accounts/{account_id}", response_model=AccountDetail)
+def get_account(
+    account_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return account
+
+
+@router.patch("/accounts/{account_id}", response_model=AccountOut)
+def update_account(
+    account_id: int,
+    req: AccountUpdate,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    update_data = req.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(account, field, value)
+
+    db.commit()
+    db.refresh(account)
+    return account
+
+
+@router.delete("/accounts/{account_id}", status_code=204)
+def delete_account(
+    account_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    db.delete(account)
+    db.commit()
+
+
+# --- Account Review (combined brief with loss run + mod data) ---
+
+
+@router.post("/accounts/{account_id}/review", response_model=BriefResponse)
+def generate_account_review(
+    account_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    """Generate a full account review brief that incorporates loss run and mod data."""
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    if not account.industry:
+        raise HTTPException(status_code=400, detail="Account must have an industry set to generate a review")
+    if not account.location:
+        raise HTTPException(status_code=400, detail="Account must have a location set to generate a review")
+
+    profile = match_industry(account.industry, db)
+    if not profile:
+        raise HTTPException(status_code=404, detail=f"Industry '{account.industry}' not found")
+
+    # Get latest loss run and mod reviews for this account
+    latest_loss_run = (
+        db.query(LossRunReview)
+        .filter(LossRunReview.account_id == account_id)
+        .order_by(LossRunReview.timestamp.desc())
+        .first()
+    )
+    latest_mod = (
+        db.query(ExperienceModReview)
+        .filter(ExperienceModReview.account_id == account_id)
+        .order_by(ExperienceModReview.timestamp.desc())
+        .first()
+    )
+
+    # Use account mod or latest mod review
+    mod = account.current_mod
+    if latest_mod and latest_mod.current_mod:
+        mod = latest_mod.current_mod
+
+    log = generate_brief(
+        profile=profile,
+        location=account.location,
+        employee_count=account.employee_count,
+        mod=mod,
+        vehicle_exposure=account.vehicle_exposure,
+        query_type="account_review",
+        raw_question=None,
+        db=db,
+        loss_run_data=latest_loss_run.analysis_json if latest_loss_run else None,
+        mod_data=latest_mod.analysis_json if latest_mod else None,
+    )
+
+    # Link to account
+    log.account_id = account_id
+    db.commit()
+
+    return _log_to_response(log)
+
+
 # --- Loss Runs ---
 
 
@@ -186,8 +358,12 @@ def create_loss_run_review(
         if profile:
             industry_id = profile.id
 
+    # Auto-link to account
+    account = _find_or_create_account(req.account_name, db)
+
     review = LossRunReview(
         account_name=req.account_name,
+        account_id=account.id,
         policy_period_start=req.policy_period_start,
         policy_period_end=req.policy_period_end,
         industry_id=industry_id,
@@ -242,8 +418,12 @@ def create_experience_mod_review(
     analysis_text = render_experience_mod_text(analysis, req.account_name)
     talking_points = "\n".join(f"• {p}" for p in analysis.get("talking_points", []))
 
+    # Auto-link to account
+    account = _find_or_create_account(req.account_name, db)
+
     review = ExperienceModReview(
         account_name=req.account_name,
+        account_id=account.id,
         state_code=req.state_code.upper() if req.state_code else None,
         effective_date=req.effective_date,
         current_mod=req.current_mod,

@@ -153,6 +153,8 @@ def generate_brief(
     query_type: str,
     raw_question: str | None,
     db: Session,
+    loss_run_data: dict | None = None,
+    mod_data: dict | None = None,
 ) -> QueryLog:
     start = time.time()
 
@@ -197,6 +199,8 @@ def generate_brief(
         tort_environment=tort_environment,
         cat_exposures=cat_exposures,
         location_intel=location_intel,
+        loss_run_data=loss_run_data,
+        mod_data=mod_data,
     )
 
     brief_text = render_brief_text(brief_json)

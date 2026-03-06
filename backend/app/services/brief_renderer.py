@@ -34,6 +34,8 @@ def build_brief_json(
     tort_environment: str | None = None,
     cat_exposures: list[str] | None = None,
     location_intel: dict | None = None,
+    loss_run_data: dict | None = None,
+    mod_data: dict | None = None,
 ) -> dict:
     result = {
         "industry": industry_name,
@@ -59,8 +61,45 @@ def build_brief_json(
         result["cat_exposures"] = cat_exposures
     if location_intel:
         result["location_intel"] = location_intel
+    if loss_run_data:
+        result["loss_run_summary"] = _build_loss_run_summary(loss_run_data)
+    if mod_data:
+        result["mod_summary"] = _build_mod_summary(mod_data)
 
     return result
+
+
+def _build_loss_run_summary(data: dict) -> dict:
+    """Extract key loss run metrics for the brief."""
+    totals = data.get("totals", {})
+    return {
+        "overall_loss_ratio": totals.get("loss_ratio"),
+        "total_premium": totals.get("premium"),
+        "total_incurred": totals.get("incurred"),
+        "total_claims": totals.get("claims"),
+        "flags": data.get("flags", []),
+        "talking_points": data.get("talking_points", []),
+        "line_summaries": [
+            {
+                "line": s.get("line"),
+                "loss_ratio": s.get("loss_ratio"),
+                "num_claims": s.get("num_claims"),
+            }
+            for s in data.get("line_summaries", [])
+        ],
+    }
+
+
+def _build_mod_summary(data: dict) -> dict:
+    """Extract key mod metrics for the brief."""
+    return {
+        "current_mod": data.get("current_mod"),
+        "prior_mod": data.get("prior_mod"),
+        "mod_trend": data.get("mod_trend"),
+        "flags": data.get("flags", []),
+        "insights": data.get("insights", []),
+        "talking_points": data.get("talking_points", []),
+    }
 
 
 def _render_state_sections(bj: dict) -> str:
@@ -151,6 +190,78 @@ def _render_location_intel(bj: dict) -> str:
     return "\n\n".join(sections)
 
 
+def _render_loss_run_section(bj: dict) -> str:
+    """Render loss run summary if present in brief."""
+    lr = bj.get("loss_run_summary")
+    if not lr:
+        return ""
+
+    lines = ["LOSS RUN SUMMARY"]
+    lines.append("")
+
+    ratio = lr.get("overall_loss_ratio")
+    if ratio is not None:
+        lines.append(f"  Overall Loss Ratio: {ratio:.0%}")
+    if lr.get("total_premium"):
+        lines.append(f"  Total Premium: ${lr['total_premium']:,.0f}")
+    if lr.get("total_incurred"):
+        lines.append(f"  Total Incurred: ${lr['total_incurred']:,.0f}")
+    if lr.get("total_claims"):
+        lines.append(f"  Total Claims: {lr['total_claims']}")
+
+    # Per-line highlights
+    problem_lines = [
+        s for s in lr.get("line_summaries", [])
+        if s.get("loss_ratio") is not None and s["loss_ratio"] > 0.60
+    ]
+    if problem_lines:
+        lines.append("")
+        lines.append("  Problem Lines:")
+        for s in problem_lines:
+            lines.append(f"    {s['line']}: {s['loss_ratio']:.0%} loss ratio ({s.get('num_claims', '?')} claims)")
+
+    flags = lr.get("flags", [])
+    if flags:
+        lines.append("")
+        for f in flags[:3]:
+            lines.append(f"  ! {f}")
+
+    return "\n".join(lines)
+
+
+def _render_mod_section(bj: dict) -> str:
+    """Render mod summary if present in brief."""
+    ms = bj.get("mod_summary")
+    if not ms:
+        return ""
+
+    lines = ["EXPERIENCE MOD SUMMARY"]
+    lines.append("")
+
+    if ms.get("current_mod") is not None:
+        lines.append(f"  Current Mod: {ms['current_mod']:.2f}")
+    if ms.get("prior_mod") is not None:
+        lines.append(f"  Prior Mod: {ms['prior_mod']:.2f}")
+
+    trend = ms.get("mod_trend")
+    if trend:
+        lines.append(f"  Trend: {trend['direction'].upper()} ({trend['change']:+.2f})")
+
+    flags = ms.get("flags", [])
+    if flags:
+        lines.append("")
+        for f in flags[:3]:
+            lines.append(f"  ! {f}")
+
+    insights = ms.get("insights", [])
+    if insights:
+        lines.append("")
+        for i in insights[:2]:
+            lines.append(f"  + {i}")
+
+    return "\n".join(lines)
+
+
 def render_brief_text(brief_json: dict, metadata: dict | None = None) -> str:
     bj = brief_json
 
@@ -159,6 +270,12 @@ def render_brief_text(brief_json: dict, metadata: dict | None = None) -> str:
 
     intel_block = _render_location_intel(bj)
     intel_section = f"\n\n{intel_block}" if intel_block else ""
+
+    lr_block = _render_loss_run_section(bj)
+    lr_section = f"\n\n{lr_block}" if lr_block else ""
+
+    mod_block = _render_mod_section(bj)
+    mod_section = f"\n\n{mod_block}" if mod_block else ""
 
     return f"""WAYOS PREP — CLIENT BRIEF
 
@@ -179,7 +296,7 @@ REGIONAL / LOCAL RISK NOTES
 
 COVERAGE EXPOSURES (what to stress-test)
 
-{_bullets(bj['coverage_exposures'])}{state_section}{intel_section}
+{_bullets(bj['coverage_exposures'])}{state_section}{intel_section}{lr_section}{mod_section}
 
 CONVERSATION STARTERS (producer ammo)
 

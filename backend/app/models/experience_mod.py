@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import String, Text, Integer, Float, DateTime, func, JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Text, Integer, Float, DateTime, ForeignKey, func, JSON
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -36,3 +36,7 @@ class ExperienceModReview(Base):
     analysis_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     analysis_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     talking_points: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Account link
+    account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    account = relationship("Account", back_populates="experience_mod_reviews")

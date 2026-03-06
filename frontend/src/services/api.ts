@@ -91,6 +91,27 @@ export interface ExperienceModAnalysisResponse {
   talking_points: string | null;
 }
 
+export interface AccountListItem {
+  id: number;
+  name: string;
+  industry: string | null;
+  location: string | null;
+  current_mod: number | null;
+  policy_expiration: string | null;
+  renewal_status: string | null;
+}
+
+export interface AccountDetail extends AccountListItem {
+  employee_count: number | null;
+  vehicle_exposure: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  loss_run_reviews: { id: number; account_name: string; total_incurred: number | null; total_claims: number | null; loss_ratio: number | null }[];
+  experience_mod_reviews: { id: number; account_name: string; current_mod: number | null; prior_mod: number | null }[];
+  briefs: { id: number; brief_text: string | null }[];
+}
+
 function getApiKey(): string | null {
   return (window as any).__WAYOS_API_KEY__ || null;
 }
@@ -182,4 +203,36 @@ export const api = {
     }),
   getExperienceModReview: (id: number) =>
     request<ExperienceModAnalysisResponse>(`/experience-mod/${id}`),
+
+  // --- Accounts ---
+  createAccount: (data: {
+    name: string;
+    industry?: string;
+    location?: string;
+    employee_count?: number;
+    current_mod?: number;
+    vehicle_exposure?: string;
+    policy_expiration?: string;
+    renewal_status?: string;
+    notes?: string;
+  }) =>
+    request<AccountDetail>('/accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  listAccounts: (renewalStatus?: string) =>
+    request<AccountListItem[]>(
+      renewalStatus ? `/accounts?renewal_status=${renewalStatus}` : '/accounts'
+    ),
+  listUpcomingRenewals: () => request<AccountListItem[]>('/accounts/renewals'),
+  getAccount: (id: number) => request<AccountDetail>(`/accounts/${id}`),
+  updateAccount: (id: number, data: Record<string, any>) =>
+    request<AccountDetail>(`/accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteAccount: (id: number) =>
+    request<void>(`/accounts/${id}`, { method: 'DELETE' }),
+  generateAccountReview: (accountId: number) =>
+    request<BriefResponse>(`/accounts/${accountId}/review`, { method: 'POST' }),
 };
