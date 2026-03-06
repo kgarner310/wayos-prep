@@ -388,3 +388,41 @@ class MissingInformationAlert(Base):
     __table_args__ = (
         Index("ix_missing_information_alerts_run_id", "risk_score_run_id"),
     )
+
+
+class DiscoveryOutcome(Base):
+    __tablename__ = "discovery_outcomes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    industry = Column(Text, nullable=False)
+    state = Column(Text, nullable=False)
+    account_stage = Column(Text)
+    source_type = Column(Text, nullable=False)
+    source_key = Column(Text, nullable=False)
+    exposure_found = Column(Boolean, nullable=False, default=False)
+    exposure_type = Column(Text)
+    coverage_added = Column(Text)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_discovery_outcomes_industry", "industry"),
+        Index("ix_discovery_outcomes_state", "state"),
+        Index("ix_discovery_outcomes_source_type", "source_type"),
+        Index("ix_discovery_outcomes_created_at", "created_at"),
+    )
+
+
+class EventLog(Base):
+    __tablename__ = "event_log"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    event_type = Column(Text, nullable=False)
+    event_payload = Column(JSONB)
+    user_id = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_event_log_event_type", "event_type"),
+        Index("ix_event_log_created_at", "created_at"),
+    )

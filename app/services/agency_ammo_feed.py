@@ -26,8 +26,6 @@ from app.services.producer_ammo import (
     _INDUSTRY_COVERAGE_TRAPS,
     _INDUSTRY_UNDERWRITING_FLAGS,
     _GENERIC_TOP_QUESTIONS,
-    _GENERIC_COVERAGE_TRAPS,
-    _GENERIC_UNDERWRITING_FLAGS,
 )
 
 logger = logging.getLogger(__name__)

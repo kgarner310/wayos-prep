@@ -22,6 +22,8 @@ from app.schemas.schemas import (
     CoverageGapInsightRequest, CoverageGapInsightResponse,
     ProducerAmmoRequest, ProducerAmmoResponse,
     AgencyAmmoFeedResponse,
+    DiscoveryCaptureRequest, DiscoveryCaptureResponse,
+    ProductSignalsResponse,
 )
 from app.services.ingestion import ingest_raw_text, ingest_url, ingest_file
 from app.services.parser import clean_text
@@ -34,6 +36,8 @@ from app.services.risk_scoring import score_account
 from app.services.coverage_gap_detector import detect_coverage_gaps
 from app.services.producer_ammo import generate_producer_ammo
 from app.services.agency_ammo_feed import build_agency_ammo_feed
+from app.services.discovery_capture import save_discovery
+from app.services.instrumentation import log_event, get_product_signals
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -531,3 +535,35 @@ def agency_ammo_feed(
     }
     result = build_agency_ammo_feed(filters, db=db)
     return AgencyAmmoFeedResponse(**result)
+
+
+# --- Discovery Capture ---
+
+@router.post("/intel/discovery-capture", response_model=DiscoveryCaptureResponse, tags=["intel"])
+def discovery_capture(payload: DiscoveryCaptureRequest, db: Session = Depends(get_db)):
+    """Record a producer-discovered exposure and any coverage action taken."""
+    data = {
+        "industry": payload.industry,
+        "state": payload.state,
+        "account_stage": payload.account_stage,
+        "source_type": payload.source_type,
+        "source_key": payload.source_key,
+        "exposure_found": payload.exposure_found,
+        "exposure_type": payload.exposure_type,
+        "coverage_added": payload.coverage_added,
+        "notes": payload.notes,
+    }
+    log_event(db, "discovery_capture", payload={"industry": payload.industry, "source_type": payload.source_type})
+    result = save_discovery(db, data)
+    return DiscoveryCaptureResponse(**result)
+
+
+# --- Product Signals ---
+
+@router.get("/intel/product-signals", response_model=ProductSignalsResponse, tags=["intel"])
+def product_signals(days: int = 7, db: Session = Depends(get_db)):
+    """Aggregated product usage signals over a time window."""
+    if days < 1:
+        days = 7
+    result = get_product_signals(db, days=days)
+    return ProductSignalsResponse(**result)

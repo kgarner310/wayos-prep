@@ -262,14 +262,24 @@ class CoverageGapInsightRequest(BaseModel):
     current_mod: Optional[float] = None
     uses_subcontractors: Optional[bool] = False
     current_coverages: list[str] = []
+    claims_summary: Optional[str] = None
+    account_stage: Optional[str] = None
 
 class CoverageGapDetail(BaseModel):
     coverage: str
     reason: str
     risk_level: Literal["high", "medium", "low"]
+    confidence: Optional[float] = None
+
+class MissingEndorsement(BaseModel):
+    endorsement: str
+    reason: str
 
 class CoverageGapInsightResponse(BaseModel):
+    industry: Optional[str] = None
     coverage_gaps: list[CoverageGapDetail] = []
+    missing_endorsements: list[MissingEndorsement] = []
+    confirmation_questions: list[str] = []
     suggested_questions: list[str] = []
 
 
@@ -313,6 +323,31 @@ class AgencyAmmoFeedResponse(BaseModel):
     state: str
     date_range_days: int
     summary: AgencyAmmoFeedSummary
+
+
+# --- Discovery Capture ---
+
+class DiscoveryCaptureRequest(BaseModel):
+    industry: str
+    state: str
+    account_stage: Optional[str] = None
+    source_type: str
+    source_key: str
+    exposure_found: bool
+    exposure_type: Optional[str] = None
+    coverage_added: Optional[str] = None
+    notes: Optional[str] = None
+
+class DiscoveryCaptureResponse(BaseModel):
+    status: str = "ok"
+    saved: bool = True
+
+
+# --- Product Instrumentation ---
+
+class ProductSignalsResponse(BaseModel):
+    days: int
+    signals: dict
 
 
 class RetrievalDebugResult(BaseModel):

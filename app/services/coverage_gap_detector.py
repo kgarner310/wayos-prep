@@ -411,6 +411,62 @@ _SUGGESTED_QUESTIONS_BY_ATTRIBUTE = {
     "earthquake_state": "Do you carry earthquake coverage, and has your building's seismic vulnerability been assessed?",
 }
 
+# Confidence scores: how likely this coverage is truly missing/needed
+# Based on industry data certainty (1.0 = very certain, 0.5 = speculative)
+_COVERAGE_CONFIDENCE = {
+    "workers_comp": 0.95,
+    "general_liability": 0.93,
+    "commercial_auto": 0.90,
+    "umbrella": 0.78,
+    "inland_marine": 0.72,
+    "builders_risk": 0.60,
+    "property": 0.80,
+    "cargo": 0.88,
+    "cyber": 0.55,
+    "epli": 0.65,
+    "professional_liability": 0.62,
+    "hired_non_owned_auto": 0.75,
+}
+
+# Endorsements commonly missed by industry
+_INDUSTRY_ENDORSEMENTS = {
+    "roofing": [
+        {"endorsement": "Waiver of Subrogation", "reason": "Frequently required by contract in this industry"},
+        {"endorsement": "Additional Insured — Ongoing & Completed Operations", "reason": "GC contracts typically require AI coverage for both ongoing and completed operations"},
+        {"endorsement": "Per Project Aggregate", "reason": "Multiple active job sites need per-project aggregate to avoid exhausting limits"},
+    ],
+    "trucking": [
+        {"endorsement": "Motor Carrier MCS-90", "reason": "Required by federal regulation for for-hire carriers"},
+        {"endorsement": "Trailer Interchange Agreement", "reason": "Borrowed or interchanged trailers need separate coverage"},
+        {"endorsement": "Pollution Liability — Broadened", "reason": "Standard auto excludes fuel spill cleanup and environmental response"},
+    ],
+    "manufacturing": [
+        {"endorsement": "Product Recall Expense", "reason": "Standard GL excludes recall costs; must be added separately"},
+        {"endorsement": "Equipment Breakdown", "reason": "Standard property excludes mechanical/electrical breakdown of machinery"},
+        {"endorsement": "Waiver of Subrogation — WC", "reason": "Customer contracts often require WC waivers"},
+    ],
+    "restaurant": [
+        {"endorsement": "Liquor Liability", "reason": "Excluded from standard GL; required if alcohol is served"},
+        {"endorsement": "Food Contamination / Spoilage", "reason": "Not automatic on property policies; covers inventory loss from equipment failure"},
+        {"endorsement": "Assault & Battery", "reason": "Often excluded on GL in hospitality; separate endorsement needed for late-night operations"},
+    ],
+    "landscaping": [
+        {"endorsement": "Pesticide / Herbicide Application", "reason": "Chemical application liability may be excluded without specific endorsement"},
+        {"endorsement": "Waiver of Subrogation", "reason": "Commercial property clients frequently require WOS endorsements"},
+        {"endorsement": "Additional Insured — Blanket", "reason": "Multiple property management clients require AI coverage"},
+    ],
+    "hvac": [
+        {"endorsement": "Professional Liability / E&O", "reason": "Design or engineering services alongside installation require E&O coverage"},
+        {"endorsement": "Waiver of Subrogation", "reason": "GC and property owner contracts frequently require WOS"},
+        {"endorsement": "Additional Insured — Blanket", "reason": "GC contracts typically require blanket AI endorsement"},
+    ],
+}
+
+_GENERIC_ENDORSEMENTS = [
+    {"endorsement": "Waiver of Subrogation", "reason": "Commonly required by contracts across most commercial lines"},
+    {"endorsement": "Additional Insured", "reason": "Contractual requirements often mandate AI endorsements on GL and auto policies"},
+]
+
 
 def detect_coverage_gaps(account_profile: dict) -> dict:
     """Coverage Gap Insight Engine.
@@ -461,6 +517,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
                 "coverage": _COVERAGE_DISPLAY.get(cov, cov.replace("_", " ").title()),
                 "reason": _COVERAGE_REASONS.get(cov, f"Standard coverage for {industry} operations is missing"),
                 "risk_level": _COVERAGE_RISK_LEVELS.get(cov, "medium"),
+                "confidence": _COVERAGE_CONFIDENCE.get(cov, 0.60),
             })
             q = _SUGGESTED_QUESTIONS_BY_COVERAGE.get(cov)
             if q and q not in questions:
@@ -472,6 +529,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "coverage": _COVERAGE_DISPLAY["commercial_auto"],
             "reason": f"Account operates {vehicle_count} vehicles but has no commercial auto coverage",
             "risk_level": "high",
+            "confidence": 0.92,
         }
         if not any(g["coverage"] == auto_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(auto_gap)
@@ -481,6 +539,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "coverage": _COVERAGE_DISPLAY["hired_non_owned_auto"],
             "reason": "Employees may use personal vehicles for job activities",
             "risk_level": "medium",
+            "confidence": 0.75,
         }
         if not any(g["coverage"] == hnoa_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(hnoa_gap)
@@ -494,6 +553,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "coverage": _COVERAGE_DISPLAY["epli"],
             "reason": f"With {employee_count} employees, employment practices claims become statistically likely",
             "risk_level": "medium",
+            "confidence": 0.70,
         }
         if not any(g["coverage"] == epli_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(epli_gap)
@@ -506,6 +566,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "coverage": _COVERAGE_DISPLAY["cyber"],
             "reason": f"A {employee_count}-employee operation stores employee PII and likely processes data electronically",
             "risk_level": "low" if employee_count < 50 else "medium",
+            "confidence": 0.55 if employee_count < 50 else 0.65,
         }
         if not any(g["coverage"] == cyber_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(cyber_gap)
@@ -517,6 +578,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
                 "coverage": _COVERAGE_DISPLAY["general_liability"],
                 "reason": "Subcontractor usage without confirmed GL creates upstream liability risk",
                 "risk_level": "high",
+                "confidence": 0.90,
             }
             if not any(g["coverage"] == gl_gap["coverage"] for g in coverage_gaps):
                 coverage_gaps.append(gl_gap)
@@ -526,6 +588,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
                 "coverage": _COVERAGE_DISPLAY["umbrella"],
                 "reason": "Subcontractor operations amplify excess liability exposure beyond primary limits",
                 "risk_level": "medium",
+                "confidence": 0.78,
             }
             if not any(g["coverage"] == umb_gap["coverage"] for g in coverage_gaps):
                 coverage_gaps.append(umb_gap)
@@ -572,9 +635,35 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
     severity_order = {"high": 0, "medium": 1, "low": 2}
     coverage_gaps.sort(key=lambda g: severity_order.get(g["risk_level"], 3))
 
-    logger.info("Coverage gap analysis complete: %d gaps, %d questions", len(coverage_gaps), len(questions))
+    # Missing endorsements
+    endorsements = list(_INDUSTRY_ENDORSEMENTS.get(industry, _GENERIC_ENDORSEMENTS))
+    if uses_subcontractors and not any(e["endorsement"] == "Waiver of Subrogation" for e in endorsements):
+        endorsements.insert(0, {"endorsement": "Waiver of Subrogation", "reason": "Subcontractor relationships typically require WOS endorsements"})
+
+    # Confirmation questions — practical questions that confirm or deny a gap
+    confirmation_questions = list(questions[:5])
+    if uses_subcontractors:
+        cq = "Do your contracts require waiver of subrogation or additional insured wording?"
+        if cq not in confirmation_questions:
+            confirmation_questions.append(cq)
+    if vehicle_count > 0:
+        cq = "Are tools stored overnight in trucks or trailers?"
+        if cq not in confirmation_questions:
+            confirmation_questions.append(cq)
+    if employee_count >= 25:
+        cq = "How is employee and customer data stored and protected?"
+        if cq not in confirmation_questions:
+            confirmation_questions.append(cq)
+
+    logger.info(
+        "Coverage gap analysis complete: %d gaps, %d endorsements, %d questions",
+        len(coverage_gaps), len(endorsements), len(confirmation_questions),
+    )
 
     return {
+        "industry": industry_raw or industry,
         "coverage_gaps": coverage_gaps,
+        "missing_endorsements": endorsements[:5],
+        "confirmation_questions": confirmation_questions[:6],
         "suggested_questions": questions,
     }
