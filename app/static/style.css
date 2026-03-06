@@ -115,6 +115,37 @@ tr:hover { background: #f1f3f5; }
 .badge-ready { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
 .badge-rejected { background: #ffebee; color: #c62828; }
 .badge-archived { background: #eceff1; color: #546e7a; }
+.badge-high { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.badge-medium { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+.badge-low { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+
+/* Coverage Gap Cards */
+.gap-card {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fafbfc;
+}
+.gap-card-high { border-left: 3px solid var(--danger); }
+.gap-card-medium { border-left: 3px solid var(--warning); }
+.gap-card-low { border-left: 3px solid var(--info); }
+.gap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.gap-header h4 { font-size: 13px; font-weight: 600; margin: 0; }
+.gap-reason { font-size: 12px; color: var(--text); margin-bottom: 4px; }
+.gap-detail { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+.gap-detail strong { color: var(--text); }
+
+/* Producer Ammo */
+.ammo-section { margin-bottom: 12px; }
+.ammo-section h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--accent); }
+.ammo-section ul { padding-left: 16px; margin: 0; }
+.ammo-section li { font-size: 12px; margin-bottom: 6px; line-height: 1.4; }
 
 /* Tags */
 .tag {

@@ -68,6 +68,8 @@ def test_minimal_brief():
     assert brief.industry == "trucking"
     assert brief.top_loss_drivers == []
     assert brief.employee_count == 0
+    assert brief.coverage_gap_detector == []
+    assert brief.producer_ammo is None
 
 
 def test_brief_with_all_sections():
@@ -103,3 +105,48 @@ def test_brief_with_all_sections():
     assert len(brief.top_loss_drivers) == 2
     assert len(brief.questions_to_ask) == 2
     assert brief.citation_map[1].url == "https://example.com"
+
+
+def test_brief_with_coverage_gaps():
+    data = {
+        "industry": "roofing",
+        "state": "NC",
+        "coverage_gap_detector": [
+            {
+                "title": "Commercial Auto Coverage Gap",
+                "severity": "high",
+                "reason": "Fleet exposure detected but no commercial auto confirmed.",
+                "why_now": "Auto liability claims rising.",
+                "suggested_question": "Walk me through your fleet.",
+                "suggested_coverage_or_action": "Confirm commercial auto limits.",
+                "evidence_source": "industry",
+            },
+            {
+                "title": "EPLI Gap",
+                "severity": "medium",
+                "reason": "50+ employees without EPLI.",
+                "evidence_source": "account_input",
+            },
+        ],
+    }
+    brief = BriefOutput(**data)
+    assert len(brief.coverage_gap_detector) == 2
+    assert brief.coverage_gap_detector[0].severity == "high"
+    assert brief.coverage_gap_detector[1].title == "EPLI Gap"
+
+
+def test_brief_with_producer_ammo():
+    data = {
+        "industry": "trucking",
+        "state": "GA",
+        "producer_ammo": {
+            "renewal_pressure_points": ["Your mod is trending up."],
+            "underwriting_hot_buttons": ["Fleet MVR screening required."],
+            "cross_sell_openings": ["Cyber liability is a natural add."],
+            "hard_questions_to_ask": ["Walk me through driver eligibility."],
+        },
+    }
+    brief = BriefOutput(**data)
+    assert brief.producer_ammo is not None
+    assert len(brief.producer_ammo.renewal_pressure_points) == 1
+    assert len(brief.producer_ammo.hard_questions_to_ask) == 1

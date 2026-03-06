@@ -119,6 +119,21 @@ class CitationMapEntry(BaseModel):
     title: str
     url: Optional[str] = None
 
+class CoverageGapItem(BaseModel):
+    title: str
+    severity: Literal["high", "medium", "low"] = "medium"
+    reason: str
+    why_now: str = ""
+    suggested_question: str = ""
+    suggested_coverage_or_action: str = ""
+    evidence_source: str = "industry"
+
+class ProducerAmmo(BaseModel):
+    renewal_pressure_points: list[str] = []
+    underwriting_hot_buttons: list[str] = []
+    cross_sell_openings: list[str] = []
+    hard_questions_to_ask: list[str] = []
+
 class BriefOutput(BaseModel):
     industry: str
     state: str
@@ -133,6 +148,8 @@ class BriefOutput(BaseModel):
     watchouts: list[Watchout] = []
     confidence_notes: list[ConfidenceNote] = []
     citation_map: list[CitationMapEntry] = []
+    coverage_gap_detector: list[CoverageGapItem] = []
+    producer_ammo: Optional[ProducerAmmo] = None
 
 
 # --- Feedback ---

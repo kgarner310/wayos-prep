@@ -46,6 +46,56 @@
   </div>
 </div>
 
+{% set gaps = brief.brief_json.get('coverage_gap_detector', []) if brief.brief_json else [] %}
+{% if gaps %}
+<div class="card">
+  <h2>Coverage Gap Detector <span class="text-sm text-muted">({{ gaps|length }} gaps)</span></h2>
+  {% for g in gaps %}
+  <div class="gap-card gap-card-{{ g.severity }}">
+    <div class="gap-header">
+      <h4>{{ g.title }}</h4>
+      <span class="badge badge-{{ g.severity }}">{{ g.severity|upper }}</span>
+    </div>
+    <div class="gap-reason">{{ g.reason }}</div>
+    {% if g.why_now %}<div class="gap-detail"><strong>Why now:</strong> {{ g.why_now }}</div>{% endif %}
+    {% if g.suggested_question %}<div class="gap-detail"><strong>Ask:</strong> {{ g.suggested_question }}</div>{% endif %}
+    {% if g.suggested_coverage_or_action %}<div class="gap-detail"><strong>Action:</strong> {{ g.suggested_coverage_or_action }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% set ammo = brief.brief_json.get('producer_ammo') if brief.brief_json else None %}
+{% if ammo %}
+<div class="card">
+  <h2>Producer Ammo</h2>
+  {% if ammo.renewal_pressure_points %}
+  <div class="ammo-section">
+    <h4>Renewal Pressure Points</h4>
+    <ul>{% for item in ammo.renewal_pressure_points %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.underwriting_hot_buttons %}
+  <div class="ammo-section">
+    <h4>Underwriting Hot Buttons</h4>
+    <ul>{% for item in ammo.underwriting_hot_buttons %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.cross_sell_openings %}
+  <div class="ammo-section">
+    <h4>Cross-Sell Openings</h4>
+    <ul>{% for item in ammo.cross_sell_openings %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.hard_questions_to_ask %}
+  <div class="ammo-section">
+    <h4>Hard Questions to Ask</h4>
+    <ul>{% for item in ammo.hard_questions_to_ask %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if retrieval_run %}
 <div class="card">
   <h2>Retrieval Debug</h2>

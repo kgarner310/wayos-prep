@@ -10,6 +10,8 @@ from app.core.enums import TagType
 from app.models.models import GeneratedBrief, BriefSource, Query, RetrievalRun, ChunkTag
 from app.schemas.schemas import BriefOutput
 from app.services.producer_questions import get_questions_for_brief
+from app.services.coverage_gap_detector import detect_gaps
+from app.services.producer_ammo import generate_ammo
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +70,16 @@ Return JSON matching this exact schema:
   ],
   "citation_map": [
     {"source_id": "string", "title": "string", "url": "string or null"}
-  ]
+  ],
+  "coverage_gap_detector": [
+    {"title": "string", "severity": "high|medium|low", "reason": "string", "why_now": "string", "suggested_question": "string", "suggested_coverage_or_action": "string", "evidence_source": "industry|state|mod|account_input"}
+  ],
+  "producer_ammo": {
+    "renewal_pressure_points": ["string"],
+    "underwriting_hot_buttons": ["string"],
+    "cross_sell_openings": ["string"],
+    "hard_questions_to_ask": ["string"]
+  }
 }"""
 
 
@@ -155,6 +166,25 @@ def generate_brief(
         validated = BriefOutput(**brief_dict)
         brief_dict = validated.model_dump()
         model_used = "fallback"
+
+    # Always inject deterministic coverage gaps and producer ammo
+    # (supplements LLM output or fills in if LLM didn't produce them)
+    if not brief_dict.get("coverage_gap_detector"):
+        brief_dict["coverage_gap_detector"] = detect_gaps(
+            industry=industry, state=state,
+            employee_count=employee_count or 10,
+            current_mod=current_mod,
+            entity_type=entity_type or "private_business",
+            department=department,
+        )
+    if not brief_dict.get("producer_ammo") or brief_dict["producer_ammo"] is None:
+        brief_dict["producer_ammo"] = generate_ammo(
+            industry=industry, state=state,
+            employee_count=employee_count or 10,
+            current_mod=current_mod,
+            entity_type=entity_type or "private_business",
+            department=department,
+        )
 
     rendered_md = render_brief_markdown(brief_dict)
 
@@ -456,6 +486,32 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
     if "multi_state_operations" in account_traits:
         watchouts.append({"note": "Source materials mention multi-state operations — check WC filing requirements by state.", "source_ids": trait_to_sources.get("multi_state_operations", [])[:1]})
 
+    # Coverage Gap Detector
+    coverage_gap_items = detect_gaps(
+        industry=industry,
+        state=state,
+        employee_count=employee_count or 10,
+        current_mod=current_mod,
+        entity_type=entity_type or "private_business",
+        department=department,
+        account_traits=list(account_traits),
+        active_risk_themes=risk_themes,
+        known_coverages=list(coverage_tags),
+    )
+
+    # Producer Ammo
+    ammo = generate_ammo(
+        industry=industry,
+        state=state,
+        employee_count=employee_count or 10,
+        current_mod=current_mod,
+        entity_type=entity_type or "private_business",
+        department=department,
+        account_traits=list(account_traits),
+        risk_themes=risk_themes,
+        coverage_tags=coverage_tags,
+    )
+
     # Confidence notes
     confidence_notes = []
     if not _has_openai_key():
@@ -488,6 +544,8 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "watchouts": watchouts[:5],
         "confidence_notes": confidence_notes,
         "citation_map": citation_map,
+        "coverage_gap_detector": coverage_gap_items,
+        "producer_ammo": ammo,
     }
     if entity_type:
         result["entity_type"] = entity_type
@@ -548,6 +606,47 @@ def render_brief_markdown(brief: dict) -> str:
         for w in watchouts:
             lines.append(f"- {w['note']}")
         lines.append("")
+
+    # Coverage Gap Detector
+    gap_items = brief.get("coverage_gap_detector", [])
+    if gap_items:
+        lines.append("## Coverage Gap Detector")
+        for g in gap_items:
+            sev = g.get("severity", "medium").upper()
+            lines.append(f"### [{sev}] {g['title']}")
+            lines.append(g.get("reason", ""))
+            if g.get("why_now"):
+                lines.append(f"*Why now:* {g['why_now']}")
+            if g.get("suggested_question"):
+                lines.append(f"*Ask:* {g['suggested_question']}")
+            if g.get("suggested_coverage_or_action"):
+                lines.append(f"*Action:* {g['suggested_coverage_or_action']}")
+            lines.append("")
+
+    # Producer Ammo
+    ammo = brief.get("producer_ammo")
+    if ammo:
+        lines.append("## Producer Ammo")
+        if ammo.get("renewal_pressure_points"):
+            lines.append("### Renewal Pressure Points")
+            for item in ammo["renewal_pressure_points"]:
+                lines.append(f"- {item}")
+            lines.append("")
+        if ammo.get("underwriting_hot_buttons"):
+            lines.append("### Underwriting Hot Buttons")
+            for item in ammo["underwriting_hot_buttons"]:
+                lines.append(f"- {item}")
+            lines.append("")
+        if ammo.get("cross_sell_openings"):
+            lines.append("### Cross-Sell Openings")
+            for item in ammo["cross_sell_openings"]:
+                lines.append(f"- {item}")
+            lines.append("")
+        if ammo.get("hard_questions_to_ask"):
+            lines.append("### Hard Questions to Ask")
+            for item in ammo["hard_questions_to_ask"]:
+                lines.append(f"- {item}")
+            lines.append("")
 
     notes = brief.get("confidence_notes", [])
     if notes:
