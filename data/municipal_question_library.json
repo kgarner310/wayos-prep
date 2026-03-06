@@ -1,16 +1,21 @@
 {
   "version": "1.0",
   "description": "Municipal Producer Question Library for WAYOS PREP",
-  "total_questions": 186,
+  "total_questions": 196,
   "questions": [
     {
       "question_text": "What is the department's current use-of-force policy and when was it last updated?",
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "excessive_force",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Assess whether the use-of-force policy meets current legal standards and best practices",
-      "follow_up_questions": ["How often is use-of-force training conducted?", "How are force incidents reviewed and documented?"],
+      "follow_up_questions": [
+        "How often is use-of-force training conducted?",
+        "How are force incidents reviewed and documented?"
+      ],
       "importance_score": 10,
       "difficulty_score": 4
     },
@@ -19,9 +24,14 @@
       "category": "claims",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Quantify historical civil rights litigation exposure",
-      "follow_up_questions": ["What were the outcomes?", "What is the average cost per claim?"],
+      "follow_up_questions": [
+        "What were the outcomes?",
+        "What is the average cost per claim?"
+      ],
       "importance_score": 10,
       "difficulty_score": 5
     },
@@ -30,9 +40,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Evaluate evidence preservation practices and litigation defense capability",
-      "follow_up_questions": ["What is the retention policy for footage?", "Who reviews footage after incidents?"],
+      "follow_up_questions": [
+        "What is the retention policy for footage?",
+        "Who reviews footage after incidents?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -41,9 +56,15 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "law_enforcement_liability"],
+      "coverage": [
+        "municipal_auto",
+        "law_enforcement_liability"
+      ],
       "purpose": "Identify high-severity auto liability from pursuit-related accidents",
-      "follow_up_questions": ["How many pursuit incidents occurred last year?", "Were any third parties injured?"],
+      "follow_up_questions": [
+        "How many pursuit incidents occurred last year?",
+        "Were any third parties injured?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -52,9 +73,15 @@
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability", "employment_practices_public"],
+      "coverage": [
+        "law_enforcement_liability",
+        "employment_practices_public"
+      ],
       "purpose": "Assess internal affairs process and early warning systems for problem officers",
-      "follow_up_questions": ["Is there a citizen complaint review board?", "How many sustained complaints in the last 3 years?"],
+      "follow_up_questions": [
+        "Is there a citizen complaint review board?",
+        "How many sustained complaints in the last 3 years?"
+      ],
       "importance_score": 9,
       "difficulty_score": 6
     },
@@ -63,9 +90,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "excessive_force",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Identify whether de-escalation training reduces force incidents and associated claims",
-      "follow_up_questions": ["How many hours of de-escalation training per year?", "Is training scenario-based?"],
+      "follow_up_questions": [
+        "How many hours of de-escalation training per year?",
+        "Is training scenario-based?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -74,9 +106,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "excessive_force",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "K-9 deployments generate significant excessive force and civil rights claims",
-      "follow_up_questions": ["How many K-9 deployments per year?", "How many bite incidents in the last 3 years?"],
+      "follow_up_questions": [
+        "How many K-9 deployments per year?",
+        "How many bite incidents in the last 3 years?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -85,9 +122,15 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability", "workers_comp"],
+      "coverage": [
+        "law_enforcement_liability",
+        "workers_comp"
+      ],
       "purpose": "Off-duty incidents can create municipality liability if officer is acting under color of law",
-      "follow_up_questions": ["Does the municipality require approval for secondary employment?", "Who provides liability coverage for off-duty work?"],
+      "follow_up_questions": [
+        "Does the municipality require approval for secondary employment?",
+        "Who provides liability coverage for off-duty work?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -96,9 +139,14 @@
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Spoliation of evidence and chain-of-custody failures create litigation exposure",
-      "follow_up_questions": ["Is there a digital evidence management system?", "What is the evidence retention schedule?"],
+      "follow_up_questions": [
+        "Is there a digital evidence management system?",
+        "What is the evidence retention schedule?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -107,9 +155,15 @@
       "category": "workforce",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["workers_comp", "employment_practices_public"],
+      "coverage": [
+        "workers_comp",
+        "employment_practices_public"
+      ],
       "purpose": "Officer wellness impacts judgment, force decisions, and workers comp claims",
-      "follow_up_questions": ["Is there a peer support program?", "What is the PTSD claim rate?"],
+      "follow_up_questions": [
+        "Is there a peer support program?",
+        "What is the PTSD claim rate?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -118,9 +172,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "In-custody injuries and deaths create extreme liability exposure",
-      "follow_up_questions": ["What is the medical screening process for detainees?", "Have there been any in-custody incidents?"],
+      "follow_up_questions": [
+        "What is the medical screening process for detainees?",
+        "Have there been any in-custody incidents?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -129,9 +188,15 @@
       "category": "workforce",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["workers_comp", "employment_practices_public"],
+      "coverage": [
+        "workers_comp",
+        "employment_practices_public"
+      ],
       "purpose": "Staffing levels and turnover impact training adequacy and incident rates",
-      "follow_up_questions": ["Are you fully staffed?", "What is the average officer tenure?"],
+      "follow_up_questions": [
+        "Are you fully staffed?",
+        "What is the average officer tenure?"
+      ],
       "importance_score": 7,
       "difficulty_score": 2
     },
@@ -140,9 +205,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "excessive_force",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Tactical operations carry elevated excessive force and property damage exposure",
-      "follow_up_questions": ["Is the team shared with other agencies?", "What equipment is used (armored vehicles, flash bangs)?"],
+      "follow_up_questions": [
+        "Is the team shared with other agencies?",
+        "What equipment is used (armored vehicles, flash bangs)?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -151,9 +221,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Mental health crisis encounters are a leading source of force complaints and wrongful death claims",
-      "follow_up_questions": ["Is there a co-responder model with mental health professionals?", "How many CIT-trained officers are on staff?"],
+      "follow_up_questions": [
+        "Is there a co-responder model with mental health professionals?",
+        "How many CIT-trained officers are on staff?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -162,9 +237,14 @@
       "category": "fleet",
       "department": "law_enforcement",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Police vehicles have high mileage and emergency response creates elevated accident frequency",
-      "follow_up_questions": ["How many preventable accidents last year?", "Are dash cameras standard?"],
+      "follow_up_questions": [
+        "How many preventable accidents last year?",
+        "Are dash cameras standard?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -173,9 +253,13 @@
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Officer social media activity can create civil rights and employment practices claims",
-      "follow_up_questions": ["Have there been any social media-related disciplinary actions?"],
+      "follow_up_questions": [
+        "Have there been any social media-related disciplinary actions?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -184,9 +268,14 @@
       "category": "public_interaction",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Ride-along participants create additional liability if injured during operations",
-      "follow_up_questions": ["What waivers are required?", "What is the screening process?"],
+      "follow_up_questions": [
+        "What waivers are required?",
+        "What is the screening process?"
+      ],
       "importance_score": 5,
       "difficulty_score": 2
     },
@@ -195,9 +284,14 @@
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Civil asset forfeiture generates litigation and constitutional challenge claims",
-      "follow_up_questions": ["What is the annual forfeiture value?", "How many forfeiture challenges are pending?"],
+      "follow_up_questions": [
+        "What is the annual forfeiture value?",
+        "How many forfeiture challenges are pending?"
+      ],
       "importance_score": 6,
       "difficulty_score": 6
     },
@@ -206,9 +300,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "excessive_force",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "High-risk warrants carry extreme liability for force, property damage, and wrongful death",
-      "follow_up_questions": ["How many high-risk warrants were executed last year?", "What supervisory approval is required?"],
+      "follow_up_questions": [
+        "How many high-risk warrants were executed last year?",
+        "What supervisory approval is required?"
+      ],
       "importance_score": 9,
       "difficulty_score": 7
     },
@@ -217,9 +316,14 @@
       "category": "workforce",
       "department": "fire_department",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Training certifications (hazmat, technical rescue, EMS) affect exposure scope",
-      "follow_up_questions": ["What percentage are paramedic vs EMT certified?", "Is hazmat response provided?"],
+      "follow_up_questions": [
+        "What percentage are paramedic vs EMT certified?",
+        "Is hazmat response provided?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -228,9 +332,15 @@
       "category": "workforce",
       "department": "fire_department",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp", "volunteer_liability"],
+      "coverage": [
+        "workers_comp",
+        "volunteer_liability"
+      ],
       "purpose": "Volunteer firefighter injuries create unique coverage and liability questions",
-      "follow_up_questions": ["How many volunteers vs career firefighters?", "Are volunteers covered under the municipality's WC policy?"],
+      "follow_up_questions": [
+        "How many volunteers vs career firefighters?",
+        "Are volunteers covered under the municipality's WC policy?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -239,9 +349,15 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "fleet_liability",
-      "coverage": ["workers_comp", "municipal_auto"],
+      "coverage": [
+        "workers_comp",
+        "municipal_auto"
+      ],
       "purpose": "Call volume and type directly impact workers comp frequency and fleet exposure",
-      "follow_up_questions": ["What percentage of calls are EMS vs fire?", "What is the mutual aid arrangement with neighboring departments?"],
+      "follow_up_questions": [
+        "What percentage of calls are EMS vs fire?",
+        "What is the mutual aid arrangement with neighboring departments?"
+      ],
       "importance_score": 8,
       "difficulty_score": 2
     },
@@ -250,9 +366,15 @@
       "category": "fleet",
       "department": "fire_department",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "public_entity_property"],
+      "coverage": [
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "Fire apparatus are high-value vehicles with elevated collision severity during emergency response",
-      "follow_up_questions": ["What is the average apparatus age?", "What is the replacement schedule?"],
+      "follow_up_questions": [
+        "What is the average apparatus age?",
+        "What is the replacement schedule?"
+      ],
       "importance_score": 7,
       "difficulty_score": 2
     },
@@ -261,9 +383,14 @@
       "category": "workforce",
       "department": "fire_department",
       "risk_theme": "chemical_exposure",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Firefighter occupational cancer is a growing workers comp exposure with presumptive legislation in many states",
-      "follow_up_questions": ["Does the state have a firefighter cancer presumption law?", "What exposure tracking and decontamination protocols are in place?"],
+      "follow_up_questions": [
+        "Does the state have a firefighter cancer presumption law?",
+        "What exposure tracking and decontamination protocols are in place?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -272,9 +399,14 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "burns_and_scalds",
-      "coverage": ["workers_comp"],
-      "purpose": "Training injuries are a significant WC exposure — live fire training carries burn and smoke inhalation risk",
-      "follow_up_questions": ["Is training conducted at a fixed facility or acquired structures?", "Have there been any training injuries in the past 3 years?"],
+      "coverage": [
+        "workers_comp"
+      ],
+      "purpose": "Training injuries are a significant WC exposure \u2014 live fire training carries burn and smoke inhalation risk",
+      "follow_up_questions": [
+        "Is training conducted at a fixed facility or acquired structures?",
+        "Have there been any training injuries in the past 3 years?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -283,9 +415,15 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "police_liability",
-      "coverage": ["general_liability", "municipal_auto"],
+      "coverage": [
+        "general_liability",
+        "municipal_auto"
+      ],
       "purpose": "EMS transport adds medical malpractice, patient handling, and ambulance collision exposure",
-      "follow_up_questions": ["What is the billing and reimbursement model?", "How many patient transport runs per year?"],
+      "follow_up_questions": [
+        "What is the billing and reimbursement model?",
+        "How many patient transport runs per year?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -294,9 +432,15 @@
       "category": "compliance",
       "department": "fire_department",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public", "workers_comp"],
+      "coverage": [
+        "environmental_liability_public",
+        "workers_comp"
+      ],
       "purpose": "PFAS contamination from AFFF foam creates both environmental liability and firefighter health claims",
-      "follow_up_questions": ["Has AFFF been used at training facilities?", "Has groundwater testing been conducted at fire stations?"],
+      "follow_up_questions": [
+        "Has AFFF been used at training facilities?",
+        "Has groundwater testing been conducted at fire stations?"
+      ],
       "importance_score": 8,
       "difficulty_score": 6
     },
@@ -305,9 +449,15 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp", "municipal_auto"],
+      "coverage": [
+        "workers_comp",
+        "municipal_auto"
+      ],
       "purpose": "Mutual aid responses in other jurisdictions can create workers comp and liability coverage gaps",
-      "follow_up_questions": ["How many mutual aid responses per year?", "Does the agreement address liability and WC coverage?"],
+      "follow_up_questions": [
+        "How many mutual aid responses per year?",
+        "Does the agreement address liability and WC coverage?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -316,9 +466,14 @@
       "category": "workforce",
       "department": "fire_department",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Cardiovascular events are a leading cause of firefighter line-of-duty deaths and WC claims",
-      "follow_up_questions": ["Are annual physicals required?", "What is the cardiac event history?"],
+      "follow_up_questions": [
+        "Are annual physicals required?",
+        "What is the cardiac event history?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -327,9 +482,14 @@
       "category": "compliance",
       "department": "fire_department",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Failure to inspect or enforce fire codes can create liability when fires cause injuries or deaths",
-      "follow_up_questions": ["How many inspections per year?", "What is the re-inspection process for violations?"],
+      "follow_up_questions": [
+        "How many inspections per year?",
+        "What is the re-inspection process for violations?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -338,9 +498,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Road mileage directly correlates with pothole and road defect claim frequency",
-      "follow_up_questions": ["What is the annual paving/resurfacing budget?", "What is the pavement condition index?"],
+      "follow_up_questions": [
+        "What is the annual paving/resurfacing budget?",
+        "What is the pavement condition index?"
+      ],
       "importance_score": 9,
       "difficulty_score": 2
     },
@@ -349,9 +514,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Response time to known road defects is the key factor in pothole liability claims",
-      "follow_up_questions": ["What is the average repair time after a defect is reported?", "Is there a digital tracking system?"],
+      "follow_up_questions": [
+        "What is the average repair time after a defect is reported?",
+        "Is there a digital tracking system?"
+      ],
       "importance_score": 10,
       "difficulty_score": 3
     },
@@ -360,9 +530,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability", "municipal_auto"],
+      "coverage": [
+        "general_liability",
+        "municipal_auto"
+      ],
       "purpose": "Snow/ice response standards and documentation are critical defenses against winter weather claims",
-      "follow_up_questions": ["What is the priority route system?", "How many plows and salt trucks are available?"],
+      "follow_up_questions": [
+        "What is the priority route system?",
+        "How many plows and salt trucks are available?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -371,9 +547,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["general_liability", "environmental_liability_public"],
+      "coverage": [
+        "general_liability",
+        "environmental_liability_public"
+      ],
       "purpose": "Stormwater system failures cause property damage claims and environmental compliance issues",
-      "follow_up_questions": ["What is the stormwater system age?", "Has the system capacity been assessed for current development levels?"],
+      "follow_up_questions": [
+        "What is the stormwater system age?",
+        "Has the system capacity been assessed for current development levels?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -382,9 +564,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Signal failures and burned-out lights contribute to intersection accidents and municipal liability",
-      "follow_up_questions": ["What is the inspection frequency?", "What is the response time for reported outages?"],
+      "follow_up_questions": [
+        "What is the inspection frequency?",
+        "What is the response time for reported outages?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -393,9 +580,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["infrastructure_property", "general_liability"],
-      "purpose": "Bridge failures create catastrophic liability — regular inspection documentation is critical",
-      "follow_up_questions": ["How many bridges are weight-restricted or structurally deficient?", "What is the funding plan for bridge replacements?"],
+      "coverage": [
+        "infrastructure_property",
+        "general_liability"
+      ],
+      "purpose": "Bridge failures create catastrophic liability \u2014 regular inspection documentation is critical",
+      "follow_up_questions": [
+        "How many bridges are weight-restricted or structurally deficient?",
+        "What is the funding plan for bridge replacements?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -404,9 +597,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "struck_by_object",
-      "coverage": ["workers_comp"],
-      "purpose": "Trench collapses are a leading cause of construction fatalities — OSHA standards are strict",
-      "follow_up_questions": ["Is a competent person designated for every excavation?", "What shoring/trench box equipment is available?"],
+      "coverage": [
+        "workers_comp"
+      ],
+      "purpose": "Trench collapses are a leading cause of construction fatalities \u2014 OSHA standards are strict",
+      "follow_up_questions": [
+        "Is a competent person designated for every excavation?",
+        "What shoring/trench box equipment is available?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -415,9 +613,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["workers_comp", "general_liability"],
+      "coverage": [
+        "workers_comp",
+        "general_liability"
+      ],
       "purpose": "Work zone safety affects both worker injuries and motorist claims from improper traffic control",
-      "follow_up_questions": ["Do you follow MUTCD standards?", "How many work zone incidents occurred last year?"],
+      "follow_up_questions": [
+        "Do you follow MUTCD standards?",
+        "How many work zone incidents occurred last year?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -426,20 +630,30 @@
       "category": "fleet",
       "department": "public_works",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Dump trucks, heavy equipment, and utility vehicles create elevated auto and property damage exposure",
-      "follow_up_questions": ["What is the average fleet age?", "What is the preventive maintenance schedule?"],
+      "follow_up_questions": [
+        "What is the average fleet age?",
+        "What is the preventive maintenance schedule?"
+      ],
       "importance_score": 8,
       "difficulty_score": 2
     },
     {
-      "question_text": "How does the municipality handle sidewalk maintenance — is it a city or property owner responsibility?",
+      "question_text": "How does the municipality handle sidewalk maintenance \u2014 is it a city or property owner responsibility?",
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
-      "purpose": "Sidewalk trip-and-fall claims are high-frequency — liability allocation varies by ordinance",
-      "follow_up_questions": ["What is the sidewalk inspection program?", "How are ADA compliance issues handled?"],
+      "coverage": [
+        "general_liability"
+      ],
+      "purpose": "Sidewalk trip-and-fall claims are high-frequency \u2014 liability allocation varies by ordinance",
+      "follow_up_questions": [
+        "What is the sidewalk inspection program?",
+        "How are ADA compliance issues handled?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -448,9 +662,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "chemical_exposure",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Sewer manholes, water vaults, and tanks are permit-required confined spaces with atmospheric and engulfment hazards",
-      "follow_up_questions": ["How many confined space entries per year?", "What atmospheric monitoring equipment is used?"],
+      "follow_up_questions": [
+        "How many confined space entries per year?",
+        "What atmospheric monitoring equipment is used?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -459,9 +678,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "struck_by_object",
-      "coverage": ["general_liability", "workers_comp"],
+      "coverage": [
+        "general_liability",
+        "workers_comp"
+      ],
       "purpose": "Falling tree limbs on public property create both GL and WC claims",
-      "follow_up_questions": ["Is there a tree inventory and inspection program?", "How are dead/hazardous trees identified and removed?"],
+      "follow_up_questions": [
+        "Is there a tree inventory and inspection program?",
+        "How are dead/hazardous trees identified and removed?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -470,9 +695,14 @@
       "category": "compliance",
       "department": "public_works",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "ADA non-compliance in sidewalks, curb ramps, and public buildings creates federal civil rights exposure",
-      "follow_up_questions": ["Is there an ADA transition plan?", "What percentage of curb ramps are ADA compliant?"],
+      "follow_up_questions": [
+        "Is there an ADA transition plan?",
+        "What percentage of curb ramps are ADA compliant?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -481,9 +711,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public", "workers_comp"],
+      "coverage": [
+        "environmental_liability_public",
+        "workers_comp"
+      ],
       "purpose": "Chemical application near waterways and residential areas creates environmental and health claims",
-      "follow_up_questions": ["Are applicators licensed?", "What chemicals are used and how is drift managed?"],
+      "follow_up_questions": [
+        "Are applicators licensed?",
+        "What chemicals are used and how is drift managed?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -492,9 +728,14 @@
       "category": "claims",
       "department": "public_works",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Sewer backup claim frequency and severity indicates system condition and maintenance adequacy",
-      "follow_up_questions": ["What is the average claim cost?", "What is the sewer line cleaning schedule?"],
+      "follow_up_questions": [
+        "What is the average claim cost?",
+        "What is the sewer line cleaning schedule?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -503,9 +744,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Striking underground utilities during excavation creates property damage and service disruption claims",
-      "follow_up_questions": ["How many utility strikes occurred last year?", "What GIS mapping exists for underground infrastructure?"],
+      "follow_up_questions": [
+        "How many utility strikes occurred last year?",
+        "What GIS mapping exists for underground infrastructure?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -514,9 +760,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Faded markings and missing signs contribute to accident liability",
-      "follow_up_questions": ["What is the restriping schedule?", "How are sign replacements prioritized?"],
+      "follow_up_questions": [
+        "What is the restriping schedule?",
+        "How are sign replacements prioritized?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -525,9 +776,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "water_quality_claims",
-      "coverage": ["infrastructure_property", "general_liability"],
+      "coverage": [
+        "infrastructure_property",
+        "general_liability"
+      ],
       "purpose": "Aging water mains create water main break claims and water quality contamination exposure",
-      "follow_up_questions": ["What percentage of the system is beyond its design life?", "How many water main breaks per year?"],
+      "follow_up_questions": [
+        "What percentage of the system is beyond its design life?",
+        "How many water main breaks per year?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -536,9 +793,15 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["infrastructure_property", "general_liability"],
+      "coverage": [
+        "infrastructure_property",
+        "general_liability"
+      ],
       "purpose": "Dam failures create catastrophic downstream liability",
-      "follow_up_questions": ["What hazard classification are the dams?", "When was the last dam safety inspection?"],
+      "follow_up_questions": [
+        "What hazard classification are the dams?",
+        "When was the last dam safety inspection?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -547,9 +810,14 @@
       "category": "governance",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["infrastructure_property"],
-      "purpose": "Deferred maintenance increases claim frequency — the CIP indicates investment in risk reduction",
-      "follow_up_questions": ["What is the annual capital budget?", "How is the CIP prioritized?"],
+      "coverage": [
+        "infrastructure_property"
+      ],
+      "purpose": "Deferred maintenance increases claim frequency \u2014 the CIP indicates investment in risk reduction",
+      "follow_up_questions": [
+        "What is the annual capital budget?",
+        "How is the CIP prioritized?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -558,9 +826,15 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public", "workers_comp"],
+      "coverage": [
+        "environmental_liability_public",
+        "workers_comp"
+      ],
       "purpose": "Water treatment chemical storage and handling creates both worker safety and environmental exposure",
-      "follow_up_questions": ["What quantities of chlorine or other chemicals are stored?", "What is the emergency response plan for a chemical release?"],
+      "follow_up_questions": [
+        "What quantities of chlorine or other chemicals are stored?",
+        "What is the emergency response plan for a chemical release?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -569,9 +843,14 @@
       "category": "compliance",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "SDWA violations create regulatory penalties and class action exposure from affected customers",
-      "follow_up_questions": ["Have there been any maximum contaminant level violations?", "When was the last sanitary survey?"],
+      "follow_up_questions": [
+        "Have there been any maximum contaminant level violations?",
+        "When was the last sanitary survey?"
+      ],
       "importance_score": 10,
       "difficulty_score": 5
     },
@@ -580,9 +859,15 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public", "general_liability"],
-      "purpose": "EPA Lead and Copper Rule revisions require lead service line inventories — failure creates health exposure",
-      "follow_up_questions": ["How many known lead service lines exist?", "What is the replacement timeline and funding source?"],
+      "coverage": [
+        "environmental_liability_public",
+        "general_liability"
+      ],
+      "purpose": "EPA Lead and Copper Rule revisions require lead service line inventories \u2014 failure creates health exposure",
+      "follow_up_questions": [
+        "How many known lead service lines exist?",
+        "What is the replacement timeline and funding source?"
+      ],
       "importance_score": 10,
       "difficulty_score": 5
     },
@@ -591,9 +876,14 @@
       "category": "compliance",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Discharge permit violations create EPA enforcement actions and citizen lawsuits",
-      "follow_up_questions": ["Have there been any permit exceedances in the last 3 years?", "What is the consent order status if any?"],
+      "follow_up_questions": [
+        "Have there been any permit exceedances in the last 3 years?",
+        "What is the consent order status if any?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -602,9 +892,15 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["environmental_liability_public", "general_liability"],
+      "coverage": [
+        "environmental_liability_public",
+        "general_liability"
+      ],
       "purpose": "SSO events create environmental penalties and property damage claims simultaneously",
-      "follow_up_questions": ["How many SSOs were reported last year?", "What is the root cause (capacity, blockage, infiltration)?"],
+      "follow_up_questions": [
+        "How many SSOs were reported last year?",
+        "What is the root cause (capacity, blockage, infiltration)?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -613,9 +909,15 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "fleet_liability",
-      "coverage": ["public_entity_property", "workers_comp"],
+      "coverage": [
+        "public_entity_property",
+        "workers_comp"
+      ],
       "purpose": "Electric utility operations create electrocution, fire, and infrastructure failure exposures",
-      "follow_up_questions": ["What is the system voltage and line-mile count?", "How many outage events per year?"],
+      "follow_up_questions": [
+        "What is the system voltage and line-mile count?",
+        "How many outage events per year?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -624,9 +926,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
+      "coverage": [
+        "cyber"
+      ],
       "purpose": "SCADA systems are targets for cyber attacks that could compromise water treatment and public health",
-      "follow_up_questions": ["Are SCADA systems air-gapped or network-connected?", "When was the last OT security assessment?"],
+      "follow_up_questions": [
+        "Are SCADA systems air-gapped or network-connected?",
+        "When was the last OT security assessment?"
+      ],
       "importance_score": 9,
       "difficulty_score": 6
     },
@@ -635,9 +942,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["infrastructure_property"],
+      "coverage": [
+        "infrastructure_property"
+      ],
       "purpose": "Excessive I&I causes capacity-related sewer backups during rain events and increases treatment costs",
-      "follow_up_questions": ["What percentage of the collection system has been assessed with CCTV?", "What is the annual I&I reduction budget?"],
+      "follow_up_questions": [
+        "What percentage of the collection system has been assessed with CCTV?",
+        "What is the annual I&I reduction budget?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -646,9 +958,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["public_entity_property"],
-      "purpose": "Loss of water supply is a public health emergency — contingency plans affect business interruption and liability",
-      "follow_up_questions": ["Are there emergency interconnections with adjacent systems?", "What is the emergency water supply capacity?"],
+      "coverage": [
+        "public_entity_property"
+      ],
+      "purpose": "Loss of water supply is a public health emergency \u2014 contingency plans affect business interruption and liability",
+      "follow_up_questions": [
+        "Are there emergency interconnections with adjacent systems?",
+        "What is the emergency water supply capacity?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -657,9 +974,14 @@
       "category": "compliance",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Biosolids land application creates environmental liability and neighbor complaints",
-      "follow_up_questions": ["What is the disposal method (land application, landfill, incineration)?", "Are there any citizen complaints about odor?"],
+      "follow_up_questions": [
+        "What is the disposal method (land application, landfill, incineration)?",
+        "Are there any citizen complaints about odor?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -668,9 +990,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "procurement_disputes",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Billing disputes and service disconnection claims create customer relations and legal exposure",
-      "follow_up_questions": ["How many billing disputes per year?", "What is the disconnection policy for non-payment?"],
+      "follow_up_questions": [
+        "How many billing disputes per year?",
+        "What is the disconnection policy for non-payment?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -679,9 +1006,14 @@
       "category": "governance",
       "department": "utilities",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Rate setting decisions can generate legal challenges and public officials claims",
-      "follow_up_questions": ["When was the last rate study conducted?", "Are rates adequate to fund infrastructure replacement?"],
+      "follow_up_questions": [
+        "When was the last rate study conducted?",
+        "Are rates adequate to fund infrastructure replacement?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -690,9 +1022,14 @@
       "category": "compliance",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Cross-connections can introduce contaminants into the drinking water system",
-      "follow_up_questions": ["How many backflow prevention devices are in service?", "What is the testing compliance rate?"],
+      "follow_up_questions": [
+        "How many backflow prevention devices are in service?",
+        "What is the testing compliance rate?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -701,9 +1038,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "playground_injury",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Identify maintenance practices that reduce injury exposure at municipal playgrounds",
-      "follow_up_questions": ["Who is responsible for inspection logs?", "How are hazards reported and corrected?"],
+      "follow_up_questions": [
+        "Who is responsible for inspection logs?",
+        "How are hazards reported and corrected?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -712,9 +1054,14 @@
       "category": "compliance",
       "department": "parks_recreation",
       "risk_theme": "playground_injury",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Outdated equipment that fails current safety standards increases liability when injuries occur",
-      "follow_up_questions": ["When was the last equipment replacement cycle?", "What surfacing materials are used under equipment?"],
+      "follow_up_questions": [
+        "When was the last equipment replacement cycle?",
+        "What surfacing materials are used under equipment?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -723,9 +1070,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Aquatic facilities carry drowning and slip-and-fall liability exposure",
-      "follow_up_questions": ["What lifeguard staffing and certification requirements exist?", "How many incidents occurred last season?"],
+      "follow_up_questions": [
+        "What lifeguard staffing and certification requirements exist?",
+        "How many incidents occurred last season?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -734,9 +1086,14 @@
       "category": "public_interaction",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Public events create crowd crush, alcohol-related, and vendor liability exposure",
-      "follow_up_questions": ["What insurance requirements exist for event vendors?", "Is alcohol served at events?"],
+      "follow_up_questions": [
+        "What insurance requirements exist for event vendors?",
+        "Is alcohol served at events?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -745,9 +1102,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Youth programs create participant injury, coaching liability, and abuse/molestation exposure",
-      "follow_up_questions": ["Are background checks conducted on all coaches and volunteers?", "What is the concussion management protocol?"],
+      "follow_up_questions": [
+        "Are background checks conducted on all coaches and volunteers?",
+        "What is the concussion management protocol?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -756,9 +1118,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Trail conditions, signage, and maintenance create trip-and-fall and inadequate warning claims",
-      "follow_up_questions": ["What is the trail inspection frequency?", "Are trails used for cycling and what are the speed limits?"],
+      "follow_up_questions": [
+        "What is the trail inspection frequency?",
+        "Are trails used for cycling and what are the speed limits?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -767,9 +1134,15 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability", "public_entity_property"],
+      "coverage": [
+        "general_liability",
+        "public_entity_property"
+      ],
       "purpose": "Facility rentals create premises liability and tenant-use exposure",
-      "follow_up_questions": ["What insurance requirements apply to renters?", "Are hold-harmless agreements used?"],
+      "follow_up_questions": [
+        "What insurance requirements apply to renters?",
+        "Are hold-harmless agreements used?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -778,9 +1151,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Natural areas create drowning, wildlife encounter, and rescue operation exposure",
-      "follow_up_questions": ["Are there lifeguards at swimming areas?", "What signage exists for hazard warnings?"],
+      "follow_up_questions": [
+        "Are there lifeguards at swimming areas?",
+        "What signage exists for hazard warnings?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -789,9 +1167,15 @@
       "category": "workforce",
       "department": "parks_recreation",
       "risk_theme": "volunteer_liability",
-      "coverage": ["general_liability", "employment_practices_public"],
+      "coverage": [
+        "general_liability",
+        "employment_practices_public"
+      ],
       "purpose": "Inadequate background screening creates abuse/molestation liability exposure",
-      "follow_up_questions": ["Are criminal background checks conducted on all volunteers?", "What is the supervision ratio policy?"],
+      "follow_up_questions": [
+        "Are criminal background checks conducted on all volunteers?",
+        "What is the supervision ratio policy?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -800,9 +1184,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "playground_injury",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Poor field conditions contribute to participant injuries and premises liability claims",
-      "follow_up_questions": ["How often are fields inspected pre-game?", "What is the policy for closing fields due to conditions?"],
+      "follow_up_questions": [
+        "How often are fields inspected pre-game?",
+        "What is the policy for closing fields due to conditions?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -811,9 +1200,15 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability", "public_entity_property"],
+      "coverage": [
+        "general_liability",
+        "public_entity_property"
+      ],
       "purpose": "Golf courses create errant ball, lightning, cart accident, and chemical application exposure",
-      "follow_up_questions": ["What is the annual round count?", "Are golf carts rented to patrons?"],
+      "follow_up_questions": [
+        "What is the annual round count?",
+        "Are golf carts rented to patrons?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -822,9 +1217,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["governmental_immunity"],
-      "purpose": "Governmental immunity is the foundational liability framework — understanding caps and exceptions is critical",
-      "follow_up_questions": ["What is the damages cap per occurrence?", "What activities are not covered by immunity?"],
+      "coverage": [
+        "governmental_immunity"
+      ],
+      "purpose": "Governmental immunity is the foundational liability framework \u2014 understanding caps and exceptions is critical",
+      "follow_up_questions": [
+        "What is the damages cap per occurrence?",
+        "What activities are not covered by immunity?"
+      ],
       "importance_score": 10,
       "difficulty_score": 6
     },
@@ -833,9 +1233,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Governance structure and documentation practices affect public officials liability exposure",
-      "follow_up_questions": ["Are all meetings conducted in compliance with open meetings laws?", "What training do elected officials receive?"],
+      "follow_up_questions": [
+        "Are all meetings conducted in compliance with open meetings laws?",
+        "What training do elected officials receive?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -844,9 +1249,14 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["employment_practices_public"],
-      "purpose": "Public sector EPLI claims are common — policies, training, and documentation are key defenses",
-      "follow_up_questions": ["When was the employee handbook last updated?", "How many employment-related claims in the past 3 years?"],
+      "coverage": [
+        "employment_practices_public"
+      ],
+      "purpose": "Public sector EPLI claims are common \u2014 policies, training, and documentation are key defenses",
+      "follow_up_questions": [
+        "When was the employee handbook last updated?",
+        "How many employment-related claims in the past 3 years?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -855,9 +1265,14 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Payroll distribution by department drives WC premium allocation and indicates exposure concentration",
-      "follow_up_questions": ["What are the highest-payroll departments?", "How much payroll is allocated to public safety?"],
+      "follow_up_questions": [
+        "What are the highest-payroll departments?",
+        "How much payroll is allocated to public safety?"
+      ],
       "importance_score": 8,
       "difficulty_score": 2
     },
@@ -866,9 +1281,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "FOIA non-compliance creates litigation and can result in fee-shifting awards",
-      "follow_up_questions": ["What is the average response time for records requests?", "Have there been any FOIA lawsuits?"],
+      "follow_up_questions": [
+        "What is the average response time for records requests?",
+        "Have there been any FOIA lawsuits?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -877,9 +1297,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
-      "purpose": "Municipal governments are primary targets for ransomware — cyber hygiene directly impacts claim likelihood",
-      "follow_up_questions": ["Is there a cybersecurity incident response plan?", "When was the last penetration test?"],
+      "coverage": [
+        "cyber"
+      ],
+      "purpose": "Municipal governments are primary targets for ransomware \u2014 cyber hygiene directly impacts claim likelihood",
+      "follow_up_questions": [
+        "Is there a cybersecurity incident response plan?",
+        "When was the last penetration test?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -888,20 +1313,30 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
+      "coverage": [
+        "cyber"
+      ],
       "purpose": "Determine whether current cyber coverage is adequate for ransomware and data breach scenarios",
-      "follow_up_questions": ["What is the retention/deductible?", "Does the policy cover ransomware payments?"],
+      "follow_up_questions": [
+        "What is the retention/deductible?",
+        "Does the policy cover ransomware payments?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
     {
-      "question_text": "What is the municipality's approach to risk management — is there a dedicated risk manager?",
+      "question_text": "What is the municipality's approach to risk management \u2014 is there a dedicated risk manager?",
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "A dedicated risk manager indicates organizational maturity in loss prevention",
-      "follow_up_questions": ["What risk management initiatives have been implemented?", "Is risk management centralized or decentralized?"],
+      "follow_up_questions": [
+        "What risk management initiatives have been implemented?",
+        "Is risk management centralized or decentralized?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -910,9 +1345,14 @@
       "category": "contracts",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Interlocal agreements create shared liability and coverage coordination requirements",
-      "follow_up_questions": ["Do agreements address insurance and indemnification?", "What joint services are provided?"],
+      "follow_up_questions": [
+        "Do agreements address insurance and indemnification?",
+        "What joint services are provided?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -921,9 +1361,14 @@
       "category": "contracts",
       "department": "administration",
       "risk_theme": "procurement_disputes",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Inadequate vendor insurance requirements create uninsured liability gaps",
-      "follow_up_questions": ["What minimum insurance limits are required?", "Is additional insured status required?"],
+      "follow_up_questions": [
+        "What minimum insurance limits are required?",
+        "Is additional insured status required?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -932,9 +1377,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "grant_compliance",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Grant non-compliance can result in fund clawback and audit findings",
-      "follow_up_questions": ["What is the total grant portfolio value?", "When was the last single audit conducted?"],
+      "follow_up_questions": [
+        "What is the total grant portfolio value?",
+        "When was the last single audit conducted?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -943,9 +1393,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "procurement_disputes",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Procurement violations create bid protest litigation and public trust issues",
-      "follow_up_questions": ["How many bid protests have been filed in the past 3 years?", "What electronic bidding system is used?"],
+      "follow_up_questions": [
+        "How many bid protests have been filed in the past 3 years?",
+        "What electronic bidding system is used?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -954,9 +1409,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "zoning_decisions",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Zoning and land use decisions generate inverse condemnation, takings, and equal protection claims",
-      "follow_up_questions": ["How many zoning appeals are pending?", "Has the municipality faced any takings claims?"],
+      "follow_up_questions": [
+        "How many zoning appeals are pending?",
+        "Has the municipality faced any takings claims?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -965,9 +1425,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Building inspection failures that result in structural collapse or injury create significant liability",
-      "follow_up_questions": ["How many building inspectors are on staff?", "What is the inspection backlog?"],
+      "follow_up_questions": [
+        "How many building inspectors are on staff?",
+        "What is the inspection backlog?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -976,9 +1441,15 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "workers_comp"],
+      "coverage": [
+        "municipal_auto",
+        "workers_comp"
+      ],
       "purpose": "Sanitation trucks operating in residential areas create pedestrian strike, property damage, and worker injury exposure",
-      "follow_up_questions": ["Is collection performed in-house or contracted?", "How many collection routes per day?"],
+      "follow_up_questions": [
+        "Is collection performed in-house or contracted?",
+        "How many collection routes per day?"
+      ],
       "importance_score": 8,
       "difficulty_score": 2
     },
@@ -987,9 +1458,14 @@
       "category": "claims",
       "department": "sanitation",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
-      "purpose": "Sanitation has among the highest WC claim rates of any municipal department — lifting, struck-by, and vehicle incidents",
-      "follow_up_questions": ["What are the most common injury types?", "Are automated collection trucks used?"],
+      "coverage": [
+        "workers_comp"
+      ],
+      "purpose": "Sanitation has among the highest WC claim rates of any municipal department \u2014 lifting, struck-by, and vehicle incidents",
+      "follow_up_questions": [
+        "What are the most common injury types?",
+        "Are automated collection trucks used?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -998,9 +1474,15 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "fleet_liability",
-      "coverage": ["workers_comp", "environmental_liability_public"],
+      "coverage": [
+        "workers_comp",
+        "environmental_liability_public"
+      ],
       "purpose": "Recycling processing creates additional worker exposure to sharps, chemicals, and equipment hazards",
-      "follow_up_questions": ["Is there a municipal recycling center?", "What contamination issues exist with the recycling stream?"],
+      "follow_up_questions": [
+        "Is there a municipal recycling center?",
+        "What contamination issues exist with the recycling stream?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1009,9 +1491,15 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public", "workers_comp"],
+      "coverage": [
+        "environmental_liability_public",
+        "workers_comp"
+      ],
       "purpose": "Landfill operations create environmental compliance, closure liability, and worker safety exposure",
-      "follow_up_questions": ["What is the remaining permitted capacity?", "What is the estimated closure and post-closure cost?"],
+      "follow_up_questions": [
+        "What is the remaining permitted capacity?",
+        "What is the estimated closure and post-closure cost?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -1020,9 +1508,14 @@
       "category": "fleet",
       "department": "sanitation",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Garbage trucks have high claim frequency due to residential area operation and backing incidents",
-      "follow_up_questions": ["How many backing accidents last year?", "Are rear-mounted cameras standard?"],
+      "follow_up_questions": [
+        "How many backing accidents last year?",
+        "Are rear-mounted cameras standard?"
+      ],
       "importance_score": 8,
       "difficulty_score": 2
     },
@@ -1031,9 +1524,14 @@
       "category": "compliance",
       "department": "sanitation",
       "risk_theme": "environmental_liability_public",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Illegal dumping enforcement and cleanup creates environmental and legal expense exposure",
-      "follow_up_questions": ["How many illegal dumping complaints per year?", "What is the cleanup cost recovery process?"],
+      "follow_up_questions": [
+        "How many illegal dumping complaints per year?",
+        "What is the cleanup cost recovery process?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -1042,9 +1540,15 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public", "workers_comp"],
+      "coverage": [
+        "environmental_liability_public",
+        "workers_comp"
+      ],
       "purpose": "Hazardous waste handling creates worker exposure and environmental contamination risk",
-      "follow_up_questions": ["How often are events held?", "What contractor handles hazardous waste transport and disposal?"],
+      "follow_up_questions": [
+        "How often are events held?",
+        "What contractor handles hazardous waste transport and disposal?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1053,9 +1557,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["environmental_liability_public"],
-      "purpose": "Street sweeping is a stormwater BMP (best management practice) — frequency affects permit compliance",
-      "follow_up_questions": ["What is the sweeping schedule?", "How many sweeping miles per year?"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
+      "purpose": "Street sweeping is a stormwater BMP (best management practice) \u2014 frequency affects permit compliance",
+      "follow_up_questions": [
+        "What is the sweeping schedule?",
+        "How many sweeping miles per year?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1064,9 +1573,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Systematic paving prioritization demonstrates reasonable maintenance for liability defense",
-      "follow_up_questions": ["What pavement management system is used?", "What is the average pavement condition index?"],
+      "follow_up_questions": [
+        "What pavement management system is used?",
+        "What is the average pavement condition index?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1075,9 +1589,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Documented response time standards are a key defense element in pothole and defect claims",
-      "follow_up_questions": ["How is an emergency repair defined?", "Are response times tracked and reported?"],
+      "follow_up_questions": [
+        "How is an emergency repair defined?",
+        "Are response times tracked and reported?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -1086,9 +1605,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Damaged curbs and gutters create trip-and-fall hazards and stormwater drainage issues",
-      "follow_up_questions": ["What is the annual repair budget?", "How are repair requests prioritized?"],
+      "follow_up_questions": [
+        "What is the annual repair budget?",
+        "How are repair requests prioritized?"
+      ],
       "importance_score": 6,
       "difficulty_score": 2
     },
@@ -1097,9 +1621,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Utility cuts and encroachments degrade pavement and create liability for road conditions",
-      "follow_up_questions": ["What right-of-way permit process exists?", "How are utility cut restorations inspected?"],
+      "follow_up_questions": [
+        "What right-of-way permit process exists?",
+        "How are utility cut restorations inspected?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1108,9 +1637,15 @@
       "category": "fleet",
       "department": "street_maintenance",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "public_entity_property"],
+      "coverage": [
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "Heavy equipment operation on public roads creates heightened collision and property damage exposure",
-      "follow_up_questions": ["What is the average equipment age?", "What is the CDL compliance rate for operators?"],
+      "follow_up_questions": [
+        "What is the average equipment age?",
+        "What is the CDL compliance rate for operators?"
+      ],
       "importance_score": 7,
       "difficulty_score": 2
     },
@@ -1119,9 +1654,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Clogged drainage creates flooding claims against the municipality",
-      "follow_up_questions": ["What is the ditch cleaning schedule?", "How are drainage complaints tracked and resolved?"],
+      "follow_up_questions": [
+        "What is the ditch cleaning schedule?",
+        "How are drainage complaints tracked and resolved?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1130,9 +1670,14 @@
       "category": "compliance",
       "department": "water_treatment",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Failure to properly notify customers of water quality issues creates regulatory and legal exposure",
-      "follow_up_questions": ["Is the annual Consumer Confidence Report published on time?", "What is the boil water advisory notification process?"],
+      "follow_up_questions": [
+        "Is the annual Consumer Confidence Report published on time?",
+        "What is the boil water advisory notification process?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1141,9 +1686,14 @@
       "category": "operations",
       "department": "water_treatment",
       "risk_theme": "water_quality_claims",
-      "coverage": ["public_entity_property"],
+      "coverage": [
+        "public_entity_property"
+      ],
       "purpose": "Single points of failure in water treatment can cause public health emergencies",
-      "follow_up_questions": ["Is there backup power generation?", "What is the treated water storage capacity?"],
+      "follow_up_questions": [
+        "Is there backup power generation?",
+        "What is the treated water storage capacity?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1152,9 +1702,14 @@
       "category": "workforce",
       "department": "water_treatment",
       "risk_theme": "water_quality_claims",
-      "coverage": ["workers_comp"],
-      "purpose": "Operator certification is a regulatory requirement — staffing shortages can cause compliance violations",
-      "follow_up_questions": ["Are certifications current?", "How many operators are needed vs available?"],
+      "coverage": [
+        "workers_comp"
+      ],
+      "purpose": "Operator certification is a regulatory requirement \u2014 staffing shortages can cause compliance violations",
+      "follow_up_questions": [
+        "Are certifications current?",
+        "How many operators are needed vs available?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1163,9 +1718,14 @@
       "category": "operations",
       "department": "water_treatment",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Source water contamination creates treatment challenges and potential health impacts",
-      "follow_up_questions": ["Is there a source water protection plan?", "What potential contamination sources exist in the watershed?"],
+      "follow_up_questions": [
+        "Is there a source water protection plan?",
+        "What potential contamination sources exist in the watershed?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1174,9 +1734,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Fleet size directly correlates with auto liability exposure and premium",
-      "follow_up_questions": ["What is the fleet breakdown by department?", "What vehicle types are included?"],
+      "follow_up_questions": [
+        "What is the fleet breakdown by department?",
+        "What vehicle types are included?"
+      ],
       "importance_score": 9,
       "difficulty_score": 2
     },
@@ -1185,9 +1750,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Preventive maintenance reduces mechanical failure accidents and demonstrates reasonable care",
-      "follow_up_questions": ["What fleet management software is used?", "What is the PM compliance rate?"],
+      "follow_up_questions": [
+        "What fleet management software is used?",
+        "What is the PM compliance rate?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1196,9 +1766,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Unqualified or problem drivers create negligent entrustment liability",
-      "follow_up_questions": ["How often are MVRs pulled?", "What is the process for revoking driving privileges?"],
+      "follow_up_questions": [
+        "How often are MVRs pulled?",
+        "What is the process for revoking driving privileges?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -1207,9 +1782,14 @@
       "category": "claims",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Historical accident data indicates fleet risk profile and loss trend",
-      "follow_up_questions": ["What are the most common accident types?", "What is the average claim cost?"],
+      "follow_up_questions": [
+        "What are the most common accident types?",
+        "What is the average claim cost?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -1218,9 +1798,15 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "public_entity_property"],
+      "coverage": [
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "EV charging infrastructure and battery fire exposure are emerging fleet risks",
-      "follow_up_questions": ["How many EVs are in the fleet?", "What charging infrastructure exists?"],
+      "follow_up_questions": [
+        "How many EVs are in the fleet?",
+        "What charging infrastructure exists?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1229,9 +1815,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Formal driver training reduces accident frequency and supports litigation defense",
-      "follow_up_questions": ["Is defensive driving training required?", "How often is refresher training conducted?"],
+      "follow_up_questions": [
+        "Is defensive driving training required?",
+        "How often is refresher training conducted?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1240,9 +1831,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Telematics data supports accident investigation and identifies risky driving behavior",
-      "follow_up_questions": ["What percentage of fleet has telematics?", "Is data reviewed regularly?"],
+      "follow_up_questions": [
+        "What percentage of fleet has telematics?",
+        "Is data reviewed regularly?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1251,9 +1847,15 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "public_entity_property"],
+      "coverage": [
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "Aging fleet increases maintenance costs, breakdown risk, and safety feature gaps",
-      "follow_up_questions": ["What is the average vehicle age by category?", "What is the annual replacement budget?"],
+      "follow_up_questions": [
+        "What is the average vehicle age by category?",
+        "What is the annual replacement budget?"
+      ],
       "importance_score": 7,
       "difficulty_score": 2
     },
@@ -1262,9 +1864,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Take-home vehicle policies create after-hours liability and personal use exposure",
-      "follow_up_questions": ["How many vehicles are assigned take-home?", "What is the personal use policy?"],
+      "follow_up_questions": [
+        "How many vehicles are assigned take-home?",
+        "What is the personal use policy?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1273,9 +1880,15 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public", "public_entity_property"],
+      "coverage": [
+        "environmental_liability_public",
+        "public_entity_property"
+      ],
       "purpose": "Above-ground and underground fuel storage creates environmental contamination liability",
-      "follow_up_questions": ["Are tanks above-ground or underground?", "What leak detection systems are in place?"],
+      "follow_up_questions": [
+        "Are tanks above-ground or underground?",
+        "What leak detection systems are in place?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1284,9 +1897,14 @@
       "category": "claims",
       "department": "administration",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "The mod rate is the single best indicator of historical loss performance vs industry peers",
-      "follow_up_questions": ["What is the mod trend over the past 3 years?", "Which departments drive the most claims?"],
+      "follow_up_questions": [
+        "What is the mod trend over the past 3 years?",
+        "Which departments drive the most claims?"
+      ],
       "importance_score": 10,
       "difficulty_score": 2
     },
@@ -1295,9 +1913,14 @@
       "category": "claims",
       "department": "administration",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Return-to-work programs are the most effective mod improvement tool available",
-      "follow_up_questions": ["What light duty positions are available?", "What is the average days-away rate?"],
+      "follow_up_questions": [
+        "What light duty positions are available?",
+        "What is the average days-away rate?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -1306,9 +1929,16 @@
       "category": "claims",
       "department": "administration",
       "risk_theme": "fleet_liability",
-      "coverage": ["workers_comp", "general_liability", "municipal_auto"],
-      "purpose": "Loss history is the foundation of underwriting — trending data reveals improvement or deterioration",
-      "follow_up_questions": ["Can you provide a loss run by line of coverage?", "What are the open claim reserves?"],
+      "coverage": [
+        "workers_comp",
+        "general_liability",
+        "municipal_auto"
+      ],
+      "purpose": "Loss history is the foundation of underwriting \u2014 trending data reveals improvement or deterioration",
+      "follow_up_questions": [
+        "Can you provide a loss run by line of coverage?",
+        "What are the open claim reserves?"
+      ],
       "importance_score": 10,
       "difficulty_score": 2
     },
@@ -1317,9 +1947,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Pool membership vs commercial market placement affects coverage structure, limits, and pricing",
-      "follow_up_questions": ["What pool services are included (loss control, claims management)?", "What is the pool's financial condition?"],
+      "follow_up_questions": [
+        "What pool services are included (loss control, claims management)?",
+        "What is the pool's financial condition?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1328,9 +1963,14 @@
       "category": "claims",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "SIR levels indicate the municipality's retained risk and claims management responsibility",
-      "follow_up_questions": ["Is a third-party administrator used for retained claims?", "What is the annual retained loss budget?"],
+      "follow_up_questions": [
+        "Is a third-party administrator used for retained claims?",
+        "What is the annual retained loss budget?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1339,9 +1979,16 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability", "municipal_auto", "public_entity_property"],
+      "coverage": [
+        "general_liability",
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "Limit adequacy assessment protects the municipality from catastrophic uninsured losses",
-      "follow_up_questions": ["When was the last coverage adequacy review?", "What is the per-occurrence vs aggregate structure?"],
+      "follow_up_questions": [
+        "When was the last coverage adequacy review?",
+        "What is the per-occurrence vs aggregate structure?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -1350,9 +1997,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Proactive safety programs reduce claim frequency and demonstrate organizational commitment",
-      "follow_up_questions": ["Is there a safety committee?", "What safety training is mandatory for all employees?"],
+      "follow_up_questions": [
+        "Is there a safety committee?",
+        "What safety training is mandatory for all employees?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1361,9 +2013,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_entity_property"],
+      "coverage": [
+        "public_entity_property"
+      ],
       "purpose": "Underinsurance of public buildings and infrastructure creates coinsurance and recovery gaps after losses",
-      "follow_up_questions": ["When was the last property appraisal conducted?", "Are values reported at replacement cost?"],
+      "follow_up_questions": [
+        "When was the last property appraisal conducted?",
+        "Are values reported at replacement cost?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1372,9 +2029,15 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "public_event_liability",
-      "coverage": ["public_entity_property", "general_liability"],
+      "coverage": [
+        "public_entity_property",
+        "general_liability"
+      ],
       "purpose": "Emergency response gaps create liability and FEMA reimbursement issues after disasters",
-      "follow_up_questions": ["When was the plan last updated and exercised?", "What mutual aid agreements exist for emergencies?"],
+      "follow_up_questions": [
+        "When was the plan last updated and exercised?",
+        "What mutual aid agreements exist for emergencies?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1383,9 +2046,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "ADA non-compliance creates federal civil rights exposure across all municipal facilities",
-      "follow_up_questions": ["Has an ADA self-evaluation been conducted?", "What remediation plan exists?"],
+      "follow_up_questions": [
+        "Has an ADA self-evaluation been conducted?",
+        "What remediation plan exists?"
+      ],
       "importance_score": 8,
       "difficulty_score": 5
     },
@@ -1394,9 +2062,14 @@
       "category": "contracts",
       "department": "administration",
       "risk_theme": "procurement_disputes",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Construction contract management affects builder's risk, contractor insurance, and defect liability",
-      "follow_up_questions": ["What insurance requirements are in construction contracts?", "How are change orders managed?"],
+      "follow_up_questions": [
+        "What insurance requirements are in construction contracts?",
+        "How are change orders managed?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1405,9 +2078,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Leadership transitions in public entities can create operational disruption and knowledge loss",
-      "follow_up_questions": ["What is the anticipated retirement rate in the next 5 years?", "Are deputy positions filled?"],
+      "follow_up_questions": [
+        "What is the anticipated retirement rate in the next 5 years?",
+        "Are deputy positions filled?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -1416,9 +2094,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Whistleblower retaliation claims create significant EPLI and public officials exposure",
-      "follow_up_questions": ["Have there been any whistleblower complaints?", "What investigation process exists?"],
+      "follow_up_questions": [
+        "Have there been any whistleblower complaints?",
+        "What investigation process exists?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -1427,9 +2110,14 @@
       "category": "compliance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Code enforcement errors and inspection delays create liability for resulting property damage or injuries",
-      "follow_up_questions": ["What is the current building permit backlog?", "Are inspectors certified?"],
+      "follow_up_questions": [
+        "What is the current building permit backlog?",
+        "Are inspectors certified?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1438,9 +2126,14 @@
       "category": "public_interaction",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Government social media accounts create First Amendment forum and censorship issues",
-      "follow_up_questions": ["What is the comment moderation policy?", "Has anyone been blocked from official accounts?"],
+      "follow_up_questions": [
+        "What is the comment moderation policy?",
+        "Has anyone been blocked from official accounts?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1449,9 +2142,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Tax incentive and grant programs create public officials liability and procurement exposure",
-      "follow_up_questions": ["What total incentive commitments are outstanding?", "How are incentive agreements structured?"],
+      "follow_up_questions": [
+        "What total incentive commitments are outstanding?",
+        "How are incentive agreements structured?"
+      ],
       "importance_score": 6,
       "difficulty_score": 5
     },
@@ -1460,9 +2158,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Ethics violations by elected officials create public officials liability claims and reputational damage",
-      "follow_up_questions": ["Have there been any ethics complaints?", "What training is provided to officials?"],
+      "follow_up_questions": [
+        "Have there been any ethics complaints?",
+        "What training is provided to officials?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1471,9 +2174,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "zoning_decisions",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Annexation decisions generate legal challenges, service obligation disputes, and takings claims",
-      "follow_up_questions": ["Are there any pending annexation petitions?", "What service extension obligations come with annexation?"],
+      "follow_up_questions": [
+        "Are there any pending annexation petitions?",
+        "What service extension obligations come with annexation?"
+      ],
       "importance_score": 6,
       "difficulty_score": 5
     },
@@ -1482,9 +2190,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Tax assessment errors and collection practices create legal challenges and civil rights issues",
-      "follow_up_questions": ["What is the annual assessment appeal volume?", "How are property values determined?"],
+      "follow_up_questions": [
+        "What is the annual assessment appeal volume?",
+        "How are property values determined?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1493,9 +2206,14 @@
       "category": "governance",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Unfunded pension and OPEB liabilities indicate fiscal stress that affects insurance purchasing and risk tolerance",
-      "follow_up_questions": ["What is the funded ratio for pension obligations?", "What is the annual OPEB contribution?"],
+      "follow_up_questions": [
+        "What is the funded ratio for pension obligations?",
+        "What is the annual OPEB contribution?"
+      ],
       "importance_score": 7,
       "difficulty_score": 6
     },
@@ -1504,9 +2222,15 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["workers_comp", "employment_practices_public"],
+      "coverage": [
+        "workers_comp",
+        "employment_practices_public"
+      ],
       "purpose": "Training documentation is critical evidence in workers comp defense and employment practices claims",
-      "follow_up_questions": ["Is there a learning management system?", "What mandatory training is tracked?"],
+      "follow_up_questions": [
+        "Is there a learning management system?",
+        "What mandatory training is tracked?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1515,9 +2239,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
+      "coverage": [
+        "cyber"
+      ],
       "purpose": "Backup integrity determines recovery speed after ransomware attacks or system failures",
-      "follow_up_questions": ["Are backups stored offsite and offline?", "When was the last disaster recovery test?"],
+      "follow_up_questions": [
+        "Are backups stored offsite and offline?",
+        "When was the last disaster recovery test?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1526,9 +2255,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
+      "coverage": [
+        "cyber"
+      ],
       "purpose": "MFA is the single most effective control against credential-based attacks targeting municipal systems",
-      "follow_up_questions": ["Is MFA required for all remote access?", "What percentage of endpoints have EDR?"],
+      "follow_up_questions": [
+        "Is MFA required for all remote access?",
+        "What percentage of endpoints have EDR?"
+      ],
       "importance_score": 9,
       "difficulty_score": 4
     },
@@ -1537,9 +2271,14 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
-      "purpose": "Phishing is the leading attack vector — employee training is the first line of defense",
-      "follow_up_questions": ["How often is training conducted?", "Are phishing simulations used?"],
+      "coverage": [
+        "cyber"
+      ],
+      "purpose": "Phishing is the leading attack vector \u2014 employee training is the first line of defense",
+      "follow_up_questions": [
+        "How often is training conducted?",
+        "Are phishing simulations used?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1548,9 +2287,15 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability", "municipal_auto"],
+      "coverage": [
+        "law_enforcement_liability",
+        "municipal_auto"
+      ],
       "purpose": "Pursuit termination failures are a leading cause of third-party injury and wrongful death claims",
-      "follow_up_questions": ["What criteria trigger pursuit termination?", "Who has authority to terminate a pursuit?"],
+      "follow_up_questions": [
+        "What criteria trigger pursuit termination?",
+        "Who has authority to terminate a pursuit?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -1559,9 +2304,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "SRO interactions with minors create unique civil rights and excessive force exposure",
-      "follow_up_questions": ["How many SROs are assigned?", "What is the memorandum of understanding with the school district?"],
+      "follow_up_questions": [
+        "How many SROs are assigned?",
+        "What is the memorandum of understanding with the school district?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1570,9 +2320,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Drone surveillance raises Fourth Amendment and privacy concerns that generate civil rights claims",
-      "follow_up_questions": ["How many drones are in operation?", "What FAA certifications do operators hold?"],
+      "follow_up_questions": [
+        "How many drones are in operation?",
+        "What FAA certifications do operators hold?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1581,9 +2336,14 @@
       "category": "compliance",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Informant injuries and management failures create significant liability exposure",
-      "follow_up_questions": ["How many active informants are managed?", "What oversight exists for informant payments?"],
+      "follow_up_questions": [
+        "How many active informants are managed?",
+        "What oversight exists for informant payments?"
+      ],
       "importance_score": 7,
       "difficulty_score": 7
     },
@@ -1592,9 +2352,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["law_enforcement_liability"],
+      "coverage": [
+        "law_enforcement_liability"
+      ],
       "purpose": "Protest response generates First Amendment and excessive force claims",
-      "follow_up_questions": ["What less-lethal munitions are authorized?", "What de-escalation training for crowd management exists?"],
+      "follow_up_questions": [
+        "What less-lethal munitions are authorized?",
+        "What de-escalation training for crowd management exists?"
+      ],
       "importance_score": 9,
       "difficulty_score": 6
     },
@@ -1603,9 +2368,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Marine patrol creates unique watercraft liability and water rescue exposure",
-      "follow_up_questions": ["How many vessels are operated?", "What marine training is provided?"],
+      "follow_up_questions": [
+        "How many vessels are operated?",
+        "What marine training is provided?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -1614,9 +2384,15 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "police_liability",
-      "coverage": ["law_enforcement_liability", "workers_comp"],
+      "coverage": [
+        "law_enforcement_liability",
+        "workers_comp"
+      ],
       "purpose": "Active shooter response creates extreme officer safety risk and potential bystander liability",
-      "follow_up_questions": ["How often are active shooter drills conducted?", "What coordination exists with fire/EMS?"],
+      "follow_up_questions": [
+        "How often are active shooter drills conducted?",
+        "What coordination exists with fire/EMS?"
+      ],
       "importance_score": 9,
       "difficulty_score": 5
     },
@@ -1625,9 +2401,14 @@
       "category": "compliance",
       "department": "fire_department",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Legacy contamination from fuel storage, AFFF, and equipment maintenance creates long-tail environmental liability",
-      "follow_up_questions": ["Have environmental site assessments been conducted?", "Are there known contamination plumes?"],
+      "follow_up_questions": [
+        "Have environmental site assessments been conducted?",
+        "Are there known contamination plumes?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -1636,9 +2417,14 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Technical rescue operations carry elevated worker injury risk and require specialized training",
-      "follow_up_questions": ["What certifications do rescue team members hold?", "How often are rescue drills conducted?"],
+      "follow_up_questions": [
+        "What certifications do rescue team members hold?",
+        "How often are rescue drills conducted?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1647,9 +2433,15 @@
       "category": "operations",
       "department": "fire_department",
       "risk_theme": "chemical_exposure",
-      "coverage": ["workers_comp", "environmental_liability_public"],
+      "coverage": [
+        "workers_comp",
+        "environmental_liability_public"
+      ],
       "purpose": "Hazmat response creates worker exposure, environmental contamination, and third-party liability",
-      "follow_up_questions": ["What hazmat team level is maintained (operations, technician)?", "What chemicals are most commonly encountered?"],
+      "follow_up_questions": [
+        "What hazmat team level is maintained (operations, technician)?",
+        "What chemicals are most commonly encountered?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1658,9 +2450,14 @@
       "category": "workforce",
       "department": "fire_department",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Fatigue from overtime and understaffing increases injury rates and response errors",
-      "follow_up_questions": ["What is the average overtime hours per firefighter?", "What is the minimum staffing level per apparatus?"],
+      "follow_up_questions": [
+        "What is the average overtime hours per firefighter?",
+        "What is the minimum staffing level per apparatus?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1669,9 +2466,14 @@
       "category": "public_interaction",
       "department": "fire_department",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Public education events create premises and participant liability exposure",
-      "follow_up_questions": ["What public education programs are offered?", "How many community events per year?"],
+      "follow_up_questions": [
+        "What public education programs are offered?",
+        "How many community events per year?"
+      ],
       "importance_score": 5,
       "difficulty_score": 2
     },
@@ -1680,9 +2482,14 @@
       "category": "fleet",
       "department": "fire_department",
       "risk_theme": "fleet_liability",
-      "coverage": ["public_entity_property"],
+      "coverage": [
+        "public_entity_property"
+      ],
       "purpose": "Aerial device failures during fireground operations create catastrophic injury liability",
-      "follow_up_questions": ["When was the last annual aerial inspection?", "Have any aerial devices been placed out of service?"],
+      "follow_up_questions": [
+        "When was the last annual aerial inspection?",
+        "Have any aerial devices been placed out of service?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1691,9 +2498,14 @@
       "category": "contracts",
       "department": "public_works",
       "risk_theme": "procurement_disputes",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Uninsured or underinsured contractors transfer loss exposure to the municipality",
-      "follow_up_questions": ["What certificate tracking system is used?", "What minimum limits are required?"],
+      "follow_up_questions": [
+        "What certificate tracking system is used?",
+        "What minimum limits are required?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1702,9 +2514,14 @@
       "category": "operations",
       "department": "public_works",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Green infrastructure maintenance obligations affect long-term stormwater compliance",
-      "follow_up_questions": ["What types of green infrastructure are in use?", "What is the maintenance schedule?"],
+      "follow_up_questions": [
+        "What types of green infrastructure are in use?",
+        "What is the maintenance schedule?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1713,9 +2530,14 @@
       "category": "compliance",
       "department": "public_works",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Accepting substandard infrastructure creates long-term maintenance liability",
-      "follow_up_questions": ["What inspection standards apply to developer-built infrastructure?", "What warranty period is required?"],
+      "follow_up_questions": [
+        "What inspection standards apply to developer-built infrastructure?",
+        "What warranty period is required?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1724,9 +2546,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["public_entity_property"],
+      "coverage": [
+        "public_entity_property"
+      ],
       "purpose": "Power loss at water/wastewater treatment creates public health emergency and regulatory violations",
-      "follow_up_questions": ["Do all pump stations have backup generators?", "What is the generator testing schedule?"],
+      "follow_up_questions": [
+        "Do all pump stations have backup generators?",
+        "What is the generator testing schedule?"
+      ],
       "importance_score": 9,
       "difficulty_score": 3
     },
@@ -1735,9 +2562,14 @@
       "category": "compliance",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Industrial discharge to the sewer system can cause treatment plant upset and permit violations",
-      "follow_up_questions": ["How many significant industrial users discharge to the system?", "What monitoring requirements are in place?"],
+      "follow_up_questions": [
+        "How many significant industrial users discharge to the system?",
+        "What monitoring requirements are in place?"
+      ],
       "importance_score": 7,
       "difficulty_score": 5
     },
@@ -1746,9 +2578,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "sewer_backup_claims",
-      "coverage": ["infrastructure_property"],
+      "coverage": [
+        "infrastructure_property"
+      ],
       "purpose": "Capacity constraints lead to sewer overflows during peak flow events",
-      "follow_up_questions": ["What is the current average daily flow vs permitted capacity?", "What is the growth projection?"],
+      "follow_up_questions": [
+        "What is the current average daily flow vs permitted capacity?",
+        "What is the growth projection?"
+      ],
       "importance_score": 8,
       "difficulty_score": 4
     },
@@ -1757,9 +2594,14 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["infrastructure_property"],
+      "coverage": [
+        "infrastructure_property"
+      ],
       "purpose": "Tank failures create flooding, water quality, and service disruption exposure",
-      "follow_up_questions": ["When was the last tank inspection?", "What is the total storage capacity?"],
+      "follow_up_questions": [
+        "When was the last tank inspection?",
+        "What is the total storage capacity?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1768,9 +2610,15 @@
       "category": "operations",
       "department": "utilities",
       "risk_theme": "water_quality_claims",
-      "coverage": ["infrastructure_property", "general_liability"],
+      "coverage": [
+        "infrastructure_property",
+        "general_liability"
+      ],
       "purpose": "Raw water facilities create dam safety, trespasser drowning, and contamination exposure",
-      "follow_up_questions": ["What public access controls exist?", "What is the dam hazard classification?"],
+      "follow_up_questions": [
+        "What public access controls exist?",
+        "What is the dam hazard classification?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1779,9 +2627,14 @@
       "category": "workforce",
       "department": "parks_recreation",
       "risk_theme": "volunteer_liability",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Seasonal and part-time recreation workers have higher injury rates due to less training",
-      "follow_up_questions": ["How many seasonal employees are hired?", "What safety orientation is provided?"],
+      "follow_up_questions": [
+        "How many seasonal employees are hired?",
+        "What safety orientation is provided?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1790,9 +2643,14 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "food_contamination",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Food service at recreation facilities creates foodborne illness and food contamination exposure",
-      "follow_up_questions": ["Are concessions operated in-house or contracted?", "What health department inspection history exists?"],
+      "follow_up_questions": [
+        "Are concessions operated in-house or contracted?",
+        "What health department inspection history exists?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1801,9 +2659,15 @@
       "category": "operations",
       "department": "parks_recreation",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability", "public_entity_property"],
+      "coverage": [
+        "general_liability",
+        "public_entity_property"
+      ],
       "purpose": "Cemetery operations create burial error, grave marker injury, and grounds maintenance liability",
-      "follow_up_questions": ["How many active cemeteries are managed?", "What is the endowment care fund status?"],
+      "follow_up_questions": [
+        "How many active cemeteries are managed?",
+        "What is the endowment care fund status?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -1812,9 +2676,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Uncoordinated utility cuts degrade pavement and create hazardous road conditions",
-      "follow_up_questions": ["What road cut permit fees are assessed?", "What restoration standards are required?"],
+      "follow_up_questions": [
+        "What road cut permit fees are assessed?",
+        "What restoration standards are required?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1823,9 +2692,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Road salt and brine application creates groundwater and surface water contamination exposure",
-      "follow_up_questions": ["What annual salt usage volume?", "Is brine pre-treatment used?"],
+      "follow_up_questions": [
+        "What annual salt usage volume?",
+        "Is brine pre-treatment used?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1834,9 +2708,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
-      "purpose": "Inadequate street lighting contributes to pedestrian accidents and crime — liability depends on ownership",
-      "follow_up_questions": ["Who owns the street lights?", "What is the outage response time?"],
+      "coverage": [
+        "general_liability"
+      ],
+      "purpose": "Inadequate street lighting contributes to pedestrian accidents and crime \u2014 liability depends on ownership",
+      "follow_up_questions": [
+        "Who owns the street lights?",
+        "What is the outage response time?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1845,9 +2724,14 @@
       "category": "operations",
       "department": "street_maintenance",
       "risk_theme": "road_maintenance_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Speed bumps, roundabouts, and other traffic calming create design liability if improperly implemented",
-      "follow_up_questions": ["What engineering review process is followed?", "Have any incidents been attributed to traffic calming features?"],
+      "follow_up_questions": [
+        "What engineering review process is followed?",
+        "Have any incidents been attributed to traffic calming features?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -1856,9 +2740,14 @@
       "category": "operations",
       "department": "water_treatment",
       "risk_theme": "water_quality_claims",
-      "coverage": ["infrastructure_property"],
+      "coverage": [
+        "infrastructure_property"
+      ],
       "purpose": "High water loss indicates system deterioration and increases risk of main breaks and contamination",
-      "follow_up_questions": ["What is the annual water loss percentage?", "What leak detection program exists?"],
+      "follow_up_questions": [
+        "What is the annual water loss percentage?",
+        "What leak detection program exists?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1867,9 +2756,14 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Public employee discipline creates due process and EPLI claims if not properly handled",
-      "follow_up_questions": ["What is the grievance and appeal process?", "How many disciplinary appeals per year?"],
+      "follow_up_questions": [
+        "What is the grievance and appeal process?",
+        "How many disciplinary appeals per year?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1878,9 +2772,14 @@
       "category": "workforce",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["employment_practices_public"],
+      "coverage": [
+        "employment_practices_public"
+      ],
       "purpose": "Benefits administration errors create fiduciary liability and ERISA-type claims",
-      "follow_up_questions": ["What is the participation rate?", "Who administers the program?"],
+      "follow_up_questions": [
+        "What is the participation rate?",
+        "Who administers the program?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -1889,9 +2788,14 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Formal accident review demonstrates reasonable oversight and identifies repeat offenders",
-      "follow_up_questions": ["How are preventable vs non-preventable accidents determined?", "What consequences exist for at-fault accidents?"],
+      "follow_up_questions": [
+        "How are preventable vs non-preventable accidents determined?",
+        "What consequences exist for at-fault accidents?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1900,9 +2804,15 @@
       "category": "fleet",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "public_entity_property"],
+      "coverage": [
+        "municipal_auto",
+        "public_entity_property"
+      ],
       "purpose": "Specialized vehicles have unique maintenance requirements and elevated replacement costs",
-      "follow_up_questions": ["What is the maintenance program for specialized equipment?", "What operator training is required?"],
+      "follow_up_questions": [
+        "What is the maintenance program for specialized equipment?",
+        "What operator training is required?"
+      ],
       "importance_score": 6,
       "difficulty_score": 2
     },
@@ -1911,9 +2821,14 @@
       "category": "claims",
       "department": "sanitation",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
-      "purpose": "Sanitation typically has the highest WC frequency rate — benchmarking indicates risk management effectiveness",
-      "follow_up_questions": ["How does the rate compare to industry benchmarks?", "What injury prevention programs are in place?"],
+      "coverage": [
+        "workers_comp"
+      ],
+      "purpose": "Sanitation typically has the highest WC frequency rate \u2014 benchmarking indicates risk management effectiveness",
+      "follow_up_questions": [
+        "How does the rate compare to industry benchmarks?",
+        "What injury prevention programs are in place?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1922,9 +2837,14 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "chemical_exposure",
-      "coverage": ["environmental_liability_public"],
+      "coverage": [
+        "environmental_liability_public"
+      ],
       "purpose": "Composting creates odor complaints, environmental compliance, and worker exposure to bioaerosols",
-      "follow_up_questions": ["What materials are composted?", "What environmental permits are required?"],
+      "follow_up_questions": [
+        "What materials are composted?",
+        "What environmental permits are required?"
+      ],
       "importance_score": 5,
       "difficulty_score": 4
     },
@@ -1933,9 +2853,14 @@
       "category": "fleet",
       "department": "sanitation",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto"],
+      "coverage": [
+        "municipal_auto"
+      ],
       "purpose": "Collection vehicle backing and blind spot accidents are a leading cause of pedestrian strikes",
-      "follow_up_questions": ["Are 360-degree camera systems installed?", "What spotter policies exist?"],
+      "follow_up_questions": [
+        "Are 360-degree camera systems installed?",
+        "What spotter policies exist?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -1944,9 +2869,14 @@
       "category": "operations",
       "department": "sanitation",
       "risk_theme": "lifting_ergonomic",
-      "coverage": ["workers_comp"],
+      "coverage": [
+        "workers_comp"
+      ],
       "purpose": "Manual yard waste handling creates significant lifting and struck-by injury exposure",
-      "follow_up_questions": ["Is collection manual or mechanized?", "What weight limits are enforced?"],
+      "follow_up_questions": [
+        "Is collection manual or mechanized?",
+        "What weight limits are enforced?"
+      ],
       "importance_score": 6,
       "difficulty_score": 2
     },
@@ -1955,9 +2885,14 @@
       "category": "public_interaction",
       "department": "administration",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Special event permit conditions determine liability allocation between the municipality and event organizers",
-      "follow_up_questions": ["What insurance requirements apply to event permits?", "How many events are permitted annually?"],
+      "follow_up_questions": [
+        "What insurance requirements apply to event permits?",
+        "How many events are permitted annually?"
+      ],
       "importance_score": 7,
       "difficulty_score": 3
     },
@@ -1966,9 +2901,15 @@
       "category": "public_interaction",
       "department": "parks_recreation",
       "risk_theme": "playground_injury",
-      "coverage": ["general_liability", "public_entity_property"],
+      "coverage": [
+        "general_liability",
+        "public_entity_property"
+      ],
       "purpose": "Art installations create vandalism, trip-and-fall, and value exposure",
-      "follow_up_questions": ["What is the total art inventory value?", "How are installations maintained and inspected?"],
+      "follow_up_questions": [
+        "What is the total art inventory value?",
+        "How are installations maintained and inspected?"
+      ],
       "importance_score": 4,
       "difficulty_score": 2
     },
@@ -1977,9 +2918,15 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "public_event_liability",
-      "coverage": ["general_liability", "workers_comp"],
+      "coverage": [
+        "general_liability",
+        "workers_comp"
+      ],
       "purpose": "Animal control creates worker bite injuries, public bite liability, and shelter care obligations",
-      "follow_up_questions": ["Is animal control in-house or contracted?", "How many animal bites reported last year?"],
+      "follow_up_questions": [
+        "Is animal control in-house or contracted?",
+        "How many animal bites reported last year?"
+      ],
       "importance_score": 6,
       "difficulty_score": 3
     },
@@ -1988,9 +2935,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Public health enforcement (restaurant inspections, communicable disease) creates liability if negligent",
-      "follow_up_questions": ["What health services are provided?", "What communicable disease response protocols exist?"],
+      "follow_up_questions": [
+        "What health services are provided?",
+        "What communicable disease response protocols exist?"
+      ],
       "importance_score": 7,
       "difficulty_score": 4
     },
@@ -1999,9 +2951,15 @@
       "category": "operations",
       "department": "fleet_services",
       "risk_theme": "fleet_liability",
-      "coverage": ["municipal_auto", "general_liability"],
+      "coverage": [
+        "municipal_auto",
+        "general_liability"
+      ],
       "purpose": "Public transit creates passenger injury, ADA compliance, and fleet liability exposure",
-      "follow_up_questions": ["How many routes and vehicles?", "What is the annual ridership and accident rate?"],
+      "follow_up_questions": [
+        "How many routes and vehicles?",
+        "What is the annual ridership and accident rate?"
+      ],
       "importance_score": 8,
       "difficulty_score": 3
     },
@@ -2010,9 +2968,14 @@
       "category": "operations",
       "department": "law_enforcement",
       "risk_theme": "public_officials_liability",
-      "coverage": ["general_liability"],
+      "coverage": [
+        "general_liability"
+      ],
       "purpose": "Parking enforcement generates property damage claims (towing) and due process challenges",
-      "follow_up_questions": ["How many vehicles are towed annually?", "What is the citation appeal rate?"],
+      "follow_up_questions": [
+        "How many vehicles are towed annually?",
+        "What is the citation appeal rate?"
+      ],
       "importance_score": 5,
       "difficulty_score": 3
     },
@@ -2021,9 +2984,15 @@
       "category": "public_interaction",
       "department": "administration",
       "risk_theme": "civil_rights_claims",
-      "coverage": ["general_liability", "law_enforcement_liability"],
+      "coverage": [
+        "general_liability",
+        "law_enforcement_liability"
+      ],
       "purpose": "Encampment clearing and homeless services create civil rights and use-of-force exposure",
-      "follow_up_questions": ["What is the protocol for encampment removal?", "What partnerships exist with social services?"],
+      "follow_up_questions": [
+        "What is the protocol for encampment removal?",
+        "What partnerships exist with social services?"
+      ],
       "importance_score": 7,
       "difficulty_score": 6
     },
@@ -2032,9 +3001,14 @@
       "category": "operations",
       "department": "administration",
       "risk_theme": "cyber_records_breach",
-      "coverage": ["cyber"],
+      "coverage": [
+        "cyber"
+      ],
       "purpose": "Public Wi-Fi networks create data security and network intrusion exposure",
-      "follow_up_questions": ["What security controls protect the public network?", "Is the public network segmented from internal systems?"],
+      "follow_up_questions": [
+        "What security controls protect the public network?",
+        "Is the public network segmented from internal systems?"
+      ],
       "importance_score": 6,
       "difficulty_score": 4
     },
@@ -2043,10 +3017,182 @@
       "category": "contracts",
       "department": "administration",
       "risk_theme": "procurement_disputes",
-      "coverage": ["public_officials_liability"],
+      "coverage": [
+        "public_officials_liability"
+      ],
       "purpose": "Davis-Bacon and state prevailing wage violations create audit findings and contractor disputes",
-      "follow_up_questions": ["How is prevailing wage compliance monitored?", "Have there been any wage complaints?"],
+      "follow_up_questions": [
+        "How is prevailing wage compliance monitored?",
+        "Have there been any wage complaints?"
+      ],
       "importance_score": 6,
+      "difficulty_score": 5
+    },
+    {
+      "question_text": "What is the total insured value of all municipal buildings and structures?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "public_officials_liability",
+      "coverage": [
+        "public_entity_property"
+      ],
+      "purpose": "Establish baseline property exposure for all municipal assets",
+      "follow_up_questions": [
+        "When was the last appraisal conducted?",
+        "Are replacement cost values current?"
+      ],
+      "importance_score": 10,
+      "difficulty_score": 4
+    },
+    {
+      "question_text": "Does the municipality have a formal building maintenance and inspection schedule?",
+      "category": "property",
+      "department": "public_works",
+      "risk_theme": "road_maintenance_liability",
+      "coverage": [
+        "public_entity_property",
+        "general_liability"
+      ],
+      "purpose": "Assess property maintenance practices and condition of public buildings",
+      "follow_up_questions": [
+        "How are maintenance requests prioritized?",
+        "What is the deferred maintenance backlog?"
+      ],
+      "importance_score": 9,
+      "difficulty_score": 3
+    },
+    {
+      "question_text": "What infrastructure assets does the municipality own (bridges, water towers, dams, retaining walls)?",
+      "category": "property",
+      "department": "public_works",
+      "risk_theme": "road_maintenance_liability",
+      "coverage": [
+        "infrastructure_property",
+        "public_entity_property"
+      ],
+      "purpose": "Identify high-value infrastructure assets requiring specialized coverage",
+      "follow_up_questions": [
+        "What is the age and condition of each?",
+        "Are any subject to federal or state inspection requirements?"
+      ],
+      "importance_score": 9,
+      "difficulty_score": 5
+    },
+    {
+      "question_text": "Has the municipality experienced any property losses exceeding $100,000 in the past 5 years?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "public_officials_liability",
+      "coverage": [
+        "public_entity_property"
+      ],
+      "purpose": "Understand historical property loss patterns and catastrophic exposure",
+      "follow_up_questions": [
+        "What were the causes?",
+        "Were any losses uninsured or underinsured?"
+      ],
+      "importance_score": 9,
+      "difficulty_score": 4
+    },
+    {
+      "question_text": "What flood zone designations apply to municipal properties?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "water_quality_claims",
+      "coverage": [
+        "public_entity_property",
+        "environmental_liability_public"
+      ],
+      "purpose": "Assess flood exposure and NFIP compliance for public structures",
+      "follow_up_questions": [
+        "Are any critical facilities in flood zones?",
+        "Does the municipality carry flood insurance?"
+      ],
+      "importance_score": 8,
+      "difficulty_score": 4
+    },
+    {
+      "question_text": "What is the condition and age of the municipality's playground equipment?",
+      "category": "property",
+      "department": "parks_recreation",
+      "risk_theme": "playground_injury",
+      "coverage": [
+        "public_entity_property",
+        "general_liability"
+      ],
+      "purpose": "Identify playground equipment liability and replacement needs",
+      "follow_up_questions": [
+        "Is equipment CPSC compliant?",
+        "How often are safety inspections conducted?"
+      ],
+      "importance_score": 8,
+      "difficulty_score": 3
+    },
+    {
+      "question_text": "Does the municipality own or lease any properties with known environmental contamination?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "water_quality_claims",
+      "coverage": [
+        "environmental_liability_public",
+        "public_entity_property"
+      ],
+      "purpose": "Identify environmental remediation liability on owned properties",
+      "follow_up_questions": [
+        "Are there any active remediation orders?",
+        "Has a Phase I or Phase II assessment been conducted?"
+      ],
+      "importance_score": 8,
+      "difficulty_score": 6
+    },
+    {
+      "question_text": "What security measures are in place at municipal buildings (cameras, access control, guards)?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "cyber_records_breach",
+      "coverage": [
+        "public_entity_property"
+      ],
+      "purpose": "Evaluate physical security of municipal facilities and assets",
+      "follow_up_questions": [
+        "Have there been any break-ins or vandalism incidents?",
+        "Are after-hours access logs maintained?"
+      ],
+      "importance_score": 7,
+      "difficulty_score": 3
+    },
+    {
+      "question_text": "Does the municipality have a disaster recovery and continuity plan for critical facilities?",
+      "category": "property",
+      "department": "administration",
+      "risk_theme": "public_officials_liability",
+      "coverage": [
+        "public_entity_property",
+        "infrastructure_property"
+      ],
+      "purpose": "Assess resilience planning for catastrophic property events",
+      "follow_up_questions": [
+        "When was the plan last tested?",
+        "Are backup power systems in place for critical facilities?"
+      ],
+      "importance_score": 8,
+      "difficulty_score": 5
+    },
+    {
+      "question_text": "What is the current condition and capacity of the municipality's water and sewer infrastructure?",
+      "category": "property",
+      "department": "utilities",
+      "risk_theme": "sewer_backup_claims",
+      "coverage": [
+        "infrastructure_property",
+        "environmental_liability_public"
+      ],
+      "purpose": "Assess aging infrastructure risk and capital improvement needs",
+      "follow_up_questions": [
+        "What percentage of pipes are past useful life?",
+        "Are there any consent orders or regulatory mandates?"
+      ],
+      "importance_score": 9,
       "difficulty_score": 5
     }
   ]

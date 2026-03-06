@@ -6,7 +6,7 @@ based on entity type, department, risk theme, and coverage filters.
 
 import logging
 
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, Text
 from sqlalchemy.orm import Session
 
 from app.models.models import ProducerQuestion
@@ -58,7 +58,13 @@ def get_producer_questions(
     if risk_themes:
         theme_coverage_filters.append(ProducerQuestion.risk_theme.in_(risk_themes))
     if coverages:
-        theme_coverage_filters.append(ProducerQuestion.coverage.in_(coverages))
+        # coverage is JSONB array — use ?| operator to match any value in the array
+        from sqlalchemy.dialects.postgresql import JSONB as JSONB_TYPE
+        from sqlalchemy import text, literal_column
+        for cov in coverages:
+            theme_coverage_filters.append(
+                ProducerQuestion.coverage.op("@>")(f'["{cov}"]')
+            )
 
     if theme_coverage_filters:
         q = q.filter(or_(*theme_coverage_filters))

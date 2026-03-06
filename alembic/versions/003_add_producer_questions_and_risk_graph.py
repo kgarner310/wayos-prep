@@ -22,10 +22,12 @@ def upgrade() -> None:
         sa.Column('id', UUID(as_uuid=True), server_default=sa.text('gen_random_uuid()'), primary_key=True),
         sa.Column('question_text', sa.Text(), nullable=False),
         sa.Column('category', sa.Text(), nullable=False),
+        sa.Column('industry', sa.Text(), nullable=True),
+        sa.Column('entity_type', sa.Text(), nullable=False, server_default='public_entity'),
+        sa.Column('public_entity_type', sa.Text(), nullable=True),
         sa.Column('department', sa.Text(), nullable=True),
         sa.Column('risk_theme', sa.Text(), nullable=True),
-        sa.Column('coverage', sa.Text(), nullable=True),
-        sa.Column('entity_type', sa.Text(), nullable=False, server_default='public_entity'),
+        sa.Column('coverage', JSONB, nullable=True),  # Array of coverage strings
         sa.Column('purpose', sa.Text(), nullable=True),
         sa.Column('follow_up_questions', JSONB, nullable=True),
         sa.Column('importance_score', sa.Numeric(3, 1), server_default='5.0'),
@@ -33,10 +35,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index('ix_producer_questions_category', 'producer_questions', ['category'])
+    op.create_index('ix_producer_questions_industry', 'producer_questions', ['industry'])
     op.create_index('ix_producer_questions_department', 'producer_questions', ['department'])
     op.create_index('ix_producer_questions_risk_theme', 'producer_questions', ['risk_theme'])
-    op.create_index('ix_producer_questions_coverage', 'producer_questions', ['coverage'])
     op.create_index('ix_producer_questions_entity_type', 'producer_questions', ['entity_type'])
+    op.create_index('ix_producer_questions_public_entity_type', 'producer_questions', ['public_entity_type'])
 
     # Risk themes table (graph nodes)
     op.create_table(
@@ -46,6 +49,7 @@ def upgrade() -> None:
         sa.Column('node_type', sa.Text(), nullable=False),
         sa.Column('display_label', sa.Text(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
+        sa.Column('entity_scope', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index('ix_risk_themes_node_type', 'risk_themes', ['node_type'])
@@ -59,6 +63,7 @@ def upgrade() -> None:
         sa.Column('to_theme_id', UUID(as_uuid=True), sa.ForeignKey('risk_themes.id', ondelete='CASCADE'), nullable=False),
         sa.Column('edge_type', sa.Text(), nullable=False),
         sa.Column('weight', sa.Numeric(4, 2), nullable=False, server_default='0.50'),
+        sa.Column('evidence_note', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.UniqueConstraint('from_theme_id', 'to_theme_id', 'edge_type', name='uq_risk_theme_edge'),
     )
