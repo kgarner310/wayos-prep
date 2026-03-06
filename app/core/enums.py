@@ -81,10 +81,13 @@ class TagType:
     DOCUMENT_TOPIC = "document_topic"
     LOSS_DRIVER = "loss_driver"
     ACCOUNT_TRAIT = "account_trait"
+    PUBLIC_ENTITY_TYPE = "public_entity_type"
+    DEPARTMENT = "department"
 
     ALL = [
         INDUSTRY, COVERAGE, RISK_THEME, JURISDICTION,
         CLASS_CODE, ENTITY_TYPE, DOCUMENT_TOPIC, LOSS_DRIVER, ACCOUNT_TRAIT,
+        PUBLIC_ENTITY_TYPE, DEPARTMENT,
     ]
 
 
@@ -99,6 +102,11 @@ STARTER_COVERAGE_TAGS = [
     "workers_comp", "general_liability", "commercial_auto", "umbrella",
     "property", "builders_risk", "inland_marine", "cyber", "epli",
     "professional_liability",
+    # Public entity coverages
+    "public_officials_liability", "law_enforcement_liability",
+    "governmental_immunity", "employment_practices_public",
+    "municipal_auto", "public_entity_property",
+    "infrastructure_property", "environmental_liability_public",
 ]
 
 STARTER_RISK_THEME_TAGS = [
@@ -108,6 +116,13 @@ STARTER_RISK_THEME_TAGS = [
     "improper_classification", "hired_non_owned_auto",
     "burns_and_scalds", "heat_illness", "struck_by_object",
     "food_contamination", "chemical_exposure", "lifting_ergonomic",
+    # Public entity risk themes
+    "police_liability", "civil_rights_claims", "excessive_force",
+    "public_officials_liability", "zoning_decisions",
+    "road_maintenance_liability", "playground_injury",
+    "public_event_liability", "sewer_backup_claims",
+    "water_quality_claims", "fleet_liability", "volunteer_liability",
+    "cyber_records_breach", "grant_compliance", "procurement_disputes",
 ]
 
 STARTER_ACCOUNT_TRAIT_TAGS = [
@@ -118,4 +133,26 @@ STARTER_ACCOUNT_TRAIT_TAGS = [
 
 STARTER_JURISDICTION_TAGS = [
     "federal", "nc", "sc", "ga", "tn", "va", "national", "multi_state",
+]
+
+# Entity type classification
+STARTER_ENTITY_TYPE_TAGS = [
+    "private_business", "public_entity", "nonprofit",
+    "educational_entity", "religious_entity", "tribal_entity",
+]
+
+# Public entity subtype
+STARTER_PUBLIC_ENTITY_TYPE_TAGS = [
+    "municipality", "county", "school_system", "fire_district",
+    "utility_authority", "water_sewer_authority", "transit_authority",
+    "parks_recreation_department", "public_housing_authority",
+    "special_tax_district",
+]
+
+# Municipal department tags
+STARTER_DEPARTMENT_TAGS = [
+    "law_enforcement", "fire_department", "public_works", "utilities",
+    "parks_recreation", "administration", "sanitation",
+    "street_maintenance", "planning_zoning", "water_treatment",
+    "wastewater", "fleet_services",
 ]

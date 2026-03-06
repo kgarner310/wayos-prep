@@ -260,6 +260,9 @@ def prep_query(payload: PrepQueryRequest, db: Session = Depends(get_db)):
         requested_state=payload.state.lower().strip(),
         employee_count=payload.employee_count,
         current_mod=payload.current_mod,
+        entity_type=payload.entity_type,
+        public_entity_type=payload.public_entity_type,
+        department=payload.department,
     )
     db.add(query)
     db.flush()
@@ -272,6 +275,9 @@ def prep_query(payload: PrepQueryRequest, db: Session = Depends(get_db)):
         employee_count=payload.employee_count,
         current_mod=payload.current_mod,
         raw_query=payload.raw_query,
+        entity_type=payload.entity_type,
+        public_entity_type=payload.public_entity_type,
+        department=payload.department,
     )
 
     brief = generate_brief(
@@ -284,6 +290,9 @@ def prep_query(payload: PrepQueryRequest, db: Session = Depends(get_db)):
         employee_count=payload.employee_count,
         current_mod=payload.current_mod,
         raw_query=payload.raw_query,
+        entity_type=payload.entity_type,
+        public_entity_type=payload.public_entity_type,
+        department=payload.department,
     )
 
     return PrepQueryResponse(

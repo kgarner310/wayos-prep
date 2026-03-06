@@ -76,6 +76,9 @@ class PrepQueryRequest(BaseModel):
     employee_count: int = 10
     current_mod: Optional[float] = None
     raw_query: Optional[str] = None
+    entity_type: Optional[str] = None
+    public_entity_type: Optional[str] = None
+    department: Optional[str] = None
 
 class PrepQueryResponse(BaseModel):
     query_id: UUID
@@ -120,6 +123,9 @@ class BriefOutput(BaseModel):
     state: str
     employee_count: int = 0
     current_mod: Optional[float] = None
+    entity_type: Optional[str] = None
+    public_entity_type: Optional[str] = None
+    department: Optional[str] = None
     top_loss_drivers: list[LossDriver] = []
     coverage_blind_spots: list[CoverageBlindSpot] = []
     questions_to_ask: list[QuestionToAsk] = []

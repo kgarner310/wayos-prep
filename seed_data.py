@@ -676,6 +676,125 @@ Producers should ask trucking company clients these key questions:
 10. What is your fleet size, average vehicle age, and preventive maintenance program?
 """,
     },
+    # ── Municipal / Public Entity Risk Profile ───────────────────────
+    {
+        "title": "Municipal Government Risk Profile: Public Works Department",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": "nc",
+        "published_at": datetime(2025, 12, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# Municipal Government Risk Profile: Public Works Department
+
+## Entity Classification
+
+This risk profile covers public entity exposures for a municipality, specifically the public works department. Municipal governments face a unique liability environment shaped by governmental immunity statutes, public interaction, and infrastructure maintenance obligations.
+
+## Workers Compensation
+
+### Top Injury Types
+Municipal public works departments generate significant workers comp claims across diverse operations:
+- Lifting injury and back injury from manual handling of materials, equipment, and infrastructure components
+- Struck by falling debris or objects during road maintenance and construction operations
+- Slip and fall on wet, icy, or uneven surfaces during outdoor operations year-round
+- Vehicle accidents involving municipal fleet trucks, dump trucks, and heavy equipment
+- Heat illness and heat exhaustion during summer road crew and outdoor maintenance work
+- Chemical exposure from water treatment chemicals, sewer gases, and road materials (asphalt, solvents)
+- Trench collapse and confined space incidents during water/sewer line repair
+- Repetitive strain from prolonged equipment operation and manual labor
+
+### Typical Severity Drivers
+- Heavy equipment operations (backhoe, excavator, front-end loader) create high-severity incidents
+- Roadside work exposes crews to struck-by vehicle hazards from passing traffic
+- Confined space entry in sewer manholes and water vaults carries fatality risk
+- Seasonal payroll fluctuations bring temporary workers with less training during peak seasons
+- Aging workforce in public sector increases claim duration and severity
+
+## General Liability
+
+### Common Claims
+- Road maintenance liability: pothole claims, road defect claims, and failure-to-maintain allegations
+- Sewer backup claims from blocked or failing municipal sewer systems causing property damage
+- Slip and fall on public sidewalks, parking lots, and municipal buildings
+- Property damage from utility work (water main breaks, sewer line repairs)
+- Public event liability from city-sponsored festivals, parades, and community events
+- Playground injury claims at municipal parks from equipment failures or inadequate maintenance
+- Tree limb failure on public property causing injury or property damage
+
+### Operational Exposures
+- Governmental immunity varies by state — North Carolina Tort Claims Act caps damages for state entities
+- Notice requirements for road defect claims create documentation obligations
+- Third-party contractor oversight during capital projects creates vicarious liability
+- Volunteer liability for community service workers, volunteer firefighters, and event volunteers
+- Zoning decisions and planning approvals can generate inverse condemnation or takings claims
+
+## Commercial Auto / Municipal Fleet
+
+### Typical Exposures
+- Municipal auto fleet includes dump trucks, utility trucks, backhoes, front-end loaders, and passenger vehicles
+- Fleet accidents involving municipal vehicles are a top liability exposure
+- Emergency vehicle response creates heightened collision risk (police, fire, EMS)
+- Hired and non-owned auto exposure when employees use personal vehicles for municipal business
+- Snow plow operations create collision and property damage exposure during winter
+- Sanitation trucks (garbage collection) operate in residential areas with pedestrian exposure
+
+## Property
+
+### Typical Equipment and Building Risks
+- Public entity property includes government buildings, fire stations, police stations, libraries, recreation centers
+- Infrastructure property: roads, bridges, water/sewer systems, stormwater infrastructure
+- Equipment breakdown for water treatment plants, wastewater treatment plants, and pumping stations
+- Flood and weather damage to public infrastructure
+- Vandalism and arson at public buildings and facilities
+- Business interruption for critical infrastructure (water treatment, wastewater) has public health implications
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- OSHA general industry (1910) and construction (1926) standards apply to municipal workers
+- Confined space entry permits required for manholes, vaults, and tanks (29 CFR 1910.146)
+- Trenching and excavation safety (29 CFR 1926 Subpart P) for water/sewer work
+- Hazard communication for water treatment chemicals, sewer gases, and road materials
+- Traffic control and work zone safety (MUTCD standards) for road crew operations
+- CDL requirements for municipal employees operating heavy equipment and commercial vehicles
+- NC OSHA (administered by NC DOL) conducts inspections of public sector workplaces
+- Environmental compliance for water treatment discharge and stormwater permits
+
+## Public Entity Specific Exposures
+
+### Civil Rights and Law Enforcement
+- Police liability and excessive force claims under Section 1983 create significant exposure
+- Civil rights claims against law enforcement officers and the municipality
+- Public officials liability for elected officials and appointed board members
+- Employment practices claims (discrimination, harassment, wrongful termination) in the public sector
+
+### Cyber and Records
+- Cyber records breach exposure from ransomware attacks targeting municipal IT systems
+- Public records management obligations under state open records laws
+- HIPAA exposure for municipal EMS and health departments
+
+### Grant and Procurement
+- Grant compliance risk for federal and state grants funding municipal projects
+- Procurement disputes from competitive bidding processes and contract awards
+- Environmental liability from historical contamination at municipal sites
+
+## Suggested Producer Questions
+
+Producers should ask municipal government clients these key questions:
+1. What departments does the municipality operate and how many total employees across all departments?
+2. What is your current governmental immunity status and tort claims cap under state law?
+3. Does the municipality operate a police department? What is the use-of-force policy and training program?
+4. How many vehicles are in the municipal fleet and what types (dump trucks, police cruisers, fire apparatus)?
+5. What water and sewer infrastructure does the municipality own and maintain?
+6. How often are road maintenance inspections performed and documented for pothole and defect liability?
+7. Does the municipality sponsor public events, operate parks with playgrounds, or manage recreation facilities?
+8. What is the IT security posture — has a cybersecurity assessment been conducted for ransomware risk?
+9. What volunteer programs does the municipality operate (volunteer fire, community service)?
+10. What is the municipality's current experience modification rate for workers comp?
+11. How are confined space entries managed for sewer and water vault work?
+12. What federal or state grants is the municipality managing and what are the compliance requirements?
+""",
+    },
 ]
 
 

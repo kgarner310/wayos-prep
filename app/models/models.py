@@ -147,6 +147,9 @@ class Query(Base):
     requested_state = Column(Text)
     employee_count = Column(Integer)
     current_mod = Column(Numeric(6, 3))
+    entity_type = Column(Text)
+    public_entity_type = Column(Text)
+    department = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
 
     retrieval_runs = relationship("RetrievalRun", back_populates="query", cascade="all, delete-orphan")

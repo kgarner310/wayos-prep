@@ -36,13 +36,20 @@ def run_retrieval(
     employee_count: int | None = None,
     current_mod: float | None = None,
     raw_query: str | None = None,
+    entity_type: str | None = None,
+    public_entity_type: str | None = None,
+    department: str | None = None,
 ) -> tuple[RetrievalRun, list[dict]]:
     """Run full retrieval pipeline.
 
     Returns (retrieval_run, list of scored chunk dicts).
     """
     # Build the query text for embedding
-    query_text = _build_query_text(industry, state, employee_count, current_mod, raw_query)
+    query_text = _build_query_text(
+        industry, state, employee_count, current_mod, raw_query,
+        entity_type=entity_type, public_entity_type=public_entity_type,
+        department=department,
+    )
 
     # Get query embedding
     query_embedding = get_query_embedding(query_text)
@@ -58,15 +65,33 @@ def run_retrieval(
         "min_authority": MIN_AUTHORITY_THRESHOLD,
         "min_freshness": MIN_FRESHNESS_THRESHOLD,
     }
+    if entity_type:
+        filters["entity_type"] = entity_type
+    if public_entity_type:
+        filters["public_entity_type"] = public_entity_type
+    if department:
+        filters["department"] = department
 
     if query_embedding:
-        candidates = _vector_search(db, query_embedding, industry, jurisdiction_matches, TOP_K_CANDIDATES)
+        candidates = _vector_search(
+            db, query_embedding, industry, jurisdiction_matches, TOP_K_CANDIDATES,
+            entity_type=entity_type, public_entity_type=public_entity_type,
+            department=department,
+        )
     else:
         # Fallback: tag-based retrieval without vector search
-        candidates = _tag_based_search(db, industry, jurisdiction_matches, TOP_K_CANDIDATES)
+        candidates = _tag_based_search(
+            db, industry, jurisdiction_matches, TOP_K_CANDIDATES,
+            entity_type=entity_type, public_entity_type=public_entity_type,
+            department=department,
+        )
 
     # Score and rerank
-    scored = _rerank(candidates, industry, state, jurisdiction_matches)
+    scored = _rerank(
+        candidates, industry, state, jurisdiction_matches,
+        entity_type=entity_type, public_entity_type=public_entity_type,
+        department=department,
+    )
 
     # Select top results
     selected = scored[:TOP_K_SELECTED]
@@ -103,11 +128,22 @@ def run_retrieval(
 
 
 def _build_query_text(industry: str, state: str, employee_count: int | None,
-                      current_mod: float | None, raw_query: str | None) -> str:
-    parts = [
-        f"{industry} commercial insurance",
-        f"in {state}",
-    ]
+                      current_mod: float | None, raw_query: str | None,
+                      entity_type: str | None = None,
+                      public_entity_type: str | None = None,
+                      department: str | None = None) -> str:
+    if entity_type == "public_entity":
+        parts = [f"municipal government public entity insurance"]
+        if public_entity_type:
+            parts.append(public_entity_type.replace("_", " "))
+        if department:
+            parts.append(f"{department.replace('_', ' ')} department")
+        parts.append(f"in {state}")
+    else:
+        parts = [
+            f"{industry} commercial insurance",
+            f"in {state}",
+        ]
     if employee_count:
         parts.append(f"{employee_count} employees")
     if current_mod:
@@ -126,7 +162,10 @@ def _get_jurisdiction_matches(state: str) -> list[str]:
 
 
 def _vector_search(db: Session, query_embedding: list[float], industry: str,
-                   jurisdictions: list[str], limit: int) -> list[dict]:
+                   jurisdictions: list[str], limit: int,
+                   entity_type: str | None = None,
+                   public_entity_type: str | None = None,
+                   department: str | None = None) -> list[dict]:
     """Run vector similarity search with metadata filters."""
     # Use raw SQL for pgvector cosine distance
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
@@ -134,7 +173,48 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
     # Pre-filter: only consider chunks tagged with the requested industry
     # or with a matching jurisdiction. Vector similarity alone is not enough
     # to ensure topical relevance for insurance content.
-    sql = text("""
+    # Build entity-type filter clause for public entity queries
+    entity_filter = ""
+    params = {
+        "query_embedding": embedding_str,
+        "status": SourceStatus.READY,
+        "min_authority": MIN_AUTHORITY_THRESHOLD,
+        "min_freshness": MIN_FRESHNESS_THRESHOLD,
+        "industry": industry,
+        "jurisdictions": jurisdictions,
+        "limit": limit,
+    }
+
+    if entity_type == "public_entity":
+        # For public entities, prioritize chunks tagged as public_entity or with matching subtype/dept
+        entity_clauses = [
+            "EXISTS (SELECT 1 FROM chunk_tags ct WHERE ct.chunk_id = sc.id AND ct.tag_type = 'entity_type' AND ct.tag_value = 'public_entity')",
+            "EXISTS (SELECT 1 FROM chunk_tags ct WHERE ct.chunk_id = sc.id AND ct.tag_type = 'jurisdiction' AND ct.tag_value = ANY(:jurisdictions))",
+        ]
+        if public_entity_type:
+            entity_clauses.append(
+                "EXISTS (SELECT 1 FROM chunk_tags ct WHERE ct.chunk_id = sc.id AND ct.tag_type = 'public_entity_type' AND ct.tag_value = :public_entity_type)"
+            )
+            params["public_entity_type"] = public_entity_type
+        if department:
+            entity_clauses.append(
+                "EXISTS (SELECT 1 FROM chunk_tags ct WHERE ct.chunk_id = sc.id AND ct.tag_type = 'department' AND ct.tag_value = :department)"
+            )
+            params["department"] = department
+        entity_filter = "AND (" + " OR ".join(entity_clauses) + ")"
+    else:
+        entity_filter = """AND (
+            EXISTS (
+              SELECT 1 FROM chunk_tags ct
+              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'industry' AND ct.tag_value = :industry
+            )
+            OR EXISTS (
+              SELECT 1 FROM chunk_tags ct
+              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'jurisdiction' AND ct.tag_value = ANY(:jurisdictions)
+            )
+          )"""
+
+    sql = text(f"""
         SELECT
             sc.id as chunk_id,
             sc.source_id,
@@ -154,29 +234,12 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
         WHERE s.status = :status
           AND s.authority_score >= :min_authority
           AND s.freshness_score >= :min_freshness
-          AND (
-            EXISTS (
-              SELECT 1 FROM chunk_tags ct
-              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'industry' AND ct.tag_value = :industry
-            )
-            OR EXISTS (
-              SELECT 1 FROM chunk_tags ct
-              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'jurisdiction' AND ct.tag_value = ANY(:jurisdictions)
-            )
-          )
+          {entity_filter}
         ORDER BY ce.embedding <=> :query_embedding::vector
         LIMIT :limit
     """)
 
-    results = db.execute(sql, {
-        "query_embedding": embedding_str,
-        "status": SourceStatus.READY,
-        "min_authority": MIN_AUTHORITY_THRESHOLD,
-        "min_freshness": MIN_FRESHNESS_THRESHOLD,
-        "industry": industry,
-        "jurisdictions": jurisdictions,
-        "limit": limit,
-    }).fetchall()
+    results = db.execute(sql, params).fetchall()
 
     candidates = []
     for row in results:
@@ -202,38 +265,68 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
 
 
 def _tag_based_search(db: Session, industry: str, jurisdictions: list[str],
-                      limit: int) -> list[dict]:
+                      limit: int,
+                      entity_type: str | None = None,
+                      public_entity_type: str | None = None,
+                      department: str | None = None) -> list[dict]:
     """Fallback retrieval using tag matching when embeddings unavailable.
 
     Filters to chunks that have an industry or jurisdiction tag matching the query.
+    For public entity queries, also matches entity_type, public_entity_type, and department tags.
     """
-    # Find chunk IDs that have a matching industry tag
-    industry_chunk_ids = (
-        db.query(ChunkTag.chunk_id)
-        .filter(ChunkTag.tag_type == "industry", ChunkTag.tag_value == industry)
-        .subquery()
-    )
+    from sqlalchemy import or_
 
-    # Find chunk IDs that have a matching jurisdiction tag
+    # Build subqueries for matching tags
+    filter_subqueries = []
+
+    if entity_type == "public_entity":
+        # Match chunks tagged as public_entity
+        entity_chunk_ids = (
+            db.query(ChunkTag.chunk_id)
+            .filter(ChunkTag.tag_type == "entity_type", ChunkTag.tag_value == "public_entity")
+            .subquery()
+        )
+        filter_subqueries.append(SourceChunk.id.in_(entity_chunk_ids))
+
+        if public_entity_type:
+            pet_chunk_ids = (
+                db.query(ChunkTag.chunk_id)
+                .filter(ChunkTag.tag_type == "public_entity_type", ChunkTag.tag_value == public_entity_type)
+                .subquery()
+            )
+            filter_subqueries.append(SourceChunk.id.in_(pet_chunk_ids))
+
+        if department:
+            dept_chunk_ids = (
+                db.query(ChunkTag.chunk_id)
+                .filter(ChunkTag.tag_type == "department", ChunkTag.tag_value == department)
+                .subquery()
+            )
+            filter_subqueries.append(SourceChunk.id.in_(dept_chunk_ids))
+    else:
+        # Standard private-business matching: industry tag
+        industry_chunk_ids = (
+            db.query(ChunkTag.chunk_id)
+            .filter(ChunkTag.tag_type == "industry", ChunkTag.tag_value == industry)
+            .subquery()
+        )
+        filter_subqueries.append(SourceChunk.id.in_(industry_chunk_ids))
+
+    # Always include jurisdiction matching
     jurisdiction_chunk_ids = (
         db.query(ChunkTag.chunk_id)
         .filter(ChunkTag.tag_type == "jurisdiction", ChunkTag.tag_value.in_(jurisdictions))
         .subquery()
     )
+    filter_subqueries.append(SourceChunk.id.in_(jurisdiction_chunk_ids))
 
-    # Get chunks that match industry OR jurisdiction (prefer those matching both via rerank)
-    from sqlalchemy import or_
+    # Get chunks that match any of the filter subqueries
     chunks = (
         db.query(SourceChunk)
         .join(Source, Source.id == SourceChunk.source_id)
         .filter(Source.status == SourceStatus.READY)
         .filter(Source.authority_score >= MIN_AUTHORITY_THRESHOLD)
-        .filter(
-            or_(
-                SourceChunk.id.in_(industry_chunk_ids),
-                SourceChunk.id.in_(jurisdiction_chunk_ids),
-            )
-        )
+        .filter(or_(*filter_subqueries))
         .limit(limit)
         .all()
     )
@@ -262,7 +355,10 @@ def _tag_based_search(db: Session, industry: str, jurisdictions: list[str],
 
 
 def _rerank(candidates: list[dict], industry: str, state: str,
-            jurisdictions: list[str]) -> list[dict]:
+            jurisdictions: list[str],
+            entity_type: str | None = None,
+            public_entity_type: str | None = None,
+            department: str | None = None) -> list[dict]:
     """Rerank candidates using blended scoring."""
     if not candidates:
         return []
@@ -275,8 +371,19 @@ def _rerank(candidates: list[dict], industry: str, state: str,
         # Tag overlap score
         tag_overlap = 0.0
         tags = c.get("tags", set())
-        if ("industry", industry) in tags:
-            tag_overlap += 0.5
+
+        if entity_type == "public_entity":
+            # Public entity scoring: boost entity_type and department matches
+            if ("entity_type", "public_entity") in tags:
+                tag_overlap += 0.4
+            if public_entity_type and ("public_entity_type", public_entity_type) in tags:
+                tag_overlap += 0.3
+            if department and ("department", department) in tags:
+                tag_overlap += 0.2
+        else:
+            if ("industry", industry) in tags:
+                tag_overlap += 0.5
+
         if any(("jurisdiction", j) in tags for j in jurisdictions):
             tag_overlap += 0.3
         # Check for coverage/risk theme tags (any match is good)

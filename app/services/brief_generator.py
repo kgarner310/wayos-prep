@@ -75,6 +75,21 @@ def _has_openai_key() -> bool:
     return bool(settings.OPENAI_API_KEY) and not settings.OPENAI_API_KEY.startswith("sk-your")
 
 
+PUBLIC_ENTITY_PROMPT_SUPPLEMENT = """
+
+IMPORTANT: This account represents a public entity such as a municipality or government authority.
+
+Prioritize risks related to:
+- public services
+- civil rights exposure
+- infrastructure operations
+- volunteer involvement
+- public interaction
+- governmental liability frameworks
+
+Avoid assuming private commercial insurance structures unless supported by source context."""
+
+
 def generate_brief(
     db: Session,
     query: Query,
@@ -85,6 +100,9 @@ def generate_brief(
     employee_count: int | None = None,
     current_mod: float | None = None,
     raw_query: str | None = None,
+    entity_type: str | None = None,
+    public_entity_type: str | None = None,
+    department: str | None = None,
 ) -> GeneratedBrief:
     """Generate a brief from retrieved chunks."""
 
@@ -111,12 +129,20 @@ def generate_brief(
     model_used = "fallback"
 
     if _has_openai_key() and chunks:
-        brief_dict = _call_llm(context_text, industry, state, employee_count, current_mod, raw_query)
+        brief_dict = _call_llm(
+            context_text, industry, state, employee_count, current_mod, raw_query,
+            entity_type=entity_type, public_entity_type=public_entity_type,
+            department=department,
+        )
         if brief_dict:
             model_used = settings.LLM_MODEL
 
     if brief_dict is None:
-        brief_dict = _fallback_brief(db, chunks, industry, state, employee_count, current_mod, source_map)
+        brief_dict = _fallback_brief(
+            db, chunks, industry, state, employee_count, current_mod, source_map,
+            entity_type=entity_type, public_entity_type=public_entity_type,
+            department=department,
+        )
 
     # Strict schema validation — fail loud, then retry with fallback
     try:
@@ -162,7 +188,10 @@ def generate_brief(
 
 def _call_llm(context_text: str, industry: str, state: str,
               employee_count: int | None, current_mod: float | None,
-              raw_query: str | None) -> dict | None:
+              raw_query: str | None,
+              entity_type: str | None = None,
+              public_entity_type: str | None = None,
+              department: str | None = None) -> dict | None:
     """Call OpenAI to generate brief. Returns None on failure."""
     try:
         import openai
@@ -172,22 +201,35 @@ def _call_llm(context_text: str, industry: str, state: str,
 
     client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
+    entity_lines = ""
+    if entity_type == "public_entity":
+        entity_lines = f"\n- Entity type: public entity"
+        if public_entity_type:
+            entity_lines += f"\n- Public entity subtype: {public_entity_type.replace('_', ' ')}"
+        if department:
+            entity_lines += f"\n- Department focus: {department.replace('_', ' ')}"
+
     user_prompt = f"""Generate a pre-meeting brief for:
 - Industry: {industry}
 - State: {state}
 - Employee count: {employee_count or 'unknown'}
-- Current mod: {current_mod or 'unknown'}
+- Current mod: {current_mod or 'unknown'}{entity_lines}
 {f'- Additional context: {raw_query}' if raw_query else ''}
 
 SOURCE CONTEXT:
 {context_text}"""
+
+    # Inject public entity supplement into system prompt if applicable
+    system_prompt = SYSTEM_PROMPT
+    if entity_type == "public_entity":
+        system_prompt = SYSTEM_PROMPT + PUBLIC_ENTITY_PROMPT_SUPPLEMENT
 
     for attempt in range(2):
         try:
             response = client.chat.completions.create(
                 model=settings.LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 response_format={"type": "json_object"},
@@ -209,7 +251,10 @@ SOURCE CONTEXT:
 
 def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
                     employee_count: int | None, current_mod: float | None,
-                    source_map: dict) -> dict:
+                    source_map: dict,
+                    entity_type: str | None = None,
+                    public_entity_type: str | None = None,
+                    department: str | None = None) -> dict:
     """Generate a deterministic brief from chunk tags and content. No LLM needed."""
     source_ids = list(dict.fromkeys(str(c["source_id"]) for c in chunks))[:5]
 
@@ -251,6 +296,22 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "food_contamination": "Food Contamination / Foodborne Illness",
         "chemical_exposure": "Chemical / Refrigerant Exposure",
         "lifting_ergonomic": "Lifting and Ergonomic Injuries",
+        # Public entity risk themes
+        "police_liability": "Police / Law Enforcement Liability",
+        "civil_rights_claims": "Civil Rights Claims (Section 1983)",
+        "excessive_force": "Excessive Force Exposure",
+        "public_officials_liability": "Public Officials Liability",
+        "zoning_decisions": "Zoning / Land Use Decision Liability",
+        "road_maintenance_liability": "Road Maintenance Liability",
+        "playground_injury": "Playground Injury Exposure",
+        "public_event_liability": "Public Event Liability",
+        "sewer_backup_claims": "Sewer Backup Claims",
+        "water_quality_claims": "Water Quality / Contamination Claims",
+        "fleet_liability": "Municipal Fleet Liability",
+        "volunteer_liability": "Volunteer Liability",
+        "cyber_records_breach": "Cyber / Public Records Breach",
+        "grant_compliance": "Grant Compliance Risk",
+        "procurement_disputes": "Procurement / Bid Dispute Exposure",
     }
 
     # Build a map from risk theme -> source_ids whose chunks actually carry that tag
@@ -298,6 +359,15 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "cyber": "Cyber Liability",
         "epli": "EPLI",
         "professional_liability": "Professional Liability",
+        # Public entity coverages
+        "public_officials_liability": "Public Officials Liability",
+        "law_enforcement_liability": "Law Enforcement Liability",
+        "governmental_immunity": "Governmental Immunity / Tort Claims",
+        "employment_practices_public": "Employment Practices (Public Sector)",
+        "municipal_auto": "Municipal Auto",
+        "public_entity_property": "Public Entity Property",
+        "infrastructure_property": "Infrastructure Property",
+        "environmental_liability_public": "Environmental Liability (Public)",
     }
 
     # Map coverage tag -> source_ids that actually carry that coverage tag
@@ -387,7 +457,7 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         for sid in source_ids
     ]
 
-    return {
+    result = {
         "industry": industry,
         "state": state,
         "employee_count": employee_count or 0,
@@ -399,6 +469,13 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "confidence_notes": confidence_notes,
         "citation_map": citation_map,
     }
+    if entity_type:
+        result["entity_type"] = entity_type
+    if public_entity_type:
+        result["public_entity_type"] = public_entity_type
+    if department:
+        result["department"] = department
+    return result
 
 
 def render_brief_markdown(brief: dict) -> str:
@@ -411,6 +488,12 @@ def render_brief_markdown(brief: dict) -> str:
         lines.append(f"**Employees:** {brief['employee_count']}  ")
     if brief.get("current_mod"):
         lines.append(f"**Current Mod:** {brief['current_mod']}  ")
+    if brief.get("entity_type"):
+        lines.append(f"**Entity Type:** {brief['entity_type'].replace('_', ' ').title()}  ")
+    if brief.get("public_entity_type"):
+        lines.append(f"**Public Entity Type:** {brief['public_entity_type'].replace('_', ' ').title()}  ")
+    if brief.get("department"):
+        lines.append(f"**Department:** {brief['department'].replace('_', ' ').title()}  ")
     lines.append("")
 
     drivers = brief.get("top_loss_drivers", [])
