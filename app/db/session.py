@@ -6,7 +6,7 @@ from app.core.config import settings
 Base = declarative_base()
 
 _engine = None
-_SessionLocal = None
+_session_factory = None
 
 
 def get_engine():
@@ -21,26 +21,28 @@ def get_engine():
     return _engine
 
 
-def get_session_local():
-    global _SessionLocal
-    if _SessionLocal is None:
-        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
-    return _SessionLocal
+def _get_session_factory():
+    global _session_factory
+    if _session_factory is None:
+        _session_factory = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+    return _session_factory
 
 
-# Keep backward compat
-@property
-def engine():
-    return get_engine()
-
-
-SessionLocal = None  # Will be set lazily
+def SessionLocal():
+    """Create a new database session."""
+    return _get_session_factory()()
 
 
 def get_db():
-    session_cls = get_session_local()
-    db = session_cls()
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def reset_engine():
+    """Reset engine and session factory (for testing)."""
+    global _engine, _session_factory
+    _engine = None
+    _session_factory = None

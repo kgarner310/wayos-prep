@@ -240,6 +240,7 @@ def seed():
 
         print("Seeding demo data...")
         for data in SAMPLE_SOURCES:
+            data = dict(data)  # copy to avoid mutating the original
             raw_text = data.pop("raw_text")
             source = ingest_raw_text(db=db, raw_text=raw_text, **data)
             print(f"  Created source: {source.title} ({source.id})")

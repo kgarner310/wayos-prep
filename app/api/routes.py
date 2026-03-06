@@ -13,8 +13,8 @@ from app.models.models import (
     GeneratedBrief, FeedbackEvent, RetrievalRun, RetrievalResult,
 )
 from app.schemas.schemas import (
-    SourceIngestText, SourceIngestURL, SourceResponse, SourceDetailResponse,
-    TagResponse, ChunkResponse, PrepQueryRequest, PrepQueryResponse,
+    SourceIngestText, SourceIngestURL, SourceResponse,
+    TagResponse, PrepQueryRequest, PrepQueryResponse,
     FeedbackRequest, FeedbackResponse,
     RetrievalDebugResponse, RetrievalDebugResult,
 )
@@ -34,13 +34,10 @@ router = APIRouter()
 
 @router.post("/sources/ingest", response_model=SourceResponse, tags=["sources"])
 def ingest_source(
-    payload: SourceIngestText | None = None,
+    payload: SourceIngestText,
     db: Session = Depends(get_db),
 ):
     """Ingest a source from raw text."""
-    if not payload:
-        raise HTTPException(400, "Provide text payload")
-
     source = ingest_raw_text(
         db=db,
         title=payload.title,
@@ -174,7 +171,12 @@ def embed_source(source_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(400, "Source has no chunks. Run /chunk first.")
 
     count = embed_chunks(db, chunks)
-    source.status = SourceStatus.READY if count > 0 else SourceStatus.EMBEDDED
+    if count > 0:
+        source.status = SourceStatus.READY
+    else:
+        # No embeddings generated (no API key) — still mark ready for tag-based retrieval
+        source.status = SourceStatus.READY
+        logger.info(f"Source {source_id}: no embeddings generated, marked ready for tag-based retrieval")
     db.commit()
     db.refresh(source)
     return source

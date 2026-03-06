@@ -1,8 +1,12 @@
 import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+
+# Ensure app is importable
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 config = context.config
 
@@ -15,7 +19,7 @@ if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
 
 from app.db.session import Base
-from app.models.models import *  # noqa: F401, F403
+import app.models.models  # noqa: F401 — register models with Base
 
 target_metadata = Base.metadata
 

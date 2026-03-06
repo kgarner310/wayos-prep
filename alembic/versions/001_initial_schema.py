@@ -109,9 +109,10 @@ def upgrade() -> None:
         sa.Column('embedding_model', sa.Text(), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
-    # Add vector column separately (alembic doesn't handle custom types well)
+    # Add vector column separately (alembic doesn't natively handle pgvector types)
     op.execute("ALTER TABLE chunk_embeddings ADD COLUMN embedding vector(1536)")
-    op.execute("CREATE INDEX ix_chunk_embeddings_cosine ON chunk_embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)")
+    # Use HNSW index — works on empty tables (unlike IVFFlat which needs training data)
+    op.execute("CREATE INDEX ix_chunk_embeddings_cosine ON chunk_embeddings USING hnsw (embedding vector_cosine_ops)")
 
     # queries
     op.create_table(
