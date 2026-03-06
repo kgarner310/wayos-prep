@@ -1,4 +1,4 @@
-const BASE_URL = (window as any).__WAYOS_API_URL__ || 'http://localhost:8000';
+const BASE_URL = (window as any).__WAYOS_API_URL__ || '';
 const API_PREFIX = '/api/v1';
 
 export interface IndustryListItem {
