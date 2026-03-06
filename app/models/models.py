@@ -307,3 +307,84 @@ class FeedbackEvent(Base):
 
     brief = relationship("GeneratedBrief")
     query = relationship("Query", back_populates="feedback_events")
+
+
+class RiskScoreRun(Base):
+    __tablename__ = "risk_score_runs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    query_id = Column(UUID(as_uuid=True), ForeignKey("queries.id", ondelete="CASCADE"))
+    brief_id = Column(UUID(as_uuid=True), ForeignKey("generated_briefs.id", ondelete="SET NULL"))
+    scoring_version = Column(Text, nullable=False)
+    overall_risk_score = Column(Numeric(6, 2), nullable=False)
+    risk_band = Column(Text, nullable=False)
+    confidence_score = Column(Numeric(6, 2), nullable=False)
+    score_json = Column(JSONB, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    components = relationship("RiskScoreComponent", back_populates="risk_score_run", cascade="all, delete-orphan")
+    coverage_gaps = relationship("CoverageGapAlert", back_populates="risk_score_run", cascade="all, delete-orphan")
+    missing_info = relationship("MissingInformationAlert", back_populates="risk_score_run", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_risk_score_runs_query_id", "query_id"),
+        Index("ix_risk_score_runs_brief_id", "brief_id"),
+    )
+
+
+class RiskScoreComponent(Base):
+    __tablename__ = "risk_score_components"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    risk_score_run_id = Column(UUID(as_uuid=True), ForeignKey("risk_score_runs.id", ondelete="CASCADE"), nullable=False)
+    component_type = Column(Text, nullable=False)
+    component_key = Column(Text, nullable=False)
+    component_label = Column(Text)
+    raw_value = Column(Numeric(8, 3))
+    weighted_value = Column(Numeric(8, 3))
+    explanation = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    risk_score_run = relationship("RiskScoreRun", back_populates="components")
+
+    __table_args__ = (
+        Index("ix_risk_score_components_run_id", "risk_score_run_id"),
+        Index("ix_risk_score_components_type", "component_type"),
+    )
+
+
+class CoverageGapAlert(Base):
+    __tablename__ = "coverage_gap_alerts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    risk_score_run_id = Column(UUID(as_uuid=True), ForeignKey("risk_score_runs.id", ondelete="CASCADE"), nullable=False)
+    risk_theme = Column(Text, nullable=False)
+    suggested_coverage = Column(Text, nullable=False)
+    alert_severity = Column(Text, nullable=False)
+    alert_reason = Column(Text, nullable=False)
+    supporting_node_json = Column(JSONB)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    risk_score_run = relationship("RiskScoreRun", back_populates="coverage_gaps")
+
+    __table_args__ = (
+        Index("ix_coverage_gap_alerts_run_id", "risk_score_run_id"),
+    )
+
+
+class MissingInformationAlert(Base):
+    __tablename__ = "missing_information_alerts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    risk_score_run_id = Column(UUID(as_uuid=True), ForeignKey("risk_score_runs.id", ondelete="CASCADE"), nullable=False)
+    missing_field = Column(Text, nullable=False)
+    alert_severity = Column(Text, nullable=False)
+    alert_reason = Column(Text, nullable=False)
+    recommended_question = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    risk_score_run = relationship("RiskScoreRun", back_populates="missing_info")
+
+    __table_args__ = (
+        Index("ix_missing_information_alerts_run_id", "risk_score_run_id"),
+    )

@@ -85,6 +85,7 @@ class PrepQueryResponse(BaseModel):
     brief_id: UUID
     brief: dict
     rendered_markdown: str
+    risk_score: Optional[dict] = None
 
 
 # --- Brief Schema ---
@@ -150,6 +151,82 @@ class FeedbackResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Retrieval Debug ---
+
+# --- Risk Scoring Schemas ---
+
+class RiskThemeInput(BaseModel):
+    slug: str
+    strength: float = 0.5
+
+class QuestionSignal(BaseModel):
+    category: str
+    weight: float = 0.5
+
+class RiskScoreRequest(BaseModel):
+    industry: str
+    state: str
+    employee_count: int = 10
+    current_mod: Optional[float] = None
+    entity_type: str = "private_business"
+    public_entity_type: Optional[str] = None
+    department: Optional[str] = None
+    account_traits: list[str] = []
+    retrieved_risk_themes: list[RiskThemeInput] = []
+    known_coverages: list[str] = []
+    question_signals: list[QuestionSignal] = []
+    source_confidence: float = 0.5
+
+class ScoreComponent(BaseModel):
+    component_type: str
+    component_key: str
+    component_label: Optional[str] = None
+    raw_value: Optional[float] = None
+    weighted_value: Optional[float] = None
+    explanation: Optional[str] = None
+
+class TopRiskTheme(BaseModel):
+    risk_theme: str
+    score_contribution: float
+    reason: str
+
+class CoverageGapAlert(BaseModel):
+    risk_theme: str
+    suggested_coverage: str
+    alert_severity: str
+    alert_reason: str
+
+class MissingInfoAlert(BaseModel):
+    missing_field: str
+    alert_severity: str
+    alert_reason: str
+    recommended_question: Optional[str] = None
+
+class ScoreExplanation(BaseModel):
+    base_exposure_score: float
+    trait_amplifier_score: float
+    account_detail_modifier_score: float
+    final_adjusted_score: float
+    confidence_notes: list[str] = []
+
+class RiskScoreOutput(BaseModel):
+    overall_risk_score: float
+    risk_band: str
+    confidence_score: float
+    top_risk_themes: list[TopRiskTheme] = []
+    coverage_gap_alerts: list[CoverageGapAlert] = []
+    missing_information_alerts: list[MissingInfoAlert] = []
+    score_explanation: ScoreExplanation
+    components: list[ScoreComponent] = []
+
+class RiskScoreResponse(BaseModel):
+    risk_score_run_id: UUID
+    query_id: Optional[UUID] = None
+    brief_id: Optional[UUID] = None
+    score: RiskScoreOutput
+    created_at: Optional[datetime] = None
 
 
 # --- Retrieval Debug ---

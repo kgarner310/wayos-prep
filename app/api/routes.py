@@ -11,12 +11,14 @@ from app.core.enums import SourceStatus
 from app.models.models import (
     Source, SourceChunk, ChunkEmbedding, Query,
     GeneratedBrief, FeedbackEvent, RetrievalRun, RetrievalResult,
+    RiskScoreRun,
 )
 from app.schemas.schemas import (
     SourceIngestText, SourceIngestURL, SourceResponse,
     TagResponse, PrepQueryRequest, PrepQueryResponse,
     FeedbackRequest, FeedbackResponse,
     RetrievalDebugResponse, RetrievalDebugResult,
+    RiskScoreRequest, RiskScoreResponse, RiskScoreOutput,
 )
 from app.services.ingestion import ingest_raw_text, ingest_url, ingest_file
 from app.services.parser import clean_text
@@ -25,6 +27,7 @@ from app.services.tagging import tag_source, tag_chunk, llm_tag_source
 from app.services.embeddings import embed_chunks
 from app.services.retrieval import run_retrieval
 from app.services.brief_generator import generate_brief
+from app.services.risk_scoring import score_account
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -295,11 +298,30 @@ def prep_query(payload: PrepQueryRequest, db: Session = Depends(get_db)):
         department=payload.department,
     )
 
+    # Run risk scoring (non-blocking — errors logged, not raised)
+    risk_score = None
+    try:
+        risk_score = score_account(
+            db=db,
+            industry=payload.industry,
+            state=payload.state,
+            employee_count=payload.employee_count,
+            current_mod=payload.current_mod,
+            entity_type=payload.entity_type or "private_business",
+            public_entity_type=payload.public_entity_type,
+            department=payload.department,
+            query_id=query.id,
+            brief_id=brief.id,
+        )
+    except Exception:
+        logger.exception("Risk scoring failed for query %s", query.id)
+
     return PrepQueryResponse(
         query_id=query.id,
         brief_id=brief.id,
         brief=brief.brief_json,
         rendered_markdown=brief.rendered_markdown,
+        risk_score=risk_score,
     )
 
 
@@ -382,4 +404,62 @@ def retrieval_debug(query_id: UUID, db: Session = Depends(get_db)):
         candidate_count=run.candidate_count,
         selected_count=run.selected_count,
         results=debug_results,
+    )
+
+
+# --- Risk Scoring ---
+
+@router.get("/risk-score/{query_id}", tags=["risk-scoring"])
+def get_risk_score(query_id: UUID, db: Session = Depends(get_db)):
+    """Get the most recent risk score for a query."""
+    run = db.query(RiskScoreRun).filter(
+        RiskScoreRun.query_id == query_id,
+    ).order_by(RiskScoreRun.created_at.desc()).first()
+
+    if not run:
+        raise HTTPException(404, "No risk score found for this query")
+
+    return RiskScoreResponse(
+        risk_score_run_id=run.id,
+        query_id=run.query_id,
+        brief_id=run.brief_id,
+        score=RiskScoreOutput(**run.score_json),
+        created_at=run.created_at,
+    )
+
+
+@router.post("/risk-score", response_model=RiskScoreResponse, tags=["risk-scoring"])
+def create_risk_score(payload: RiskScoreRequest, db: Session = Depends(get_db)):
+    """Run standalone risk scoring without a prep query."""
+    result = score_account(
+        db=db,
+        industry=payload.industry,
+        state=payload.state,
+        employee_count=payload.employee_count,
+        current_mod=payload.current_mod,
+        entity_type=payload.entity_type,
+        public_entity_type=payload.public_entity_type,
+        department=payload.department,
+        account_traits=payload.account_traits,
+        retrieved_risk_themes=[
+            {"slug": t.slug, "strength": t.strength}
+            for t in payload.retrieved_risk_themes
+        ],
+        known_coverages=payload.known_coverages,
+        question_signals=[
+            {"category": q.category, "weight": q.weight}
+            for q in payload.question_signals
+        ],
+        source_confidence=payload.source_confidence,
+    )
+
+    run_id = result.pop("risk_score_run_id")
+    run = db.query(RiskScoreRun).filter(RiskScoreRun.id == run_id).first()
+
+    return RiskScoreResponse(
+        risk_score_run_id=run.id,
+        query_id=run.query_id,
+        brief_id=run.brief_id,
+        score=RiskScoreOutput(**result),
+        created_at=run.created_at,
     )
