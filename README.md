@@ -2,7 +2,11 @@
 
 **Standalone meeting-prep and account-review app for commercial insurance producers.**
 
-WAYOS PREP helps producers prepare for meetings, discover risk, find coverage gaps, and build sharper underwriting submissions — all from a single web interface. Ingest insurance-related sources, run a prep query, and get back a structured brief with loss drivers, coverage gap detection, producer ammo, and actionable questions.
+WAYOS PREP is a standalone web application — not an Outlook add-in, not a browser extension, not embedded in an AMS. It runs as its own service and gives producers a dedicated workspace for meeting prep, risk discovery, coverage gap analysis, and underwriting submission sharpening.
+
+Ingest insurance-related sources, run a prep query, and get back a structured brief with loss drivers, coverage gap detection, producer ammo, and actionable questions.
+
+> **Note:** Earlier prototypes explored an Outlook add-in approach. That direction has been retired. WAYOS PREP is now a standalone web app first. Outlook or other integrations may be added later as optional connection points, but they do not define the product.
 
 ## What It Does
 
