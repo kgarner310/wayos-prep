@@ -8,7 +8,20 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    cors_origins: str = "*"  # comma-separated origins, e.g. "http://localhost:8081,https://app.wayosprep.app"
+    cors_origins: str = "http://localhost:3000"  # comma-separated origins
+
+    # Auth
+    wayos_api_key: str = ""  # empty = auth disabled (dev mode)
+
+    # Rate limiting
+    rate_limit_rpm: int = 60  # requests per minute per IP; 0 = disabled
+
+    # Database pool
+    db_pool_size: int = 10
+    db_pool_max_overflow: int = 20
+
+    # Logging
+    log_level: str = "INFO"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

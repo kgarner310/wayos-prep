@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.middleware.auth import api_key_auth
 from app.models.industry import IndustryRiskProfile
 from app.models.query_log import QueryLog
 from app.models.feedback import Feedback
@@ -31,12 +32,19 @@ def health(db: Session = Depends(get_db)):
 
 
 @router.get("/industries", response_model=list[IndustryListItem])
-def list_industries(db: Session = Depends(get_db)):
+def list_industries(
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     return db.query(IndustryRiskProfile).order_by(IndustryRiskProfile.industry_name).all()
 
 
 @router.get("/industries/{industry_id}", response_model=IndustryOut)
-def get_industry(industry_id: int, db: Session = Depends(get_db)):
+def get_industry(
+    industry_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     profile = db.query(IndustryRiskProfile).filter(IndustryRiskProfile.id == industry_id).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Industry not found")
@@ -44,7 +52,11 @@ def get_industry(industry_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/briefs/ask", response_model=BriefResponse)
-def ask_brief(req: AskRequest, db: Session = Depends(get_db)):
+def ask_brief(
+    req: AskRequest,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     profile = match_industry(req.question, db)
     if not profile:
         raise HTTPException(status_code=404, detail="Could not identify an industry from your question. Try being more specific.")
@@ -64,7 +76,11 @@ def ask_brief(req: AskRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/briefs/prep", response_model=BriefResponse)
-def prep_brief(req: PrepRequest, db: Session = Depends(get_db)):
+def prep_brief(
+    req: PrepRequest,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     profile = match_industry(req.industry, db)
     if not profile:
         raise HTTPException(status_code=404, detail=f"Industry '{req.industry}' not found.")
@@ -83,7 +99,11 @@ def prep_brief(req: PrepRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/briefs/{brief_id}", response_model=BriefResponse)
-def get_brief(brief_id: int, db: Session = Depends(get_db)):
+def get_brief(
+    brief_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     log = db.query(QueryLog).filter(QueryLog.id == brief_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Brief not found")
@@ -91,7 +111,11 @@ def get_brief(brief_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/feedback", response_model=FeedbackOut)
-def create_feedback(req: FeedbackRequest, db: Session = Depends(get_db)):
+def create_feedback(
+    req: FeedbackRequest,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
     log = db.query(QueryLog).filter(QueryLog.id == req.query_log_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Query log not found")

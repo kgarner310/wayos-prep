@@ -1,4 +1,5 @@
 const BASE_URL = (window as any).__WAYOS_API_URL__ || 'http://localhost:8000';
+const API_PREFIX = '/api/v1';
 
 export interface IndustryListItem {
   id: number;
@@ -36,10 +37,24 @@ export interface BriefResponse {
   internal_note_text: string;
 }
 
+function getApiKey(): string | null {
+  return (window as any).__WAYOS_API_KEY__ || null;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((options?.headers as Record<string, string>) || {}),
+  };
+
+  const apiKey = getApiKey();
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
+
+  const res = await fetch(`${BASE_URL}${API_PREFIX}${path}`, {
     ...options,
+    headers,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: res.statusText }));

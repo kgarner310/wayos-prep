@@ -15,7 +15,7 @@ if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
 
 from app.database import Base
-from app.models import IndustryRiskProfile, QueryLog, Feedback
+from app.models import IndustryRiskProfile, QueryLog, Feedback, StateProfile
 
 target_metadata = Base.metadata
 
