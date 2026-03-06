@@ -28,12 +28,21 @@ Rules:
 6. Do not give legal advice.
 7. Return valid JSON matching the schema exactly.
 8. Every substantive claim must map to one or more provided source IDs.
+9. NEVER fabricate state-specific statutes, penalty amounts, filing deadlines, or exclusion language.
+   If a source does not name a specific state rule, do NOT infer one. Say "general industry guidance" instead.
+10. If no sources mention the requested state, add a confidence_note with severity "warning" stating that.
+
+Confidence levels (use these exactly):
+- "high": Claim is directly stated in 2+ authoritative sources.
+- "medium": Claim is supported by at least one source but may lack specificity or state-level detail.
+- "low": Claim is inferred from general context or thin evidence. Flag in confidence_notes.
 
 Developer guidance:
 - Keep loss drivers specific, not generic.
 - Questions should help a producer uncover underwriting, safety, payroll, fleet, subcontractor, or operational risk.
 - If a state-specific point is unsupported, mark it as general rather than state-specific.
 - Do not mention sources in prose; use source_ids in the JSON fields.
+- Only attach source_ids to a claim if that source actually supports it. Do not bulk-assign source IDs.
 
 Return JSON matching this exact schema:
 {
@@ -222,28 +231,45 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
                 elif t.tag_type == TagType.ACCOUNT_TRAIT:
                     account_traits.add(t.tag_value)
 
-    # Build loss drivers from risk themes found in source data
+    # Build loss drivers from risk themes found in source data.
+    # Labels are generic descriptors only — the "why_it_matters" references
+    # source materials, not hardcoded factual claims.
     _theme_labels = {
-        "falls_from_height": ("Falls from Height", "Leading cause of severe injury and death in this industry"),
-        "fleet_accidents": ("Fleet/Vehicle Accidents", "Major liability and WC exposure from vehicle operations"),
-        "driver_turnover": ("Driver Turnover", "High turnover leads to inexperienced operators and increased accident frequency"),
-        "machine_guarding": ("Machine Guarding Hazards", "OSHA's most-cited standard — amputations and crush injuries drive severe claims"),
-        "combustible_dust": ("Combustible Dust", "Explosion risk from dust accumulation in manufacturing environments"),
-        "slip_and_fall": ("Slip and Fall", "Common premises and workplace injury driving WC and GL claims"),
-        "subcontractor_transfer": ("Subcontractor Risk Transfer", "Coverage gaps from uninsured or underinsured subcontractors"),
-        "improper_classification": ("Improper Classification", "Employee misclassification creates audit exposure and premium disputes"),
-        "certificate_tracking": ("Certificate Tracking Gaps", "Missing or expired COIs expose the employer to uninsured losses"),
-        "hired_non_owned_auto": ("Hired/Non-Owned Auto Exposure", "Personal vehicle use on company business without proper coverage"),
+        "falls_from_height": "Falls from Height",
+        "fleet_accidents": "Fleet/Vehicle Accidents",
+        "driver_turnover": "Driver Turnover",
+        "machine_guarding": "Machine Guarding Hazards",
+        "combustible_dust": "Combustible Dust",
+        "slip_and_fall": "Slip and Fall",
+        "subcontractor_transfer": "Subcontractor Risk Transfer",
+        "improper_classification": "Improper Classification",
+        "certificate_tracking": "Certificate Tracking Gaps",
+        "hired_non_owned_auto": "Hired/Non-Owned Auto Exposure",
     }
+
+    # Build a map from risk theme -> source_ids whose chunks actually carry that tag
+    theme_to_sources = {}
+    for chunk in chunks:
+        chunk_id = chunk.get("chunk_id")
+        if chunk_id and db:
+            tags = db.query(ChunkTag).filter(
+                ChunkTag.chunk_id == chunk_id, ChunkTag.tag_type == TagType.RISK_THEME
+            ).all()
+            for t in tags:
+                theme_to_sources.setdefault(t.tag_value, [])
+                sid = str(chunk["source_id"])
+                if sid not in theme_to_sources[t.tag_value]:
+                    theme_to_sources[t.tag_value].append(sid)
 
     for theme in risk_themes:
         if theme in _theme_labels:
-            label, desc = _theme_labels[theme]
+            label = _theme_labels[theme]
+            supporting_sources = theme_to_sources.get(theme, [])
             loss_drivers.append({
                 "title": label,
-                "why_it_matters": desc,
-                "confidence": "medium",
-                "source_ids": source_ids[:2],
+                "why_it_matters": f"Source materials mention {label.lower()} as a risk factor for this type of operation.",
+                "confidence": "medium" if supporting_sources else "low",
+                "source_ids": supporting_sources[:2],
             })
 
     if not loss_drivers:
@@ -267,13 +293,29 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "epli": "EPLI",
         "professional_liability": "Professional Liability",
     }
+
+    # Map coverage tag -> source_ids that actually carry that coverage tag
+    coverage_to_sources = {}
+    for chunk in chunks:
+        chunk_id = chunk.get("chunk_id")
+        if chunk_id and db:
+            tags = db.query(ChunkTag).filter(
+                ChunkTag.chunk_id == chunk_id, ChunkTag.tag_type == TagType.COVERAGE
+            ).all()
+            for t in tags:
+                coverage_to_sources.setdefault(t.tag_value, [])
+                sid = str(chunk["source_id"])
+                if sid not in coverage_to_sources[t.tag_value]:
+                    coverage_to_sources[t.tag_value].append(sid)
+
     blind_spots = []
     for cov in coverage_tags:
         label = _coverage_labels.get(cov, cov.replace("_", " ").title())
+        supporting_sources = coverage_to_sources.get(cov, [])
         blind_spots.append({
             "title": f"Review {label} Coverage",
             "why_it_matters": f"Source materials reference {label} exposure for this type of operation.",
-            "source_ids": source_ids[:2],
+            "source_ids": supporting_sources[:2],
         })
 
     if not blind_spots:
@@ -297,12 +339,26 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
             "source_ids": [],
         })
 
+    # Map account traits -> source_ids that carry that trait tag
+    trait_to_sources = {}
+    for chunk in chunks:
+        chunk_id = chunk.get("chunk_id")
+        if chunk_id and db:
+            tags = db.query(ChunkTag).filter(
+                ChunkTag.chunk_id == chunk_id, ChunkTag.tag_type == TagType.ACCOUNT_TRAIT
+            ).all()
+            for t in tags:
+                trait_to_sources.setdefault(t.tag_value, [])
+                sid = str(chunk["source_id"])
+                if sid not in trait_to_sources[t.tag_value]:
+                    trait_to_sources[t.tag_value].append(sid)
+
     # Watchouts
     watchouts = []
     if "uses_subcontractors" in account_traits:
-        watchouts.append({"note": "Subcontractor usage detected — verify certificate tracking and additional insured status.", "source_ids": source_ids[:1]})
+        watchouts.append({"note": "Source materials mention subcontractor usage — verify certificate tracking and additional insured status.", "source_ids": trait_to_sources.get("uses_subcontractors", [])[:1]})
     if "multi_state_operations" in account_traits:
-        watchouts.append({"note": "Multi-state operations — check WC filing requirements by state.", "source_ids": source_ids[:1]})
+        watchouts.append({"note": "Source materials mention multi-state operations — check WC filing requirements by state.", "source_ids": trait_to_sources.get("multi_state_operations", [])[:1]})
 
     # Confidence notes
     confidence_notes = []
@@ -310,6 +366,15 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         confidence_notes.append({"note": "Brief generated from tag-based analysis (no LLM). Add OPENAI_API_KEY for richer briefs.", "severity": "info"})
     if len(chunks) < 3:
         confidence_notes.append({"note": f"Only {len(chunks)} source chunks available. Ingest more sources for better coverage.", "severity": "warning"})
+
+    # Jurisdiction match disclosure
+    state_lower = state.lower()
+    state_matched = any(
+        (c.get("jurisdiction_state") or "").lower() == state_lower
+        for c in chunks
+    )
+    if not state_matched and chunks:
+        confidence_notes.append({"note": f"No source chunks are specific to {state}. Results are based on general or other-state materials.", "severity": "warning"})
 
     citation_map = [
         {"source_id": sid, "title": source_map.get(sid, {}).get("title", "Unknown"), "url": source_map.get(sid, {}).get("url")}

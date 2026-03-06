@@ -31,7 +31,7 @@ INDUSTRY_KEYWORDS = {
 }
 
 COVERAGE_KEYWORDS = {
-    "workers_comp": ["workers comp", "workers' comp", "work comp", "wc claim", "workplace injury", "osha"],
+    "workers_comp": ["workers comp", "workers' comp", "work comp", "wc claim", "workplace injury"],
     "general_liability": ["general liability", "gl ", "slip and fall", "bodily injury", "premises liability"],
     "commercial_auto": ["commercial auto", "fleet insurance", "vehicle coverage", "auto liability", "trucking insurance"],
     "umbrella": ["umbrella", "excess liability"],
@@ -49,17 +49,17 @@ RISK_THEME_KEYWORDS = {
     "driver_turnover": ["driver turnover", "driver shortage", "driver retention"],
     "subcontractor_transfer": ["subcontractor", "sub transfer", "certificate of insurance", "coi"],
     "certificate_tracking": ["certificate tracking", "coi management", "certificate compliance"],
-    "residential_exposure": ["residential", "homeowner", "residential work"],
+    "residential_exposure": ["residential exposure", "residential work", "residential construction"],
     "equipment_theft": ["equipment theft", "tool theft", "stolen equipment"],
     "slip_and_fall": ["slip and fall", "trip and fall", "wet floor"],
     "machine_guarding": ["machine guarding", "lockout tagout", "loto", "machine safety"],
     "combustible_dust": ["combustible dust", "dust explosion", "dust collection"],
-    "improper_classification": ["misclassification", "class code", "improper classification", "audit"],
+    "improper_classification": ["misclassification", "class code", "improper classification", "employee misclassification"],
     "hired_non_owned_auto": ["hired and non-owned", "hnoa", "hired auto", "non-owned auto"],
 }
 
 ACCOUNT_TRAIT_KEYWORDS = {
-    "uses_subcontractors": ["subcontractor", "sub", "1099 worker"],
+    "uses_subcontractors": ["subcontractor", "1099 worker", "sub-contractor"],
     "multi_state_operations": ["multi-state", "multiple states", "interstate"],
     "high_mod": ["high mod", "experience mod above", "mod over 1"],
     "young_fleet": ["new vehicles", "young fleet"],

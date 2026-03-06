@@ -1,7 +1,7 @@
 """Pydantic schemas for request/response validation."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -89,7 +89,7 @@ class PrepQueryResponse(BaseModel):
 class LossDriver(BaseModel):
     title: str
     why_it_matters: str
-    confidence: str = "medium"
+    confidence: Literal["high", "medium", "low"] = "medium"
     source_ids: list[str] = []
 
 class CoverageBlindSpot(BaseModel):
@@ -108,7 +108,7 @@ class Watchout(BaseModel):
 
 class ConfidenceNote(BaseModel):
     note: str
-    severity: str = "info"
+    severity: Literal["info", "warning", "critical"] = "info"
 
 class CitationMapEntry(BaseModel):
     source_id: str

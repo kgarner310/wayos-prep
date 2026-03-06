@@ -132,6 +132,9 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
     # Use raw SQL for pgvector cosine distance
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
+    # Pre-filter: only consider chunks tagged with the requested industry
+    # or with a matching jurisdiction. Vector similarity alone is not enough
+    # to ensure topical relevance for insurance content.
     sql = text("""
         SELECT
             sc.id as chunk_id,
@@ -152,6 +155,16 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
         WHERE s.status = :status
           AND s.authority_score >= :min_authority
           AND s.freshness_score >= :min_freshness
+          AND (
+            EXISTS (
+              SELECT 1 FROM chunk_tags ct
+              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'industry' AND ct.tag_value = :industry
+            )
+            OR EXISTS (
+              SELECT 1 FROM chunk_tags ct
+              WHERE ct.chunk_id = sc.id AND ct.tag_type = 'jurisdiction' AND ct.tag_value = ANY(:jurisdictions)
+            )
+          )
         ORDER BY ce.embedding <=> :query_embedding::vector
         LIMIT :limit
     """)
@@ -161,6 +174,8 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
         "status": SourceStatus.READY,
         "min_authority": MIN_AUTHORITY_THRESHOLD,
         "min_freshness": MIN_FRESHNESS_THRESHOLD,
+        "industry": industry,
+        "jurisdictions": jurisdictions,
         "limit": limit,
     }).fetchall()
 
@@ -189,13 +204,37 @@ def _vector_search(db: Session, query_embedding: list[float], industry: str,
 
 def _tag_based_search(db: Session, industry: str, jurisdictions: list[str],
                       limit: int) -> list[dict]:
-    """Fallback retrieval using tag matching when embeddings unavailable."""
-    # Find chunks with matching industry or jurisdiction tags
+    """Fallback retrieval using tag matching when embeddings unavailable.
+
+    Filters to chunks that have an industry or jurisdiction tag matching the query.
+    """
+    # Find chunk IDs that have a matching industry tag
+    industry_chunk_ids = (
+        db.query(ChunkTag.chunk_id)
+        .filter(ChunkTag.tag_type == "industry", ChunkTag.tag_value == industry)
+        .subquery()
+    )
+
+    # Find chunk IDs that have a matching jurisdiction tag
+    jurisdiction_chunk_ids = (
+        db.query(ChunkTag.chunk_id)
+        .filter(ChunkTag.tag_type == "jurisdiction", ChunkTag.tag_value.in_(jurisdictions))
+        .subquery()
+    )
+
+    # Get chunks that match industry OR jurisdiction (prefer those matching both via rerank)
+    from sqlalchemy import or_
     chunks = (
         db.query(SourceChunk)
         .join(Source, Source.id == SourceChunk.source_id)
         .filter(Source.status == SourceStatus.READY)
         .filter(Source.authority_score >= MIN_AUTHORITY_THRESHOLD)
+        .filter(
+            or_(
+                SourceChunk.id.in_(industry_chunk_ids),
+                SourceChunk.id.in_(jurisdiction_chunk_ids),
+            )
+        )
         .limit(limit)
         .all()
     )
@@ -216,7 +255,7 @@ def _tag_based_search(db: Session, industry: str, jurisdictions: list[str],
             "jurisdiction_state": chunk.jurisdiction_state,
             "source_title": source.title if source else "",
             "source_url": source.url if source else None,
-            "similarity_score": 0.5,  # neutral score for non-vector results
+            "similarity_score": 0.0,  # no vector similarity for tag-only results
             "tags": tag_set,
         })
 
