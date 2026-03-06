@@ -227,6 +227,455 @@ Manufacturing operations that generate combustible dust face explosion risk:
 - Multi-employer worksite responsibilities under OSHA
 """,
     },
+    # ── Industry Risk Profiles ───────────────────────────────────────
+    {
+        "title": "Roofing Contractor Industry Risk Profile",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": None,
+        "published_at": datetime(2025, 11, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# Roofing Contractor Industry Risk Profile
+
+## Workers Compensation
+
+### Top Injury Types
+Falls from height are the dominant workers comp loss driver for roofing contractors. OSHA consistently ranks roofing as the construction trade with the highest fatal fall rate. Other frequent injury types include:
+- Lacerations and puncture wounds from tools, nails, and sheet metal
+- Heat illness and heat stroke during summer roofing operations
+- Lifting injury and back injury from carrying bundles of shingles up ladders
+- Struck by falling debris or materials dropped from rooftop
+- Repetitive strain from prolonged kneeling, bending, and overhead work
+
+### Typical Severity Drivers
+- Fall claims average $100,000-$250,000 in workers comp costs; fatalities drive costs far higher
+- Steep-slope residential re-roofing carries higher severity than flat commercial work
+- Inexperienced or untrained crew members are 4x more likely to sustain serious falls
+- Heat illness claims spike during peak summer season, especially in southern states
+- Delayed reporting of cumulative trauma (knees, back, shoulders) inflates claim costs
+
+## General Liability
+
+### Common Claims
+- Property damage to customer structures during tear-off (broken windows, gutter damage, landscaping)
+- Completed operations claims from water intrusion after project completion
+- Third-party bodily injury from falling materials or debris
+- Damage to adjacent structures during roofing operations
+
+### Operational Exposures
+- Subcontractor use creates vicarious liability if sub causes injury or damage
+- Certificate of insurance tracking gaps leave the GC exposed
+- Residential exposure increases frequency of homeowner complaints and claims
+- Failure to properly protect occupied buildings during tear-off operations
+
+## Commercial Auto
+
+### Typical Exposures
+- Trucks hauling materials and equipment between shop and job sites
+- Trailer-towing exposure with material flatbeds and equipment trailers
+- Hired and non-owned auto exposure when crews use personal vehicles
+- Driver MVR issues—roofing crews may not be screened as rigorously as trucking drivers
+- Material delivery runs to suppliers create additional road time and exposure
+
+## Property
+
+### Typical Equipment and Building Risks
+- Equipment theft from job sites and unlocked trailers is common
+- Inland marine exposure for tools, compressors, generators, and specialty equipment
+- Shop/warehouse property for material storage and vehicle maintenance
+- Builders risk exposure during active construction projects
+- Damage to owned equipment from weather events at open job sites
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- Fall protection (29 CFR 1926.501) is OSHA's most-cited standard for roofing
+- Scaffold and ladder safety violations are frequent citations
+- Hazard communication for adhesives, solvents, and coatings
+- Silica dust exposure from cutting concrete tiles or masonry
+- Multi-employer worksite doctrine creates liability for controlling employers
+- Misclassification of 1099 workers vs W-2 employees triggers audit exposure
+
+## Suggested Producer Questions
+
+Producers should ask roofing contractor clients these key questions during meetings:
+1. What is your written fall protection plan and how often do you conduct toolbox talks?
+2. What percentage of your work is residential vs commercial, and steep-slope vs flat?
+3. Do you use subcontractors or 1099 workers? How do you verify their certificates of insurance?
+4. What is your experience modification rate and what loss control measures are you taking to improve it?
+5. How do you manage your fleet—do crews drive company vehicles or personal trucks to job sites?
+6. What is your annual payroll and how is it allocated across class codes?
+7. Do you have a return-to-work program for injured employees?
+8. Have you had any OSHA inspections or citations in the past 3 years?
+""",
+    },
+    {
+        "title": "Landscaping Contractor Industry Risk Profile",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": None,
+        "published_at": datetime(2025, 11, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# Landscaping Contractor Industry Risk Profile
+
+## Workers Compensation
+
+### Top Injury Types
+Landscaping contractors face a wide range of workplace injury exposures. The most frequent workers comp claims include:
+- Lacerations and amputations from mowers, trimmers, chainsaws, and edgers
+- Struck by falling branch or tree limb during tree service operations
+- Heat illness and heat exhaustion from prolonged outdoor work in high temperatures
+- Lifting injury and back injury from manual handling of soil, sod, pavers, and stone
+- Slip and fall on uneven terrain, wet grass, and muddy conditions
+- Insect stings, animal bites, and allergic reactions in outdoor environments
+- Eye injuries from flying debris during mowing, trimming, and blowing operations
+
+### Typical Severity Drivers
+- Tree service operations carry the highest severity—chainsaw lacerations and falls from height during tree trimming
+- Heat illness claims spike in summer months; employers with no written heat illness prevention program face increased severity
+- Seasonal worker turnover means new hires with minimal training are constantly entering the workforce
+- Heavy equipment (backhoe, skid steer, excavator) use increases severity when incidents occur
+- Crews working near roadways face struck-by vehicle exposure
+
+## General Liability
+
+### Common Claims
+- Property damage to customer landscaping, irrigation systems, underground utilities, and fences
+- Damage to sidewalks, driveways, and structures from heavy equipment
+- Slip and fall claims from customers or pedestrians on work areas
+- Chemical application claims—herbicide overspray damaging neighbor properties
+- Completed operations claims from tree removal (stump regrowth, root damage)
+
+### Operational Exposures
+- Pesticide and herbicide application creates environmental and bodily injury liability
+- Working on residential properties increases frequency of property damage claims
+- Subcontractor use for specialized work (irrigation, hardscaping) requires certificate tracking
+- Snow removal operations (seasonal add-on) create significant slip and fall premises liability
+
+## Commercial Auto
+
+### Typical Exposures
+- Truck and trailer combinations are the primary fleet exposure—crews tow mowers and equipment daily
+- Drivers may have limited commercial driving experience; MVR screening is often lax
+- Hired and non-owned auto exposure when workers drive personal vehicles between sites
+- Equipment trailers create towing liability and wider turning radius risks
+- Multiple daily trips between job sites increase road exposure substantially
+- Seasonal payroll peaks mean temporary drivers with less experience on the road
+
+## Property
+
+### Typical Equipment and Building Risks
+- Equipment theft is a major exposure—mowers, blowers, trimmers stored on open trailers
+- Inland marine coverage needed for portable equipment and tools
+- Shop/yard property for equipment storage, maintenance, and fuel storage
+- Fuel storage tanks create environmental liability at the yard
+- Seasonal equipment (snow plows, salt spreaders) requires year-round coverage
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- No specific OSHA landscaping standard exists, but general industry (1910) and construction (1926) standards apply
+- Tree care operations fall under ANSI Z133 safety standard
+- Pesticide applicator licensing required by state agriculture departments
+- Heat illness prevention programs increasingly required (federal and state level)
+- Eye and face protection required for trimming, mowing, and chipping operations
+- Employee misclassification of seasonal workers as 1099 contractors triggers WC audit risk
+- Hearing protection required for prolonged equipment operation (OSHA permissible exposure limits)
+
+## Suggested Producer Questions
+
+Producers should ask landscaping contractor clients these key questions:
+1. Do you perform tree service work (trimming, removal)? What is the maximum height your crews work at?
+2. What types of heavy equipment do you operate—backhoe, skid steer, excavator?
+3. What is your seasonal payroll fluctuation? How many seasonal workers do you hire?
+4. Do you apply pesticides or herbicides? Are your applicators properly licensed?
+5. How do you secure equipment overnight—locked trailers, fenced yard, GPS tracking?
+6. Do you offer snow removal services in winter? What is that revenue percentage?
+7. How many trucks and trailers are in your fleet and how do you screen drivers?
+8. Do you have a written heat illness prevention program for outdoor crews?
+9. Do you use subcontractors for irrigation, hardscaping, or specialty work?
+""",
+    },
+    {
+        "title": "HVAC Contractor Industry Risk Profile",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": None,
+        "published_at": datetime(2025, 11, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# HVAC Contractor Industry Risk Profile
+
+## Workers Compensation
+
+### Top Injury Types
+HVAC contractors face diverse workplace injury exposures spanning heating and cooling system installation, maintenance, and repair. Common workers comp claims include:
+- Burns and scalds from hot surfaces, soldering/brazing torches, and steam lines
+- Falls from height when working on rooftop HVAC units, ladders, and scaffolding
+- Chemical exposure from refrigerant leaks (R-410A, R-22) causing frostbite or respiratory irritation
+- Electrical shock and arc flash during wiring and control panel work
+- Lifting injury and back injury from carrying heavy compressors, condensers, and ductwork
+- Lacerations from sheet metal fabrication and ductwork installation
+- Confined space incidents in crawl spaces, attics, and mechanical rooms
+
+### Typical Severity Drivers
+- Rooftop unit work combines fall from height exposure with heavy lifting—dual severity risk
+- Refrigerant chemical exposure can cause cardiac sensitization in concentrated doses
+- Electrical incidents carry high severity including burn and fatality potential
+- Attic work in summer combines heat illness with confined space and fall hazards
+- Apprentice-level workers are more likely to sustain burns and cuts from inexperience
+
+## General Liability
+
+### Common Claims
+- Property damage from refrigerant leaks, water leaks, and system malfunctions
+- Completed operations claims—faulty installation causing water damage, mold, or fire
+- Bodily injury to building occupants from carbon monoxide leaks after furnace service
+- Damage to customer property (flooring, ceilings, walls) during installation
+- Professional liability exposure from system design errors and efficiency guarantees
+
+### Operational Exposures
+- Residential work increases claim frequency due to direct customer interaction
+- New construction vs retrofit work carries different liability profiles
+- Subcontractor use for electrical, plumbing, or controls work requires certificate tracking
+- Warranty and callback obligations create ongoing completed operations exposure
+
+## Commercial Auto
+
+### Typical Exposures
+- Service van fleet is the primary auto exposure—technicians driving between calls daily
+- Vans loaded with heavy tools and parts increase stopping distances and damage severity
+- High annual mileage per vehicle increases frequency exposure
+- Hired and non-owned auto coverage needed if technicians ever drive personal vehicles
+- GPS fleet tracking and telematics increasingly used for driver monitoring
+
+## Property
+
+### Typical Equipment and Building Risks
+- Service van contents (tools, equipment, diagnostic instruments, refrigerant) need inland marine coverage
+- Shop/warehouse property for parts inventory and fabrication
+- Equipment theft from unlocked service vans is common
+- Refrigerant inventory storage carries environmental liability
+- Sheet metal fabrication shop creates fire exposure from welding and brazing
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- Electrical safety standards (NFPA 70E arc flash) apply to HVAC electrical work
+- Confined space entry permits required for mechanical rooms and crawl spaces
+- EPA Section 608 certification required for refrigerant handling
+- Fall protection required for rooftop unit service above 6 feet
+- Hazard communication for refrigerants, solvents, and brazing materials
+- State licensing requirements for HVAC contractors vary significantly
+- Lead and asbestos exposure during retrofit work in older buildings
+
+## Suggested Producer Questions
+
+Producers should ask HVAC contractor clients these key questions:
+1. What percentage of your work is residential vs commercial? New construction vs service/retrofit?
+2. How much rooftop unit work do you perform and what fall protection systems do you use?
+3. Are all technicians EPA Section 608 certified for refrigerant handling?
+4. How many service vans are in your fleet and what is the average annual mileage?
+5. Do you perform sheet metal fabrication in-house or subcontract it?
+6. Do you use subcontractors for electrical, plumbing, or controls work? How do you track certificates?
+7. What is your experience modification rate and have you implemented a safety committee?
+8. Do you work in older buildings where lead paint or asbestos may be present?
+9. Do you offer energy efficiency guarantees or performance contracts?
+""",
+    },
+    {
+        "title": "Restaurant Industry Risk Profile",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": None,
+        "published_at": datetime(2025, 11, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# Restaurant Industry Risk Profile
+
+## Workers Compensation
+
+### Top Injury Types
+Restaurants have one of the highest workers comp claim frequencies across all industries due to fast-paced kitchen environments and high employee turnover. The most common injury types include:
+- Burns and scalds from grease, hot surfaces, fryer oil, ovens, and steam equipment
+- Lacerations from knives, slicers, food processors, and broken glassware
+- Slip and fall on wet or greasy kitchen floors—the single highest-frequency claim type
+- Lifting injury and back injury from carrying heavy food containers, kegs, and supplies
+- Repetitive strain from prolonged standing, chopping, and repetitive food prep motions
+- Struck by falling objects from shelving and walk-in cooler storage
+
+### Typical Severity Drivers
+- Deep fryer burns are among the most severe kitchen injuries, often requiring skin grafts
+- Slip and fall claims drive the highest total incurred costs due to sheer volume
+- High employee turnover means constant onboarding of untrained workers who are more injury-prone
+- Seasonal payroll spikes (holidays, summer) bring temporary workers with minimal training
+- Late-night operations increase fatigue-related incidents
+- Young workforce (under 25) has statistically higher injury rates
+
+## General Liability
+
+### Common Claims
+- Slip and fall by customers on wet floors, parking lots, and entrance areas
+- Foodborne illness and food contamination claims from improper food handling or storage
+- Food safety violations leading to customer illness (norovirus, salmonella, E. coli)
+- Liquor liability claims from serving intoxicated patrons (assault, DUI accidents)
+- Allergic reaction claims from undisclosed allergens in menu items
+- Foreign object in food claims
+
+### Operational Exposures
+- Liquor liability is a major exposure for restaurants serving alcohol—dram shop laws vary by state
+- Food contamination and foodborne illness claims can trigger significant brand and legal exposure
+- Delivery operations (in-house or third-party) add auto and premises liability
+- Outdoor dining and patio areas expand premises liability footprint
+- Live entertainment, playground equipment, and special events add liability dimensions
+
+## Commercial Auto
+
+### Typical Exposures
+- Delivery vehicles for catering, food delivery, and supply runs
+- Hired and non-owned auto exposure when employees use personal vehicles for delivery
+- Third-party delivery drivers (DoorDash, Uber Eats) may or may not be covered under restaurant's policy
+- Limited fleet exposure for most restaurants—typically 1-3 delivery vehicles
+- Catering operations may require box truck or van
+
+## Property
+
+### Typical Equipment and Building Risks
+- Commercial kitchen equipment (ovens, fryers, refrigeration, exhaust hoods) is high-value and specialized
+- Grease fire is the leading cause of restaurant property claims—hood suppression systems are critical
+- Refrigeration breakdown causing food spoilage is a common equipment breakdown claim
+- Water damage from plumbing failures in dish stations and restrooms
+- Business interruption exposure is high—restaurant closures from fire or health inspection failures
+- Lease obligations may require specific property coverage levels
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- OSHA general industry standards (1910) apply—slip protection, hazard communication, PPE
+- Health inspection failures can trigger immediate closure and significant revenue loss
+- Food safety compliance (FDA Food Code, state health department regulations) is paramount
+- Liquor license compliance and responsible service training requirements
+- Fire code compliance for commercial kitchen hood suppression systems
+- Employee misclassification of tipped workers and the impact on workers comp audits
+- Child labor law compliance for restaurants employing minors (hours, equipment restrictions)
+
+## Suggested Producer Questions
+
+Producers should ask restaurant clients these key questions:
+1. Do you serve alcohol? What is your food-to-liquor revenue split?
+2. What is your annual employee turnover rate and how do you onboard new kitchen staff on safety?
+3. When was your kitchen hood suppression system last inspected and serviced?
+4. Do you perform any delivery operations—in-house drivers or third-party platforms?
+5. What food safety training and certification do your managers hold (ServSafe, state equivalent)?
+6. How do you handle customer food allergy requests?
+7. What is your annual payroll and how much is tipped employee payroll?
+8. Have you had any health inspection failures or critical violations in the past 2 years?
+9. Do you have a written slip and fall prevention program (floor mats, non-slip shoes, cleaning schedule)?
+10. Do you host special events, live entertainment, or operate a patio/outdoor dining area?
+""",
+    },
+    {
+        "title": "Trucking Company Industry Risk Profile",
+        "source_type": "report",
+        "authority_level": "carrier",
+        "jurisdiction_state": None,
+        "published_at": datetime(2025, 11, 1, tzinfo=timezone.utc),
+        "publisher": "WAYOS Risk Intelligence",
+        "raw_text": """# Trucking Company Industry Risk Profile
+
+## Workers Compensation
+
+### Top Injury Types
+Despite drivers spending most time behind the wheel, trucking companies generate significant workers comp claims. The most common injury types include:
+- Lifting injury and back injury from loading, unloading, and securing freight
+- Slip and fall at docks, terminals, fuel stops, and customer delivery locations
+- Struck by falling cargo during loading and unloading operations
+- Cumulative trauma to back, neck, and shoulders from prolonged seated driving
+- Knee and ankle injuries from climbing in and out of cab and trailer
+- Repetitive strain from coupling/uncoupling trailers and operating landing gear
+- Crush injuries from being caught between vehicles during backing and coupling
+
+### Typical Severity Drivers
+- Loading and unloading injuries account for 40% of trucker workers comp claims
+- Multi-state operations complicate workers comp jurisdiction and state filing requirements
+- Driver turnover exceeding 90% for large carriers means constant influx of less-experienced workers
+- Fatigue-related incidents carry higher severity due to impaired reaction times
+- Older driver demographics increase claim severity and duration
+- Delayed medical reporting when drivers are on the road inflates claim costs
+
+## General Liability
+
+### Common Claims
+- Premises liability at terminal and yard locations (slip and fall by visitors, vendors)
+- Cargo damage claims and disputes during transportation
+- Environmental liability from fuel spills at terminals and during transit
+- Contractual liability arising from shipper and broker agreements
+- Completed operations exposure for freight brokerage services
+
+### Operational Exposures
+- Terminal and warehouse premises liability for owned or leased facilities
+- Pollution liability from diesel fuel storage and transportation of hazardous materials
+- Contractual risk transfer in shipper agreements often requires specific coverage terms
+- Cargo liability varies dramatically by commodity type (general freight vs high-value, hazmat)
+- Owner-operator relationships create subcontractor transfer and coverage gap risks
+
+## Commercial Auto
+
+### Typical Exposures
+- Commercial auto liability is the largest single insurance cost for trucking companies
+- Average commercial auto liability claim exceeds $150,000; nuclear verdicts exceed $10 million
+- Distracted driving and driver fatigue are the leading preventable accident causes
+- DOT compliance violations (hours of service, vehicle maintenance) correlate with accident frequency
+- Tractor-trailer combinations create higher severity in collisions due to vehicle weight
+- Hired and non-owned auto exposure from owner-operators and leased equipment
+- Motor cargo coverage protects against freight damage during transit
+- Trailer interchange agreements need specific endorsements
+- Non-owned trailer physical damage is commonly overlooked
+- Young fleet (newer vehicles) may reduce maintenance-related accidents but higher replacement costs
+
+### Nuclear Verdict Exposure
+- Jury awards exceeding $10 million in trucking cases have increased 300% in the last decade
+- Reptile theory litigation targets safety culture and management decisions
+- Dash cameras (front and driver-facing) are the strongest defense against fraudulent and inflated claims
+- Umbrella/excess limits of $5-10 million are increasingly the minimum standard
+- Some excess carriers are pulling back from the trucking market entirely
+
+## Property
+
+### Typical Equipment and Building Risks
+- Terminal and warehouse property at owned or leased locations
+- Fleet maintenance shop fire exposure from fuel, solvents, and welding
+- Business interruption if terminal operations are disrupted
+- Inland marine for trailers, containers, and specialized equipment
+- Cargo storage exposure at cross-dock and warehouse facilities
+- Cold storage and refrigeration breakdown for temperature-controlled carriers
+
+## Regulatory and Safety
+
+### OSHA and Compliance Risks
+- FMCSA CSA (Compliance, Safety, Accountability) scores directly impact insurance pricing and carrier selection
+- ELD (Electronic Logging Device) mandate compliance is now table stakes
+- Hours of service violations remain a top citation category
+- Drug and alcohol testing program (DOT requirements) must be strictly maintained
+- Annual driver qualification file maintenance is a federal requirement
+- FMCSA Safety Measurement System BASICs (Behavior Analysis and Safety Improvement Categories)
+- Vehicle maintenance and inspection compliance (DVIR, annual DOT inspections)
+- Hazardous materials endorsement and training requirements for applicable carriers
+- Interstate vs intrastate operating authority distinctions affect regulatory requirements
+
+## Suggested Producer Questions
+
+Producers should ask trucking company clients these key questions:
+1. What is your FMCSA CSA score and which BASICs are you flagged on?
+2. What is your annual driver turnover rate and what retention programs do you have?
+3. What types of freight do you haul and do you transport any hazardous materials?
+4. Do you use owner-operators? What percentage of your fleet is owner-op vs company drivers?
+5. Do you have dash cameras installed fleet-wide (front and driver-facing)?
+6. What are your current commercial auto liability limits and umbrella limits?
+7. How do you screen new drivers—MVR frequency, road test, background check?
+8. What is your DOT inspection out-of-service rate?
+9. Do you operate interstate or intrastate, and in how many states?
+10. What is your fleet size, average vehicle age, and preventive maintenance program?
+""",
+    },
 ]
 
 

@@ -92,6 +92,7 @@ class TagType:
 STARTER_INDUSTRY_TAGS = [
     "roofing", "trucking", "manufacturing", "habitational", "restaurant",
     "retail", "artisan_contractor", "auto_service", "landscaping", "wholesale",
+    "hvac",
 ]
 
 STARTER_COVERAGE_TAGS = [
@@ -105,6 +106,8 @@ STARTER_RISK_THEME_TAGS = [
     "subcontractor_transfer", "certificate_tracking", "residential_exposure",
     "equipment_theft", "slip_and_fall", "machine_guarding", "combustible_dust",
     "improper_classification", "hired_non_owned_auto",
+    "burns_and_scalds", "heat_illness", "struck_by_object",
+    "food_contamination", "chemical_exposure", "lifting_ergonomic",
 ]
 
 STARTER_ACCOUNT_TRAIT_TAGS = [

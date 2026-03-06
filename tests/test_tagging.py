@@ -16,9 +16,10 @@ def _mock_db():
 
 
 def test_industry_keywords_populated():
-    assert len(INDUSTRY_KEYWORDS) == 10
+    assert len(INDUSTRY_KEYWORDS) == 11
     assert "roofing" in INDUSTRY_KEYWORDS
     assert "trucking" in INDUSTRY_KEYWORDS
+    assert "hvac" in INDUSTRY_KEYWORDS
 
 
 def test_coverage_keywords_populated():

@@ -28,6 +28,7 @@ INDUSTRY_KEYWORDS = {
     "auto_service": ["auto repair", "mechanic", "body shop", "auto service", "tire shop"],
     "landscaping": ["landscaping", "lawn care", "tree service", "grounds maintenance", "mowing"],
     "wholesale": ["wholesale", "distribution", "warehouse", "distributor"],
+    "hvac": ["hvac", "heating and cooling", "air conditioning", "refrigeration", "furnace", "ductwork"],
 }
 
 COVERAGE_KEYWORDS = {
@@ -56,6 +57,12 @@ RISK_THEME_KEYWORDS = {
     "combustible_dust": ["combustible dust", "dust explosion", "dust collection"],
     "improper_classification": ["misclassification", "class code", "improper classification", "employee misclassification"],
     "hired_non_owned_auto": ["hired and non-owned", "hnoa", "hired auto", "non-owned auto"],
+    "burns_and_scalds": ["burn", "scald", "grease fire", "hot surface", "thermal burn", "fryer"],
+    "heat_illness": ["heat illness", "heat stroke", "heat exhaustion", "heat stress", "outdoor heat"],
+    "struck_by_object": ["struck by", "falling object", "falling branch", "tree limb", "falling debris"],
+    "food_contamination": ["foodborne", "food contamination", "food safety", "food poisoning", "health inspection"],
+    "chemical_exposure": ["refrigerant", "chemical exposure", "chemical burn", "toxic exposure", "r-410a"],
+    "lifting_ergonomic": ["lifting injury", "back injury", "ergonomic", "manual handling", "repetitive strain"],
 }
 
 ACCOUNT_TRAIT_KEYWORDS = {
@@ -184,9 +191,9 @@ def llm_tag_source(db: Session, source: Source) -> list[SourceTag]:
             model=settings.LLM_MODEL,
             messages=[
                 {"role": "system", "content": """Extract insurance-related tags from this text. Return JSON with these arrays:
-- industries: from [roofing, trucking, manufacturing, habitational, restaurant, retail, artisan_contractor, auto_service, landscaping, wholesale]
+- industries: from [roofing, trucking, manufacturing, habitational, restaurant, retail, artisan_contractor, auto_service, landscaping, wholesale, hvac]
 - coverages: from [workers_comp, general_liability, commercial_auto, umbrella, property, builders_risk, inland_marine, cyber, epli, professional_liability]
-- risk_themes: from [falls_from_height, fleet_accidents, driver_turnover, subcontractor_transfer, certificate_tracking, residential_exposure, equipment_theft, slip_and_fall, machine_guarding, combustible_dust, improper_classification, hired_non_owned_auto]
+- risk_themes: from [falls_from_height, fleet_accidents, driver_turnover, subcontractor_transfer, certificate_tracking, residential_exposure, equipment_theft, slip_and_fall, machine_guarding, combustible_dust, improper_classification, hired_non_owned_auto, burns_and_scalds, heat_illness, struck_by_object, food_contamination, chemical_exposure, lifting_ergonomic]
 - jurisdictions: US state codes (lowercase 2-letter) or "federal", "national"
 
 Only include tags clearly supported by the text. Be conservative."""},

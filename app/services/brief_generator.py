@@ -245,6 +245,12 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         "improper_classification": "Improper Classification",
         "certificate_tracking": "Certificate Tracking Gaps",
         "hired_non_owned_auto": "Hired/Non-Owned Auto Exposure",
+        "burns_and_scalds": "Burns and Scalds",
+        "heat_illness": "Heat Illness Exposure",
+        "struck_by_object": "Struck-By Object Hazards",
+        "food_contamination": "Food Contamination / Foodborne Illness",
+        "chemical_exposure": "Chemical / Refrigerant Exposure",
+        "lifting_ergonomic": "Lifting and Ergonomic Injuries",
     }
 
     # Build a map from risk theme -> source_ids whose chunks actually carry that tag
