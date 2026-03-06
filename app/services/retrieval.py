@@ -12,6 +12,7 @@ from app.models.models import (
     Query, RetrievalRun, RetrievalResult,
 )
 from app.services.embeddings import get_query_embedding
+from app.services.graph_expansion import expand_risk_graph, get_expansion_seeds
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,17 @@ def run_retrieval(
     # Determine jurisdiction matches
     jurisdiction_matches = _get_jurisdiction_matches(state)
 
+    # Graph expansion — discover related themes/coverages
+    seeds = get_expansion_seeds(
+        industry, state,
+        entity_type=entity_type,
+        public_entity_type=public_entity_type,
+        department=department,
+    )
+    graph_result = expand_risk_graph(db, seeds, depth=1)
+    expanded_risk_themes = graph_result.get("expanded_risk_themes", [])
+    expanded_coverages = graph_result.get("expanded_coverages", [])
+
     # Build filters
     filters = {
         "industry": industry,
@@ -71,6 +83,10 @@ def run_retrieval(
         filters["public_entity_type"] = public_entity_type
     if department:
         filters["department"] = department
+    if expanded_risk_themes:
+        filters["graph_expanded_risk_themes"] = expanded_risk_themes
+    if expanded_coverages:
+        filters["graph_expanded_coverages"] = expanded_coverages
 
     if query_embedding:
         candidates = _vector_search(
@@ -91,12 +107,24 @@ def run_retrieval(
         candidates, industry, state, jurisdiction_matches,
         entity_type=entity_type, public_entity_type=public_entity_type,
         department=department,
+        expanded_risk_themes=expanded_risk_themes,
+        expanded_coverages=expanded_coverages,
     )
 
     # Select top results
     selected = scored[:TOP_K_SELECTED]
 
-    # Store retrieval run
+    # Store retrieval run (include graph expansion in filters_json for debug)
+    if graph_result.get("expanded_themes"):
+        filters["graph_expansion"] = {
+            "seed_count": graph_result["seed_count"],
+            "expansion_hops": graph_result["expansion_hops"],
+            "expanded_themes": [
+                {"name": t["name"], "node_type": t["node_type"], "weight": t["weight"]}
+                for t in graph_result["expanded_themes"][:10]
+            ],
+        }
+
     retrieval_run = RetrievalRun(
         query_id=query.id,
         embedding_model=settings.EMBEDDING_MODEL if query_embedding else None,
@@ -358,7 +386,9 @@ def _rerank(candidates: list[dict], industry: str, state: str,
             jurisdictions: list[str],
             entity_type: str | None = None,
             public_entity_type: str | None = None,
-            department: str | None = None) -> list[dict]:
+            department: str | None = None,
+            expanded_risk_themes: list[str] | None = None,
+            expanded_coverages: list[str] | None = None) -> list[dict]:
     """Rerank candidates using blended scoring."""
     if not candidates:
         return []
@@ -393,6 +423,19 @@ def _rerank(candidates: list[dict], industry: str, state: str,
             tag_overlap += 0.1
         if risk_tags:
             tag_overlap += 0.1
+
+        # Graph expansion bonus: boost chunks that match graph-expanded themes/coverages
+        graph_bonus = 0.0
+        if expanded_risk_themes:
+            matched_expanded = [t for t in tags if t[0] == "risk_theme" and t[1] in expanded_risk_themes]
+            if matched_expanded:
+                graph_bonus += min(len(matched_expanded) * 0.08, 0.15)
+        if expanded_coverages:
+            matched_cov = [t for t in tags if t[0] == "coverage" and t[1] in expanded_coverages]
+            if matched_cov:
+                graph_bonus += min(len(matched_cov) * 0.06, 0.10)
+        tag_overlap += graph_bonus
+
         tag_overlap = min(tag_overlap, 1.0)
 
         # Jurisdiction match score

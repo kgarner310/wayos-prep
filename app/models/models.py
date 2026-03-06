@@ -226,6 +226,68 @@ class BriefSource(Base):
     chunk = relationship("SourceChunk")
 
 
+class ProducerQuestion(Base):
+    __tablename__ = "producer_questions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    question_text = Column(Text, nullable=False)
+    category = Column(Text, nullable=False)
+    department = Column(Text)
+    risk_theme = Column(Text)
+    coverage = Column(Text)
+    entity_type = Column(Text, nullable=False, default="public_entity")
+    purpose = Column(Text)
+    follow_up_questions = Column(JSONB)
+    importance_score = Column(Numeric(3, 1), default=5.0)
+    difficulty_score = Column(Numeric(3, 1), default=5.0)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_producer_questions_category", "category"),
+        Index("ix_producer_questions_department", "department"),
+        Index("ix_producer_questions_risk_theme", "risk_theme"),
+        Index("ix_producer_questions_coverage", "coverage"),
+        Index("ix_producer_questions_entity_type", "entity_type"),
+    )
+
+
+class RiskTheme(Base):
+    __tablename__ = "risk_themes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    name = Column(Text, nullable=False, unique=True)
+    node_type = Column(Text, nullable=False)  # industry, risk_theme, coverage, department, entity_type
+    display_label = Column(Text)
+    description = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_risk_themes_node_type", "node_type"),
+        Index("ix_risk_themes_name", "name"),
+    )
+
+
+class RiskThemeEdge(Base):
+    __tablename__ = "risk_theme_edges"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    from_theme_id = Column(UUID(as_uuid=True), ForeignKey("risk_themes.id", ondelete="CASCADE"), nullable=False)
+    to_theme_id = Column(UUID(as_uuid=True), ForeignKey("risk_themes.id", ondelete="CASCADE"), nullable=False)
+    edge_type = Column(Text, nullable=False)  # causes, mitigated_by, requires_coverage, co_occurs, etc.
+    weight = Column(Numeric(4, 2), nullable=False, default=0.50)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    from_theme = relationship("RiskTheme", foreign_keys=[from_theme_id])
+    to_theme = relationship("RiskTheme", foreign_keys=[to_theme_id])
+
+    __table_args__ = (
+        Index("ix_risk_theme_edges_from", "from_theme_id"),
+        Index("ix_risk_theme_edges_to", "to_theme_id"),
+        Index("ix_risk_theme_edges_type", "edge_type"),
+        UniqueConstraint("from_theme_id", "to_theme_id", "edge_type", name="uq_risk_theme_edge"),
+    )
+
+
 class FeedbackEvent(Base):
     __tablename__ = "feedback_events"
 

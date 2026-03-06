@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.enums import TagType
 from app.models.models import GeneratedBrief, BriefSource, Query, RetrievalRun, ChunkTag
 from app.schemas.schemas import BriefOutput
+from app.services.producer_questions import get_questions_for_brief
 
 logger = logging.getLogger(__name__)
 
@@ -401,12 +402,25 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
             "source_ids": source_ids[:1],
         })
 
-    # Standard questions
-    questions = [
-        {"question": "What is your current safety program?", "purpose": "Assess risk management maturity", "source_ids": []},
-        {"question": "Do you use subcontractors? How do you manage certificates?", "purpose": "Evaluate subcontractor exposure and certificate compliance", "source_ids": []},
-        {"question": "What does your fleet look like and who drives?", "purpose": "Assess commercial auto and hired/non-owned exposure", "source_ids": []},
-    ]
+    # Retrieve producer questions from database
+    db_questions = get_questions_for_brief(
+        db=db,
+        entity_type=entity_type,
+        department=department,
+        risk_themes=list(risk_themes) if risk_themes else None,
+        coverages=list(coverage_tags) if coverage_tags else None,
+        limit=5,
+    )
+
+    if db_questions:
+        questions = db_questions
+    else:
+        # Fallback to standard hardcoded questions if no DB questions available
+        questions = [
+            {"question": "What is your current safety program?", "purpose": "Assess risk management maturity", "source_ids": []},
+            {"question": "Do you use subcontractors? How do you manage certificates?", "purpose": "Evaluate subcontractor exposure and certificate compliance", "source_ids": []},
+            {"question": "What does your fleet look like and who drives?", "purpose": "Assess commercial auto and hired/non-owned exposure", "source_ids": []},
+        ]
 
     if "high_mod" in account_traits or (current_mod and current_mod > 1.0):
         questions.append({
