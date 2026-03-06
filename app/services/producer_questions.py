@@ -24,6 +24,7 @@ def get_producer_questions(
     risk_themes: list[str] | None = None,
     coverages: list[str] | None = None,
     category: str | None = None,
+    categories: list[str] | None = None,
     limit: int = MAX_QUESTIONS,
 ) -> list[dict]:
     """Retrieve producer questions matching query criteria.
@@ -49,9 +50,11 @@ def get_producer_questions(
             )
         )
 
-    # Category filter
+    # Category filter (single or graph-expanded list)
     if category:
         q = q.filter(ProducerQuestion.category == category)
+    elif categories:
+        q = q.filter(ProducerQuestion.category.in_(categories))
 
     # Risk theme and coverage filters (OR logic — match any)
     theme_coverage_filters = []
@@ -99,6 +102,7 @@ def get_questions_for_brief(
     department: str | None = None,
     risk_themes: list[str] | None = None,
     coverages: list[str] | None = None,
+    categories: list[str] | None = None,
     limit: int = 5,
 ) -> list[dict]:
     """Get producer questions formatted for brief integration.
@@ -112,6 +116,7 @@ def get_questions_for_brief(
         department=department,
         risk_themes=risk_themes,
         coverages=coverages,
+        categories=categories,
         limit=limit,
     )
 

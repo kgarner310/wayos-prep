@@ -275,21 +275,21 @@ class RiskThemeEdge(Base):
     __tablename__ = "risk_theme_edges"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
-    from_theme_id = Column(UUID(as_uuid=True), ForeignKey("risk_themes.id", ondelete="CASCADE"), nullable=False)
-    to_theme_id = Column(UUID(as_uuid=True), ForeignKey("risk_themes.id", ondelete="CASCADE"), nullable=False)
-    edge_type = Column(Text, nullable=False)  # causes, mitigated_by, requires_coverage, co_occurs, etc.
-    weight = Column(Numeric(4, 2), nullable=False, default=0.50)
-    evidence_note = Column(Text)  # Optional note explaining why this edge exists
+    from_node_type = Column(Text, nullable=False)
+    from_node_value = Column(Text, nullable=False)
+    edge_type = Column(Text, nullable=False)
+    to_node_type = Column(Text, nullable=False)
+    to_node_value = Column(Text, nullable=False)
+    weight = Column(Numeric(5, 2), nullable=False, default=1.00)
+    evidence_note = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
 
-    from_theme = relationship("RiskTheme", foreign_keys=[from_theme_id])
-    to_theme = relationship("RiskTheme", foreign_keys=[to_theme_id])
-
     __table_args__ = (
-        Index("ix_risk_theme_edges_from", "from_theme_id"),
-        Index("ix_risk_theme_edges_to", "to_theme_id"),
+        Index("ix_risk_theme_edges_from", "from_node_type", "from_node_value"),
+        Index("ix_risk_theme_edges_to", "to_node_type", "to_node_value"),
         Index("ix_risk_theme_edges_type", "edge_type"),
-        UniqueConstraint("from_theme_id", "to_theme_id", "edge_type", name="uq_risk_theme_edge"),
+        UniqueConstraint("from_node_type", "from_node_value", "edge_type",
+                         "to_node_type", "to_node_value", name="uq_risk_theme_edge"),
     )
 
 

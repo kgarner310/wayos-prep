@@ -1,11 +1,11 @@
 """Risk Theme Graph expansion service.
 
 Provides query-time graph expansion to discover related risk themes,
-coverages, and departments from the risk_themes / risk_theme_edges tables.
+coverages, question categories, and departments using denormalized
+edges in the risk_theme_edges table.
 """
 
 import logging
-from collections import defaultdict
 
 from sqlalchemy.orm import Session
 
@@ -20,22 +20,22 @@ MIN_EXPANSION_WEIGHT = 0.30
 MAX_DEPTH = 2
 
 # Maximum expanded nodes per query
-MAX_EXPANDED_NODES = 15
+MAX_EXPANDED_NODES = 20
 
 
 def expand_risk_graph(
     db: Session,
-    seed_themes: list[str],
+    seed_values: list[str],
     depth: int = 1,
     min_weight: float = MIN_EXPANSION_WEIGHT,
 ) -> dict:
-    """Expand seed themes through the risk graph.
+    """Expand seed values through the denormalized risk graph.
 
     Args:
         db: Database session.
-        seed_themes: List of theme names to expand from (e.g., risk_theme values,
-                     industry names, department names).
-        depth: How many hops to traverse (1 = direct neighbors, 2 = neighbors of neighbors).
+        seed_values: List of node values to expand from (e.g., industry names,
+                     department names, risk themes, account traits).
+        depth: How many hops to traverse (1 = direct neighbors).
         min_weight: Minimum edge weight to follow.
 
     Returns:
@@ -43,40 +43,33 @@ def expand_risk_graph(
             - expanded_themes: list of dicts with name, node_type, weight, path
             - expanded_coverages: list of coverage names discovered
             - expanded_risk_themes: list of risk_theme names discovered
-            - seed_count: number of seed nodes found in graph
+            - expanded_question_categories: list of question_category names discovered
+            - seed_count: number of seed values matched
             - expansion_hops: actual depth used
     """
     depth = min(depth, MAX_DEPTH)
 
-    # Look up seed nodes
-    seed_nodes = (
-        db.query(RiskTheme)
-        .filter(RiskTheme.name.in_(seed_themes))
-        .all()
-    )
-
-    if not seed_nodes:
+    if not seed_values:
         return _empty_result()
 
-    seed_ids = {n.id for n in seed_nodes}
-    seed_names = {n.name for n in seed_nodes}
+    seed_set = set(v.lower() for v in seed_values)
 
-    # BFS expansion
-    visited = {}  # theme_id -> (weight, path)
-    for node in seed_nodes:
-        visited[node.id] = (1.0, [node.name])
+    # Track visited: node_value -> (weight, node_type, path)
+    visited = {}
+    for sv in seed_set:
+        visited[sv] = (1.0, "seed", [sv])
 
-    frontier = list(seed_ids)
+    frontier = list(seed_set)
 
     for hop in range(depth):
         if not frontier:
             break
 
-        # Get all edges from frontier nodes
+        # Get forward edges: from_node_value IN frontier
         edges = (
             db.query(RiskThemeEdge)
             .filter(
-                RiskThemeEdge.from_theme_id.in_(frontier),
+                RiskThemeEdge.from_node_value.in_(frontier),
                 RiskThemeEdge.weight >= min_weight,
             )
             .all()
@@ -84,101 +77,97 @@ def expand_risk_graph(
 
         next_frontier = []
         for edge in edges:
-            if edge.to_theme_id in visited and edge.to_theme_id not in seed_ids:
-                # Already visited via a different path — keep the higher weight
-                existing_weight = visited[edge.to_theme_id][0]
-                new_weight = float(edge.weight) * visited[edge.from_theme_id][0]
-                if new_weight > existing_weight:
-                    parent_path = visited[edge.from_theme_id][1]
-                    visited[edge.to_theme_id] = (new_weight, parent_path + [f"--{edge.edge_type}-->"])
+            target = edge.to_node_value
+            parent_weight = visited.get(edge.from_node_value, (1.0, "seed", []))[0]
+            propagated_weight = float(edge.weight) * parent_weight
+            parent_path = visited.get(edge.from_node_value, (1.0, "seed", ["?"]))[2]
+            new_path = parent_path + [f"--{edge.edge_type}-->", target]
+
+            if target in seed_set:
+                # Don't re-expand seed nodes
                 continue
 
-            if edge.to_theme_id not in visited:
-                parent_weight = visited[edge.from_theme_id][0]
-                propagated_weight = float(edge.weight) * parent_weight
-                parent_path = visited[edge.from_theme_id][1]
+            if target in visited:
+                # Already visited — keep higher weight
+                if propagated_weight > visited[target][0]:
+                    visited[target] = (propagated_weight, edge.to_node_type, new_path)
+            else:
+                visited[target] = (propagated_weight, edge.to_node_type, new_path)
+                next_frontier.append(target)
 
-                # Load the target node
-                target = db.query(RiskTheme).filter(RiskTheme.id == edge.to_theme_id).first()
-                if target:
-                    visited[edge.to_theme_id] = (
-                        propagated_weight,
-                        parent_path + [f"--{edge.edge_type}-->", target.name],
-                    )
-                    next_frontier.append(edge.to_theme_id)
-
-        frontier = next_frontier
-
-    # Also traverse reverse edges (to_theme_id -> from_theme_id)
-    frontier_rev = list(seed_ids)
-    for hop in range(depth):
-        if not frontier_rev:
-            break
-
+        # Also check reverse edges (to_node_value IN frontier)
         reverse_edges = (
             db.query(RiskThemeEdge)
             .filter(
-                RiskThemeEdge.to_theme_id.in_(frontier_rev),
+                RiskThemeEdge.to_node_value.in_(frontier),
                 RiskThemeEdge.weight >= min_weight,
             )
             .all()
         )
 
-        next_frontier_rev = []
         for edge in reverse_edges:
-            if edge.from_theme_id not in visited:
-                parent_weight = visited.get(edge.to_theme_id, (1.0, []))[0]
-                propagated_weight = float(edge.weight) * parent_weight
-                parent_path = visited.get(edge.to_theme_id, (1.0, ["?"]))[1]
+            target = edge.from_node_value
+            parent_weight = visited.get(edge.to_node_value, (1.0, "seed", []))[0]
+            propagated_weight = float(edge.weight) * parent_weight
+            parent_path = visited.get(edge.to_node_value, (1.0, "seed", ["?"]))[2]
+            new_path = [target, f"--{edge.edge_type}-->"] + parent_path
 
-                target = db.query(RiskTheme).filter(RiskTheme.id == edge.from_theme_id).first()
-                if target:
-                    visited[edge.from_theme_id] = (
-                        propagated_weight,
-                        [target.name, f"--{edge.edge_type}-->"] + parent_path,
-                    )
-                    next_frontier_rev.append(edge.from_theme_id)
+            if target in seed_set:
+                continue
 
-        frontier_rev = next_frontier_rev
+            if target in visited:
+                if propagated_weight > visited[target][0]:
+                    visited[target] = (propagated_weight, edge.from_node_type, new_path)
+            else:
+                visited[target] = (propagated_weight, edge.from_node_type, new_path)
+                next_frontier.append(target)
 
-    # Build result
+        frontier = next_frontier
+
+    # Build result from non-seed visited nodes
     expanded = []
     expanded_coverages = []
     expanded_risk_themes = []
+    expanded_question_categories = []
 
-    # Load all visited nodes
-    all_theme_ids = [tid for tid in visited if tid not in seed_ids]
-    if all_theme_ids:
-        nodes = db.query(RiskTheme).filter(RiskTheme.id.in_(all_theme_ids)).all()
-        node_map = {n.id: n for n in nodes}
+    for value, (weight, node_type, path) in visited.items():
+        if value in seed_set:
+            continue
 
-        for tid in all_theme_ids:
-            node = node_map.get(tid)
-            if not node:
-                continue
-            weight, path = visited[tid]
-            expanded.append({
-                "name": node.name,
-                "node_type": node.node_type,
-                "display_label": node.display_label or node.name.replace("_", " ").title(),
-                "weight": round(weight, 4),
-                "path": path,
-            })
+        expanded.append({
+            "name": value,
+            "node_type": node_type,
+            "display_label": value.replace("_", " ").title(),
+            "weight": round(weight, 4),
+            "path": path,
+        })
 
-            if node.node_type == "coverage":
-                expanded_coverages.append(node.name)
-            elif node.node_type == "risk_theme":
-                expanded_risk_themes.append(node.name)
+        if node_type == "coverage":
+            expanded_coverages.append(value)
+        elif node_type == "risk_theme":
+            expanded_risk_themes.append(value)
+        elif node_type == "question_category":
+            expanded_question_categories.append(value)
 
     # Sort by weight descending, limit
     expanded.sort(key=lambda x: x["weight"], reverse=True)
     expanded = expanded[:MAX_EXPANDED_NODES]
 
+    # Look up display labels from risk_themes table for top results
+    top_names = [e["name"] for e in expanded]
+    if top_names:
+        nodes = db.query(RiskTheme).filter(RiskTheme.name.in_(top_names)).all()
+        label_map = {n.name: n.display_label for n in nodes if n.display_label}
+        for e in expanded:
+            if e["name"] in label_map:
+                e["display_label"] = label_map[e["name"]]
+
     return {
         "expanded_themes": expanded,
         "expanded_coverages": expanded_coverages,
         "expanded_risk_themes": expanded_risk_themes,
-        "seed_count": len(seed_nodes),
+        "expanded_question_categories": expanded_question_categories,
+        "seed_count": len(seed_set),
         "expansion_hops": depth,
     }
 
@@ -189,8 +178,9 @@ def get_expansion_seeds(
     entity_type: str | None = None,
     public_entity_type: str | None = None,
     department: str | None = None,
+    account_traits: list[str] | None = None,
 ) -> list[str]:
-    """Build the list of seed theme names from query parameters."""
+    """Build the list of seed values from query parameters."""
     seeds = [industry.lower()]
 
     if entity_type:
@@ -199,6 +189,8 @@ def get_expansion_seeds(
         seeds.append(public_entity_type.lower())
     if department:
         seeds.append(department.lower())
+    if account_traits:
+        seeds.extend(t.lower() for t in account_traits)
 
     return seeds
 
@@ -208,6 +200,7 @@ def _empty_result() -> dict:
         "expanded_themes": [],
         "expanded_coverages": [],
         "expanded_risk_themes": [],
+        "expanded_question_categories": [],
         "seed_count": 0,
         "expansion_hops": 0,
     }

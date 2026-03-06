@@ -13,7 +13,8 @@ from app.models.models import RiskTheme, RiskThemeEdge, ProducerQuestion
 
 
 # --- Graph Nodes ---
-# node_type: industry | risk_theme | coverage | department | entity_type | public_entity_type
+# node_type: industry | risk_theme | coverage | department | entity_type
+#             | public_entity_type | question_category | account_trait
 
 GRAPH_NODES = [
     # Industries (private scope)
@@ -64,6 +65,7 @@ GRAPH_NODES = [
     {"name": "lifting_ergonomic", "node_type": "risk_theme", "display_label": "Lifting/Ergonomic Injuries", "entity_scope": "both"},
     {"name": "improper_classification", "node_type": "risk_theme", "display_label": "Improper Classification", "entity_scope": "private"},
     {"name": "hired_non_owned_auto", "node_type": "risk_theme", "display_label": "Hired/Non-Owned Auto", "entity_scope": "private"},
+    {"name": "compliance_complexity", "node_type": "risk_theme", "display_label": "Regulatory Compliance Complexity", "entity_scope": "both"},
 
     # Public entity risk themes
     {"name": "police_liability", "node_type": "risk_theme", "display_label": "Police Liability", "entity_scope": "public"},
@@ -82,7 +84,7 @@ GRAPH_NODES = [
     {"name": "grant_compliance", "node_type": "risk_theme", "display_label": "Grant Compliance Risk", "entity_scope": "public"},
     {"name": "procurement_disputes", "node_type": "risk_theme", "display_label": "Procurement Disputes", "entity_scope": "public"},
 
-    # Coverages (both scope — used across entity types)
+    # Coverages
     {"name": "workers_comp", "node_type": "coverage", "display_label": "Workers Compensation", "entity_scope": "both"},
     {"name": "general_liability", "node_type": "coverage", "display_label": "General Liability", "entity_scope": "both"},
     {"name": "commercial_auto", "node_type": "coverage", "display_label": "Commercial Auto", "entity_scope": "private"},
@@ -99,210 +101,311 @@ GRAPH_NODES = [
     {"name": "employment_practices_public", "node_type": "coverage", "display_label": "Employment Practices (Public)", "entity_scope": "public"},
     {"name": "municipal_auto", "node_type": "coverage", "display_label": "Municipal Auto", "entity_scope": "public"},
     {"name": "environmental_liability_public", "node_type": "coverage", "display_label": "Environmental Liability (Public)", "entity_scope": "public"},
+
+    # Question categories
+    {"name": "operations", "node_type": "question_category", "display_label": "Operations", "entity_scope": "both"},
+    {"name": "workforce", "node_type": "question_category", "display_label": "Workforce", "entity_scope": "both"},
+    {"name": "contracts", "node_type": "question_category", "display_label": "Contracts", "entity_scope": "both"},
+    {"name": "fleet", "node_type": "question_category", "display_label": "Fleet", "entity_scope": "both"},
+    {"name": "property_category", "node_type": "question_category", "display_label": "Property", "entity_scope": "both"},
+    {"name": "compliance", "node_type": "question_category", "display_label": "Compliance", "entity_scope": "both"},
+    {"name": "claims", "node_type": "question_category", "display_label": "Claims", "entity_scope": "both"},
+    {"name": "public_interaction", "node_type": "question_category", "display_label": "Public Interaction", "entity_scope": "public"},
+    {"name": "governance", "node_type": "question_category", "display_label": "Governance", "entity_scope": "public"},
+
+    # Account traits
+    {"name": "uses_subcontractors", "node_type": "account_trait", "display_label": "Uses Subcontractors", "entity_scope": "private"},
+    {"name": "multi_state_operations", "node_type": "account_trait", "display_label": "Multi-State Operations", "entity_scope": "both"},
+    {"name": "high_mod", "node_type": "account_trait", "display_label": "High Experience Mod", "entity_scope": "both"},
+    {"name": "young_fleet", "node_type": "account_trait", "display_label": "Young / Inexperienced Fleet", "entity_scope": "both"},
+    {"name": "heavy_equipment", "node_type": "account_trait", "display_label": "Heavy Equipment", "entity_scope": "both"},
+    {"name": "residential_work", "node_type": "account_trait", "display_label": "Residential Work", "entity_scope": "private"},
+    {"name": "habitational_exposure", "node_type": "account_trait", "display_label": "Habitational Exposure", "entity_scope": "private"},
+    {"name": "delivery_operations", "node_type": "account_trait", "display_label": "Delivery Operations", "entity_scope": "private"},
+    {"name": "seasonal_payroll", "node_type": "account_trait", "display_label": "Seasonal Payroll", "entity_scope": "both"},
+    {"name": "high_turnover", "node_type": "account_trait", "display_label": "High Turnover", "entity_scope": "both"},
 ]
 
 
-# --- Graph Edges ---
-# (from_name, to_name, edge_type, weight)
+# --- Graph Edges (denormalized) ---
+# (from_node_type, from_node_value, edge_type, to_node_type, to_node_value, weight, evidence_note)
 
 GRAPH_EDGES = [
-    # Industry -> Risk Theme (causes / exposes_to)
-    ("roofing", "falls_from_height", "causes", 0.95),
-    ("roofing", "subcontractor_transfer", "causes", 0.80),
-    ("roofing", "heat_illness", "causes", 0.70),
-    ("roofing", "struck_by_object", "causes", 0.65),
-    ("roofing", "certificate_tracking", "causes", 0.75),
+    # --------------------------------------------------------
+    # ROOFING INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "falls_from_height", 0.95, "Primary roofing injury driver"),
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "subcontractor_transfer", 0.85, "Subcontract labor common"),
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "fleet_accidents", 0.65, "Job site travel exposure"),
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "heat_illness", 0.70, "Outdoor work in hot conditions"),
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "struck_by_object", 0.65, "Falling materials from roof"),
+    ("industry", "roofing", "commonly_has_exposure", "risk_theme", "certificate_tracking", 0.75, "Subcontractor certificate gaps"),
+    ("industry", "roofing", "often_requires_coverage", "coverage", "workers_comp", 0.95, "Core coverage"),
+    ("industry", "roofing", "often_requires_coverage", "coverage", "general_liability", 0.90, "Third-party injury risk"),
+    ("industry", "roofing", "often_requires_coverage", "coverage", "commercial_auto", 0.75, "Fleet exposure"),
 
-    ("trucking", "fleet_accidents", "causes", 0.95),
-    ("trucking", "driver_turnover", "causes", 0.85),
-    ("trucking", "hired_non_owned_auto", "causes", 0.70),
-    ("trucking", "improper_classification", "causes", 0.60),
+    # --------------------------------------------------------
+    # TRUCKING INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "trucking", "commonly_has_exposure", "risk_theme", "fleet_accidents", 0.95, "Primary loss driver"),
+    ("industry", "trucking", "commonly_has_exposure", "risk_theme", "driver_turnover", 0.70, "Driver shortage issue"),
+    ("industry", "trucking", "commonly_has_exposure", "risk_theme", "hired_non_owned_auto", 0.60, "Contract drivers common"),
+    ("industry", "trucking", "commonly_has_exposure", "risk_theme", "improper_classification", 0.60, "IC vs employee misclass"),
+    ("industry", "trucking", "often_requires_coverage", "coverage", "commercial_auto", 0.95, "Core coverage"),
+    ("industry", "trucking", "often_requires_coverage", "coverage", "umbrella", 0.80, "Catastrophic crash exposure"),
+    ("industry", "trucking", "often_requires_coverage", "coverage", "workers_comp", 0.85, "Driver injury exposure"),
 
-    ("manufacturing", "machine_guarding", "causes", 0.90),
-    ("manufacturing", "combustible_dust", "causes", 0.70),
-    ("manufacturing", "chemical_exposure", "causes", 0.75),
-    ("manufacturing", "lifting_ergonomic", "causes", 0.65),
+    # --------------------------------------------------------
+    # MANUFACTURING INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "manufacturing", "commonly_has_exposure", "risk_theme", "machine_guarding", 0.85, "Equipment hazard"),
+    ("industry", "manufacturing", "commonly_has_exposure", "risk_theme", "combustible_dust", 0.70, "Fire hazard"),
+    ("industry", "manufacturing", "commonly_has_exposure", "risk_theme", "chemical_exposure", 0.75, "Chemical handling"),
+    ("industry", "manufacturing", "commonly_has_exposure", "risk_theme", "lifting_ergonomic", 0.65, "Manual material handling"),
+    ("industry", "manufacturing", "often_requires_coverage", "coverage", "property", 0.90, "Plant property risk"),
+    ("industry", "manufacturing", "often_requires_coverage", "coverage", "workers_comp", 0.85, "Workforce injury exposure"),
+    ("industry", "manufacturing", "often_requires_coverage", "coverage", "general_liability", 0.80, "Product/premises liability"),
 
-    ("restaurant", "burns_and_scalds", "causes", 0.90),
-    ("restaurant", "slip_and_fall", "causes", 0.85),
-    ("restaurant", "food_contamination", "causes", 0.80),
-    ("restaurant", "lifting_ergonomic", "causes", 0.55),
+    # --------------------------------------------------------
+    # RESTAURANT INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "restaurant", "commonly_has_exposure", "risk_theme", "burns_and_scalds", 0.90, "Kitchen fire/heat hazard"),
+    ("industry", "restaurant", "commonly_has_exposure", "risk_theme", "slip_and_fall", 0.85, "Wet kitchen/dining floors"),
+    ("industry", "restaurant", "commonly_has_exposure", "risk_theme", "food_contamination", 0.80, "Foodborne illness liability"),
+    ("industry", "restaurant", "commonly_has_exposure", "risk_theme", "lifting_ergonomic", 0.55, "Food/supply lifting"),
+    ("industry", "restaurant", "often_requires_coverage", "coverage", "general_liability", 0.90, "Patron injury/illness"),
+    ("industry", "restaurant", "often_requires_coverage", "coverage", "workers_comp", 0.85, "Kitchen worker injuries"),
+    ("industry", "restaurant", "often_requires_coverage", "coverage", "property", 0.80, "Kitchen fire/equipment"),
 
-    ("landscaping", "heat_illness", "causes", 0.85),
-    ("landscaping", "struck_by_object", "causes", 0.70),
-    ("landscaping", "chemical_exposure", "causes", 0.60),
-    ("landscaping", "hired_non_owned_auto", "causes", 0.65),
-    ("landscaping", "subcontractor_transfer", "causes", 0.55),
+    # --------------------------------------------------------
+    # LANDSCAPING INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "landscaping", "commonly_has_exposure", "risk_theme", "heat_illness", 0.85, "Outdoor labor in heat"),
+    ("industry", "landscaping", "commonly_has_exposure", "risk_theme", "struck_by_object", 0.70, "Equipment/debris hazard"),
+    ("industry", "landscaping", "commonly_has_exposure", "risk_theme", "chemical_exposure", 0.60, "Pesticide/herbicide handling"),
+    ("industry", "landscaping", "commonly_has_exposure", "risk_theme", "hired_non_owned_auto", 0.65, "Crew vehicle use"),
+    ("industry", "landscaping", "commonly_has_exposure", "risk_theme", "subcontractor_transfer", 0.55, "Subbed work common"),
+    ("industry", "landscaping", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Outdoor labor injuries"),
+    ("industry", "landscaping", "often_requires_coverage", "coverage", "general_liability", 0.85, "Property damage risk"),
+    ("industry", "landscaping", "often_requires_coverage", "coverage", "commercial_auto", 0.80, "Truck/trailer fleet"),
 
-    ("hvac", "falls_from_height", "causes", 0.70),
-    ("hvac", "chemical_exposure", "causes", 0.80),
-    ("hvac", "burns_and_scalds", "causes", 0.65),
-    ("hvac", "subcontractor_transfer", "causes", 0.60),
+    # --------------------------------------------------------
+    # HVAC INDUSTRY EXPOSURES
+    # --------------------------------------------------------
+    ("industry", "hvac", "commonly_has_exposure", "risk_theme", "falls_from_height", 0.70, "Rooftop unit work"),
+    ("industry", "hvac", "commonly_has_exposure", "risk_theme", "chemical_exposure", 0.80, "Refrigerant handling"),
+    ("industry", "hvac", "commonly_has_exposure", "risk_theme", "burns_and_scalds", 0.65, "Electrical/heating burns"),
+    ("industry", "hvac", "commonly_has_exposure", "risk_theme", "subcontractor_transfer", 0.60, "Sub work on new construction"),
+    ("industry", "hvac", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Technician injury exposure"),
+    ("industry", "hvac", "often_requires_coverage", "coverage", "general_liability", 0.85, "Customer property damage"),
+    ("industry", "hvac", "often_requires_coverage", "coverage", "commercial_auto", 0.75, "Service van fleet"),
 
-    # Risk Theme -> Coverage (requires_coverage)
-    ("falls_from_height", "workers_comp", "requires_coverage", 0.95),
-    ("falls_from_height", "general_liability", "requires_coverage", 0.70),
-    ("falls_from_height", "umbrella", "requires_coverage", 0.60),
+    # --------------------------------------------------------
+    # MUNICIPAL ENTITY EXPOSURES
+    # --------------------------------------------------------
+    ("public_entity_type", "municipality", "entity_specific_exposure", "risk_theme", "public_officials_liability", 0.90, "Government decisions"),
+    ("public_entity_type", "municipality", "entity_specific_exposure", "risk_theme", "public_event_liability", 0.70, "Community events"),
+    ("public_entity_type", "municipality", "entity_specific_exposure", "risk_theme", "cyber_records_breach", 0.60, "Public records systems"),
+    ("public_entity_type", "municipality", "entity_specific_exposure", "risk_theme", "volunteer_liability", 0.65, "Volunteer programs"),
+    ("public_entity_type", "municipality", "entity_specific_exposure", "risk_theme", "fleet_liability", 0.75, "Municipal fleet operations"),
 
-    ("fleet_accidents", "commercial_auto", "requires_coverage", 0.95),
-    ("fleet_accidents", "workers_comp", "requires_coverage", 0.70),
-    ("fleet_accidents", "umbrella", "requires_coverage", 0.65),
+    ("public_entity_type", "county", "entity_specific_exposure", "risk_theme", "public_officials_liability", 0.90, "County governance decisions"),
+    ("public_entity_type", "county", "entity_specific_exposure", "risk_theme", "road_maintenance_liability", 0.85, "County road system"),
+    ("public_entity_type", "county", "entity_specific_exposure", "risk_theme", "fleet_liability", 0.70, "County fleet"),
 
-    ("driver_turnover", "commercial_auto", "requires_coverage", 0.75),
-    ("driver_turnover", "workers_comp", "requires_coverage", 0.60),
+    ("public_entity_type", "school_system", "entity_specific_exposure", "risk_theme", "public_officials_liability", 0.75, "Board decisions"),
+    ("public_entity_type", "school_system", "entity_specific_exposure", "risk_theme", "playground_injury", 0.85, "Student playground exposure"),
 
-    ("subcontractor_transfer", "general_liability", "requires_coverage", 0.85),
-    ("subcontractor_transfer", "umbrella", "requires_coverage", 0.70),
+    # --------------------------------------------------------
+    # MUNICIPAL DEPARTMENT EXPOSURES
+    # --------------------------------------------------------
+    ("department", "law_enforcement", "department_specific_exposure", "risk_theme", "civil_rights_claims", 0.95, "Police liability"),
+    ("department", "law_enforcement", "department_specific_exposure", "risk_theme", "excessive_force", 0.85, "Use-of-force claims"),
+    ("department", "law_enforcement", "department_specific_exposure", "risk_theme", "police_liability", 0.95, "Core police exposure"),
+    ("department", "law_enforcement", "department_specific_exposure", "risk_theme", "fleet_liability", 0.60, "Patrol vehicle operations"),
 
-    ("machine_guarding", "workers_comp", "requires_coverage", 0.90),
-    ("combustible_dust", "property", "requires_coverage", 0.85),
-    ("combustible_dust", "workers_comp", "requires_coverage", 0.75),
+    ("department", "fire_department", "department_specific_exposure", "risk_theme", "volunteer_liability", 0.75, "Volunteer firefighter exposure"),
+    ("department", "fire_department", "department_specific_exposure", "risk_theme", "fleet_liability", 0.70, "Fire apparatus operations"),
 
-    ("burns_and_scalds", "workers_comp", "requires_coverage", 0.90),
-    ("slip_and_fall", "general_liability", "requires_coverage", 0.85),
-    ("slip_and_fall", "workers_comp", "requires_coverage", 0.75),
+    ("department", "public_works", "department_specific_exposure", "risk_theme", "road_maintenance_liability", 0.90, "Road defects"),
+    ("department", "public_works", "department_specific_exposure", "risk_theme", "fleet_liability", 0.75, "Municipal fleet"),
+    ("department", "public_works", "department_specific_exposure", "risk_theme", "sewer_backup_claims", 0.65, "Infrastructure failures"),
 
-    ("food_contamination", "general_liability", "requires_coverage", 0.90),
-    ("food_contamination", "professional_liability", "requires_coverage", 0.50),
+    ("department", "utilities", "department_specific_exposure", "risk_theme", "water_quality_claims", 0.80, "Utility operations"),
+    ("department", "utilities", "department_specific_exposure", "risk_theme", "sewer_backup_claims", 0.75, "Infrastructure failures"),
+    ("department", "utilities", "department_specific_exposure", "risk_theme", "cyber_records_breach", 0.50, "SCADA/utility systems"),
 
-    ("heat_illness", "workers_comp", "requires_coverage", 0.90),
-    ("chemical_exposure", "workers_comp", "requires_coverage", 0.85),
-    ("chemical_exposure", "general_liability", "requires_coverage", 0.55),
+    ("department", "parks_recreation", "department_specific_exposure", "risk_theme", "playground_injury", 0.85, "Playground accidents"),
+    ("department", "parks_recreation", "department_specific_exposure", "risk_theme", "public_event_liability", 0.75, "Community event exposure"),
+    ("department", "parks_recreation", "department_specific_exposure", "risk_theme", "volunteer_liability", 0.65, "Park volunteer programs"),
 
-    ("hired_non_owned_auto", "commercial_auto", "requires_coverage", 0.90),
+    ("department", "administration", "department_specific_exposure", "risk_theme", "public_officials_liability", 0.90, "Policy and governance decisions"),
+    ("department", "administration", "department_specific_exposure", "risk_theme", "zoning_decisions", 0.80, "Land use decisions"),
+    ("department", "administration", "department_specific_exposure", "risk_theme", "cyber_records_breach", 0.70, "Public records systems"),
+    ("department", "administration", "department_specific_exposure", "risk_theme", "grant_compliance", 0.75, "Federal/state grant administration"),
+    ("department", "administration", "department_specific_exposure", "risk_theme", "procurement_disputes", 0.70, "Bidding and contracting"),
 
-    # Risk Theme co-occurrence
-    ("falls_from_height", "struck_by_object", "co_occurs", 0.65),
-    ("fleet_accidents", "driver_turnover", "co_occurs", 0.70),
-    ("subcontractor_transfer", "certificate_tracking", "co_occurs", 0.80),
-    ("burns_and_scalds", "chemical_exposure", "co_occurs", 0.50),
-    ("machine_guarding", "struck_by_object", "co_occurs", 0.55),
+    ("department", "sanitation", "department_specific_exposure", "risk_theme", "fleet_liability", 0.80, "Refuse collection fleet"),
+    ("department", "sanitation", "department_specific_exposure", "risk_theme", "lifting_ergonomic", 0.65, "Manual refuse handling"),
 
-    # Department -> Risk Theme (public entity)
-    ("law_enforcement", "police_liability", "causes", 0.95),
-    ("law_enforcement", "civil_rights_claims", "causes", 0.90),
-    ("law_enforcement", "excessive_force", "causes", 0.85),
-    ("law_enforcement", "fleet_liability", "causes", 0.60),
+    ("department", "street_maintenance", "department_specific_exposure", "risk_theme", "road_maintenance_liability", 0.90, "Road repair liability"),
+    ("department", "street_maintenance", "department_specific_exposure", "risk_theme", "fleet_liability", 0.75, "Maintenance vehicle fleet"),
+    ("department", "street_maintenance", "department_specific_exposure", "risk_theme", "struck_by_object", 0.55, "Work zone hazard"),
 
-    ("fire_department", "volunteer_liability", "causes", 0.75),
-    ("fire_department", "fleet_liability", "causes", 0.70),
+    ("department", "fleet_services", "department_specific_exposure", "risk_theme", "fleet_liability", 0.95, "Fleet maintenance operations"),
+    ("department", "fleet_services", "department_specific_exposure", "risk_theme", "fleet_accidents", 0.70, "Vehicle operations"),
 
-    ("public_works", "road_maintenance_liability", "causes", 0.90),
-    ("public_works", "fleet_liability", "causes", 0.75),
-    ("public_works", "sewer_backup_claims", "causes", 0.65),
+    ("department", "water_treatment", "department_specific_exposure", "risk_theme", "water_quality_claims", 0.95, "Water quality responsibility"),
+    ("department", "water_treatment", "department_specific_exposure", "risk_theme", "chemical_exposure", 0.70, "Treatment chemical handling"),
 
-    ("utilities", "water_quality_claims", "causes", 0.85),
-    ("utilities", "sewer_backup_claims", "causes", 0.80),
-    ("utilities", "cyber_records_breach", "causes", 0.50),
+    # --------------------------------------------------------
+    # RISK THEME TO COVERAGE RELATIONSHIPS
+    # --------------------------------------------------------
+    # Private industry
+    ("risk_theme", "falls_from_height", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Worker injury exposure"),
+    ("risk_theme", "falls_from_height", "often_requires_coverage", "coverage", "general_liability", 0.70, "Third-party fall claims"),
+    ("risk_theme", "falls_from_height", "often_requires_coverage", "coverage", "umbrella", 0.60, "Catastrophic fall verdicts"),
 
-    ("parks_recreation", "playground_injury", "causes", 0.90),
-    ("parks_recreation", "public_event_liability", "causes", 0.75),
-    ("parks_recreation", "volunteer_liability", "causes", 0.65),
+    ("risk_theme", "fleet_accidents", "often_requires_coverage", "coverage", "commercial_auto", 0.95, "Vehicle losses"),
+    ("risk_theme", "fleet_accidents", "often_requires_coverage", "coverage", "workers_comp", 0.70, "Driver injury claims"),
+    ("risk_theme", "fleet_accidents", "often_requires_coverage", "coverage", "umbrella", 0.65, "Catastrophic accident exposure"),
 
-    ("administration", "public_officials_liability", "causes", 0.90),
-    ("administration", "zoning_decisions", "causes", 0.80),
-    ("administration", "cyber_records_breach", "causes", 0.70),
-    ("administration", "grant_compliance", "causes", 0.75),
-    ("administration", "procurement_disputes", "causes", 0.70),
+    ("risk_theme", "driver_turnover", "often_requires_coverage", "coverage", "commercial_auto", 0.75, "Inexperienced driver risk"),
+    ("risk_theme", "driver_turnover", "often_requires_coverage", "coverage", "workers_comp", 0.60, "Training period injuries"),
 
-    ("sanitation", "fleet_liability", "causes", 0.80),
-    ("sanitation", "lifting_ergonomic", "causes", 0.65),
+    ("risk_theme", "subcontractor_transfer", "often_requires_coverage", "coverage", "general_liability", 0.80, "Contractual liability"),
+    ("risk_theme", "subcontractor_transfer", "often_requires_coverage", "coverage", "umbrella", 0.70, "Excess liability on sub work"),
 
-    ("street_maintenance", "road_maintenance_liability", "causes", 0.90),
-    ("street_maintenance", "fleet_liability", "causes", 0.75),
-    ("street_maintenance", "struck_by_object", "causes", 0.55),
+    ("risk_theme", "machine_guarding", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Amputation/crush injuries"),
+    ("risk_theme", "combustible_dust", "often_requires_coverage", "coverage", "property", 0.85, "Dust explosion fire risk"),
+    ("risk_theme", "combustible_dust", "often_requires_coverage", "coverage", "workers_comp", 0.75, "Burn/blast injuries"),
+    ("risk_theme", "burns_and_scalds", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Kitchen/heat injuries"),
+    ("risk_theme", "slip_and_fall", "often_requires_coverage", "coverage", "general_liability", 0.85, "Patron/visitor falls"),
+    ("risk_theme", "slip_and_fall", "often_requires_coverage", "coverage", "workers_comp", 0.75, "Employee slip injuries"),
+    ("risk_theme", "food_contamination", "often_requires_coverage", "coverage", "general_liability", 0.90, "Foodborne illness liability"),
+    ("risk_theme", "food_contamination", "often_requires_coverage", "coverage", "professional_liability", 0.50, "Food safety standard of care"),
+    ("risk_theme", "heat_illness", "often_requires_coverage", "coverage", "workers_comp", 0.90, "Heat stroke/exhaustion"),
+    ("risk_theme", "chemical_exposure", "often_requires_coverage", "coverage", "workers_comp", 0.85, "Toxic exposure claims"),
+    ("risk_theme", "chemical_exposure", "often_requires_coverage", "coverage", "general_liability", 0.55, "Third-party contamination"),
+    ("risk_theme", "hired_non_owned_auto", "often_requires_coverage", "coverage", "commercial_auto", 0.90, "Non-owned vehicle exposure"),
 
-    ("fleet_services", "fleet_liability", "causes", 0.95),
-    ("fleet_services", "fleet_accidents", "causes", 0.70),
+    # Public entity
+    ("risk_theme", "civil_rights_claims", "often_requires_coverage", "coverage", "law_enforcement_liability", 0.95, "Police exposure"),
+    ("risk_theme", "civil_rights_claims", "often_requires_coverage", "coverage", "governmental_immunity", 0.90, "Sovereign immunity defense"),
+    ("risk_theme", "civil_rights_claims", "often_requires_coverage", "coverage", "employment_practices_public", 0.60, "Internal discrimination claims"),
 
-    ("water_treatment", "water_quality_claims", "causes", 0.95),
-    ("water_treatment", "chemical_exposure", "causes", 0.70),
+    ("risk_theme", "police_liability", "often_requires_coverage", "coverage", "law_enforcement_liability", 0.95, "Core police coverage"),
+    ("risk_theme", "police_liability", "often_requires_coverage", "coverage", "governmental_immunity", 0.80, "Tort claims defense"),
 
-    # Public entity risk theme -> coverage
-    ("police_liability", "law_enforcement_liability", "requires_coverage", 0.95),
-    ("police_liability", "governmental_immunity", "requires_coverage", 0.80),
+    ("risk_theme", "excessive_force", "often_requires_coverage", "coverage", "law_enforcement_liability", 0.95, "Use-of-force claims"),
+    ("risk_theme", "excessive_force", "often_requires_coverage", "coverage", "umbrella", 0.70, "Large verdict exposure"),
 
-    ("civil_rights_claims", "law_enforcement_liability", "requires_coverage", 0.85),
-    ("civil_rights_claims", "governmental_immunity", "requires_coverage", 0.90),
-    ("civil_rights_claims", "employment_practices_public", "requires_coverage", 0.60),
+    ("risk_theme", "public_officials_liability", "often_requires_coverage", "coverage", "public_officials_liability_cov", 0.95, "Government decisions"),
+    ("risk_theme", "public_officials_liability", "often_requires_coverage", "coverage", "epli", 0.55, "Employment-related decisions"),
 
-    ("excessive_force", "law_enforcement_liability", "requires_coverage", 0.95),
-    ("excessive_force", "umbrella", "requires_coverage", 0.70),
+    ("risk_theme", "zoning_decisions", "often_requires_coverage", "coverage", "public_officials_liability_cov", 0.85, "Land use decision liability"),
 
-    ("public_officials_liability", "public_officials_liability_cov", "requires_coverage", 0.95),
-    ("public_officials_liability", "epli", "requires_coverage", 0.55),
+    ("risk_theme", "road_maintenance_liability", "often_requires_coverage", "coverage", "general_liability", 0.85, "Road defect claims"),
+    ("risk_theme", "road_maintenance_liability", "often_requires_coverage", "coverage", "municipal_auto", 0.60, "Maintenance vehicle exposure"),
 
-    ("zoning_decisions", "public_officials_liability_cov", "requires_coverage", 0.85),
+    ("risk_theme", "playground_injury", "often_requires_coverage", "coverage", "general_liability", 0.90, "Child injury claims"),
+    ("risk_theme", "playground_injury", "often_requires_coverage", "coverage", "property", 0.50, "Equipment replacement"),
 
-    ("road_maintenance_liability", "general_liability", "requires_coverage", 0.85),
-    ("road_maintenance_liability", "municipal_auto", "requires_coverage", 0.60),
+    ("risk_theme", "public_event_liability", "often_requires_coverage", "coverage", "general_liability", 0.90, "Event attendee injuries"),
+    ("risk_theme", "public_event_liability", "often_requires_coverage", "coverage", "umbrella", 0.65, "Large crowd exposure"),
 
-    ("playground_injury", "general_liability", "requires_coverage", 0.90),
-    ("playground_injury", "property", "requires_coverage", 0.50),
+    ("risk_theme", "sewer_backup_claims", "often_requires_coverage", "coverage", "general_liability", 0.80, "Property damage claims"),
+    ("risk_theme", "sewer_backup_claims", "often_requires_coverage", "coverage", "environmental_liability_public", 0.70, "Contamination liability"),
 
-    ("public_event_liability", "general_liability", "requires_coverage", 0.90),
-    ("public_event_liability", "umbrella", "requires_coverage", 0.65),
+    ("risk_theme", "water_quality_claims", "often_requires_coverage", "coverage", "environmental_liability_public", 0.90, "Water contamination"),
+    ("risk_theme", "water_quality_claims", "often_requires_coverage", "coverage", "general_liability", 0.60, "Health impact claims"),
 
-    ("sewer_backup_claims", "general_liability", "requires_coverage", 0.80),
-    ("sewer_backup_claims", "environmental_liability_public", "requires_coverage", 0.70),
+    ("risk_theme", "fleet_liability", "often_requires_coverage", "coverage", "municipal_auto", 0.95, "Municipal vehicle losses"),
+    ("risk_theme", "fleet_liability", "often_requires_coverage", "coverage", "workers_comp", 0.65, "Driver injury claims"),
 
-    ("water_quality_claims", "environmental_liability_public", "requires_coverage", 0.90),
-    ("water_quality_claims", "general_liability", "requires_coverage", 0.60),
+    ("risk_theme", "volunteer_liability", "often_requires_coverage", "coverage", "general_liability", 0.80, "Volunteer injury claims"),
+    ("risk_theme", "volunteer_liability", "often_requires_coverage", "coverage", "workers_comp", 0.70, "Volunteer WC coverage"),
 
-    ("fleet_liability", "municipal_auto", "requires_coverage", 0.95),
-    ("fleet_liability", "workers_comp", "requires_coverage", 0.65),
+    ("risk_theme", "cyber_records_breach", "often_requires_coverage", "coverage", "cyber", 0.95, "Data breach response"),
+    ("risk_theme", "grant_compliance", "often_requires_coverage", "coverage", "public_officials_liability_cov", 0.60, "Grant mismanagement claims"),
+    ("risk_theme", "procurement_disputes", "often_requires_coverage", "coverage", "public_officials_liability_cov", 0.65, "Bid protest liability"),
 
-    ("volunteer_liability", "general_liability", "requires_coverage", 0.80),
-    ("volunteer_liability", "workers_comp", "requires_coverage", 0.70),
+    # --------------------------------------------------------
+    # RISK THEMES TRIGGER QUESTION CATEGORIES
+    # --------------------------------------------------------
+    ("risk_theme", "falls_from_height", "often_triggers_question_category", "question_category", "operations", 0.80, "Safety procedures"),
+    ("risk_theme", "falls_from_height", "often_triggers_question_category", "question_category", "compliance", 0.70, "OSHA fall protection"),
+    ("risk_theme", "fleet_accidents", "often_triggers_question_category", "question_category", "fleet", 0.90, "Vehicle management"),
+    ("risk_theme", "fleet_accidents", "often_triggers_question_category", "question_category", "workforce", 0.60, "Driver hiring/training"),
+    ("risk_theme", "subcontractor_transfer", "often_triggers_question_category", "question_category", "contracts", 0.85, "Risk transfer questions"),
+    ("risk_theme", "machine_guarding", "often_triggers_question_category", "question_category", "operations", 0.85, "Equipment safety"),
+    ("risk_theme", "machine_guarding", "often_triggers_question_category", "question_category", "compliance", 0.75, "OSHA guarding standards"),
+    ("risk_theme", "food_contamination", "often_triggers_question_category", "question_category", "compliance", 0.85, "Health department compliance"),
+    ("risk_theme", "food_contamination", "often_triggers_question_category", "question_category", "operations", 0.75, "Food handling procedures"),
+    ("risk_theme", "burns_and_scalds", "often_triggers_question_category", "question_category", "operations", 0.80, "Kitchen safety protocols"),
+    ("risk_theme", "chemical_exposure", "often_triggers_question_category", "question_category", "compliance", 0.80, "HAZCOM compliance"),
+    ("risk_theme", "lifting_ergonomic", "often_triggers_question_category", "question_category", "workforce", 0.70, "Ergonomic assessment"),
+    ("risk_theme", "certificate_tracking", "often_triggers_question_category", "question_category", "contracts", 0.85, "Certificate management"),
 
-    ("cyber_records_breach", "cyber", "requires_coverage", 0.95),
+    # Public entity risk themes -> question categories
+    ("risk_theme", "public_officials_liability", "often_triggers_question_category", "question_category", "governance", 0.85, "Policy decisions"),
+    ("risk_theme", "civil_rights_claims", "often_triggers_question_category", "question_category", "compliance", 0.90, "Constitutional compliance"),
+    ("risk_theme", "civil_rights_claims", "often_triggers_question_category", "question_category", "claims", 0.85, "Litigation history"),
+    ("risk_theme", "excessive_force", "often_triggers_question_category", "question_category", "operations", 0.85, "Use-of-force policy"),
+    ("risk_theme", "road_maintenance_liability", "often_triggers_question_category", "question_category", "operations", 0.80, "Road inspection procedures"),
+    ("risk_theme", "playground_injury", "often_triggers_question_category", "question_category", "property_category", 0.85, "Equipment inspection"),
+    ("risk_theme", "fleet_liability", "often_triggers_question_category", "question_category", "fleet", 0.90, "Vehicle management"),
+    ("risk_theme", "volunteer_liability", "often_triggers_question_category", "question_category", "workforce", 0.75, "Volunteer management"),
+    ("risk_theme", "cyber_records_breach", "often_triggers_question_category", "question_category", "compliance", 0.80, "Data security practices"),
+    ("risk_theme", "grant_compliance", "often_triggers_question_category", "question_category", "governance", 0.80, "Grant administration"),
+    ("risk_theme", "procurement_disputes", "often_triggers_question_category", "question_category", "contracts", 0.80, "Bid and procurement process"),
+    ("risk_theme", "water_quality_claims", "often_triggers_question_category", "question_category", "operations", 0.80, "Treatment operations"),
+    ("risk_theme", "sewer_backup_claims", "often_triggers_question_category", "question_category", "property_category", 0.75, "Infrastructure condition"),
+    ("risk_theme", "public_event_liability", "often_triggers_question_category", "question_category", "public_interaction", 0.85, "Event safety planning"),
 
-    ("grant_compliance", "public_officials_liability_cov", "requires_coverage", 0.60),
-    ("procurement_disputes", "public_officials_liability_cov", "requires_coverage", 0.65),
+    # --------------------------------------------------------
+    # RISK THEME CO-OCCURRENCES
+    # --------------------------------------------------------
+    ("risk_theme", "falls_from_height", "commonly_cooccurs_with", "risk_theme", "struck_by_object", 0.65, "Construction site hazard pairing"),
+    ("risk_theme", "fleet_accidents", "commonly_cooccurs_with", "risk_theme", "driver_turnover", 0.70, "New driver accident risk"),
+    ("risk_theme", "subcontractor_transfer", "commonly_cooccurs_with", "risk_theme", "certificate_tracking", 0.80, "Sub management gap"),
+    ("risk_theme", "burns_and_scalds", "commonly_cooccurs_with", "risk_theme", "chemical_exposure", 0.50, "Kitchen/industrial heat+chemical"),
+    ("risk_theme", "machine_guarding", "commonly_cooccurs_with", "risk_theme", "struck_by_object", 0.55, "Equipment ejection hazard"),
+    ("risk_theme", "police_liability", "commonly_cooccurs_with", "risk_theme", "civil_rights_claims", 0.85, "Section 1983 exposure"),
+    ("risk_theme", "civil_rights_claims", "commonly_cooccurs_with", "risk_theme", "excessive_force", 0.80, "Force-related civil rights"),
+    ("risk_theme", "road_maintenance_liability", "commonly_cooccurs_with", "risk_theme", "fleet_liability", 0.60, "Maintenance vehicle exposure"),
+    ("risk_theme", "sewer_backup_claims", "commonly_cooccurs_with", "risk_theme", "water_quality_claims", 0.55, "Infrastructure system overlap"),
+    ("risk_theme", "public_officials_liability", "commonly_cooccurs_with", "risk_theme", "zoning_decisions", 0.65, "Governance decision liability"),
+    ("risk_theme", "grant_compliance", "commonly_cooccurs_with", "risk_theme", "procurement_disputes", 0.50, "Federal compliance overlap"),
 
-    # Public entity co-occurrences
-    ("police_liability", "civil_rights_claims", "co_occurs", 0.85),
-    ("civil_rights_claims", "excessive_force", "co_occurs", 0.80),
-    ("road_maintenance_liability", "fleet_liability", "co_occurs", 0.60),
-    ("sewer_backup_claims", "water_quality_claims", "co_occurs", 0.55),
-    ("public_officials_liability", "zoning_decisions", "co_occurs", 0.65),
-    ("grant_compliance", "procurement_disputes", "co_occurs", 0.50),
-
-    # Entity type -> department connections
-    ("public_entity", "law_enforcement", "has_department", 0.85),
-    ("public_entity", "fire_department", "has_department", 0.80),
-    ("public_entity", "public_works", "has_department", 0.90),
-    ("public_entity", "utilities", "has_department", 0.75),
-    ("public_entity", "parks_recreation", "has_department", 0.70),
-    ("public_entity", "administration", "has_department", 0.95),
-    ("public_entity", "sanitation", "has_department", 0.65),
-    ("public_entity", "street_maintenance", "has_department", 0.70),
-    ("public_entity", "fleet_services", "has_department", 0.65),
-    ("public_entity", "water_treatment", "has_department", 0.60),
-
-    # Public entity type -> department
-    ("municipality", "law_enforcement", "has_department", 0.90),
-    ("municipality", "fire_department", "has_department", 0.85),
-    ("municipality", "public_works", "has_department", 0.90),
-    ("municipality", "administration", "has_department", 0.95),
-    ("municipality", "parks_recreation", "has_department", 0.80),
-
-    ("county", "law_enforcement", "has_department", 0.95),
-    ("county", "public_works", "has_department", 0.85),
-    ("county", "administration", "has_department", 0.90),
+    # --------------------------------------------------------
+    # ACCOUNT TRAITS THAT ELEVATE RISK
+    # --------------------------------------------------------
+    ("account_trait", "uses_subcontractors", "elevated_by_trait", "risk_theme", "subcontractor_transfer", 0.90, "Subcontract exposure"),
+    ("account_trait", "uses_subcontractors", "elevated_by_trait", "risk_theme", "certificate_tracking", 0.80, "Certificate management burden"),
+    ("account_trait", "young_fleet", "elevated_by_trait", "risk_theme", "fleet_accidents", 0.70, "Driver inexperience"),
+    ("account_trait", "high_mod", "elevated_by_trait", "risk_theme", "falls_from_height", 0.65, "Loss history indicator"),
+    ("account_trait", "multi_state_operations", "elevated_by_trait", "risk_theme", "compliance_complexity", 0.75, "Regulatory complexity"),
+    ("account_trait", "heavy_equipment", "elevated_by_trait", "risk_theme", "struck_by_object", 0.70, "Heavy equipment hazard"),
+    ("account_trait", "heavy_equipment", "elevated_by_trait", "risk_theme", "machine_guarding", 0.65, "Equipment safety gaps"),
+    ("account_trait", "residential_work", "elevated_by_trait", "risk_theme", "falls_from_height", 0.75, "Residential roof slope risk"),
+    ("account_trait", "delivery_operations", "elevated_by_trait", "risk_theme", "fleet_accidents", 0.75, "Delivery vehicle exposure"),
+    ("account_trait", "delivery_operations", "elevated_by_trait", "risk_theme", "hired_non_owned_auto", 0.70, "Personal vehicle use"),
+    ("account_trait", "seasonal_payroll", "elevated_by_trait", "risk_theme", "improper_classification", 0.65, "Seasonal worker classification"),
+    ("account_trait", "high_turnover", "elevated_by_trait", "risk_theme", "driver_turnover", 0.80, "Workforce instability"),
+    ("account_trait", "high_turnover", "elevated_by_trait", "risk_theme", "lifting_ergonomic", 0.55, "Untrained new workers"),
 ]
 
 
 def seed_graph(db):
-    """Insert graph nodes and edges."""
+    """Insert graph nodes and edges (denormalized)."""
     # Check if already seeded
     existing = db.query(RiskTheme).count()
     if existing > 0:
         print(f"  Graph already seeded ({existing} nodes). Skipping.")
         return
 
-    # Insert nodes
-    node_map = {}
+    # Insert nodes into risk_themes (node registry)
     for node_data in GRAPH_NODES:
         node = RiskTheme(
             name=node_data["name"],
@@ -312,32 +415,28 @@ def seed_graph(db):
             entity_scope=node_data.get("entity_scope"),
         )
         db.add(node)
-        db.flush()
-        node_map[node_data["name"]] = node.id
 
-    print(f"  Inserted {len(node_map)} graph nodes.")
+    db.flush()
+    print(f"  Inserted {len(GRAPH_NODES)} graph nodes.")
 
-    # Insert edges
+    # Insert denormalized edges
     edge_count = 0
-    skipped = 0
-    for from_name, to_name, edge_type, weight in GRAPH_EDGES:
-        from_id = node_map.get(from_name)
-        to_id = node_map.get(to_name)
-        if not from_id or not to_id:
-            skipped += 1
-            continue
-
+    for edge_data in GRAPH_EDGES:
+        from_node_type, from_node_value, edge_type, to_node_type, to_node_value, weight, evidence_note = edge_data
         edge = RiskThemeEdge(
-            from_theme_id=from_id,
-            to_theme_id=to_id,
+            from_node_type=from_node_type,
+            from_node_value=from_node_value,
             edge_type=edge_type,
+            to_node_type=to_node_type,
+            to_node_value=to_node_value,
             weight=weight,
+            evidence_note=evidence_note,
         )
         db.add(edge)
         edge_count += 1
 
     db.commit()
-    print(f"  Inserted {edge_count} graph edges ({skipped} skipped).")
+    print(f"  Inserted {edge_count} graph edges.")
 
 
 def seed_producer_questions(db):

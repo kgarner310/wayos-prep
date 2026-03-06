@@ -68,6 +68,7 @@ def run_retrieval(
     graph_result = expand_risk_graph(db, seeds, depth=1)
     expanded_risk_themes = graph_result.get("expanded_risk_themes", [])
     expanded_coverages = graph_result.get("expanded_coverages", [])
+    expanded_question_categories = graph_result.get("expanded_question_categories", [])
 
     # Build filters
     filters = {
@@ -87,6 +88,8 @@ def run_retrieval(
         filters["graph_expanded_risk_themes"] = expanded_risk_themes
     if expanded_coverages:
         filters["graph_expanded_coverages"] = expanded_coverages
+    if expanded_question_categories:
+        filters["graph_expanded_question_categories"] = expanded_question_categories
 
     if query_embedding:
         candidates = _vector_search(

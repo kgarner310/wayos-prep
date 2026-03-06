@@ -403,12 +403,18 @@ def _fallback_brief(db: Session, chunks: list[dict], industry: str, state: str,
         })
 
     # Retrieve producer questions from database
+    # Use graph-expanded question categories if available in retrieval filters
+    graph_categories = None
+    if retrieval_run and retrieval_run.filters_json:
+        graph_categories = retrieval_run.filters_json.get("graph_expanded_question_categories")
+
     db_questions = get_questions_for_brief(
         db=db,
         entity_type=entity_type,
         department=department,
         risk_themes=list(risk_themes) if risk_themes else None,
         coverages=list(coverage_tags) if coverage_tags else None,
+        categories=graph_categories,
         limit=5,
     )
 

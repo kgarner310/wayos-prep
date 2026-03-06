@@ -55,20 +55,23 @@ def upgrade() -> None:
     op.create_index('ix_risk_themes_node_type', 'risk_themes', ['node_type'])
     op.create_index('ix_risk_themes_name', 'risk_themes', ['name'])
 
-    # Risk theme edges table (graph edges)
+    # Risk theme edges table (denormalized graph edges)
     op.create_table(
         'risk_theme_edges',
         sa.Column('id', UUID(as_uuid=True), server_default=sa.text('gen_random_uuid()'), primary_key=True),
-        sa.Column('from_theme_id', UUID(as_uuid=True), sa.ForeignKey('risk_themes.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('to_theme_id', UUID(as_uuid=True), sa.ForeignKey('risk_themes.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('from_node_type', sa.Text(), nullable=False),
+        sa.Column('from_node_value', sa.Text(), nullable=False),
         sa.Column('edge_type', sa.Text(), nullable=False),
-        sa.Column('weight', sa.Numeric(4, 2), nullable=False, server_default='0.50'),
+        sa.Column('to_node_type', sa.Text(), nullable=False),
+        sa.Column('to_node_value', sa.Text(), nullable=False),
+        sa.Column('weight', sa.Numeric(5, 2), nullable=False, server_default='1.00'),
         sa.Column('evidence_note', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.UniqueConstraint('from_theme_id', 'to_theme_id', 'edge_type', name='uq_risk_theme_edge'),
+        sa.UniqueConstraint('from_node_type', 'from_node_value', 'edge_type',
+                            'to_node_type', 'to_node_value', name='uq_risk_theme_edge'),
     )
-    op.create_index('ix_risk_theme_edges_from', 'risk_theme_edges', ['from_theme_id'])
-    op.create_index('ix_risk_theme_edges_to', 'risk_theme_edges', ['to_theme_id'])
+    op.create_index('ix_risk_theme_edges_from', 'risk_theme_edges', ['from_node_type', 'from_node_value'])
+    op.create_index('ix_risk_theme_edges_to', 'risk_theme_edges', ['to_node_type', 'to_node_value'])
     op.create_index('ix_risk_theme_edges_type', 'risk_theme_edges', ['edge_type'])
 
 
