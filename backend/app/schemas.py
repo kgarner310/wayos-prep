@@ -56,6 +56,7 @@ class BriefJson(BaseModel):
     state_compliance_items: list[str] | None = None
     tort_environment: str | None = None
     cat_exposures: list[str] | None = None
+    location_intel: dict | None = None
 
 
 class BriefResponse(BaseModel):

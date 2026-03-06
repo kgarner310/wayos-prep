@@ -33,6 +33,7 @@ def build_brief_json(
     state_compliance_items: list[str] | None = None,
     tort_environment: str | None = None,
     cat_exposures: list[str] | None = None,
+    location_intel: dict | None = None,
 ) -> dict:
     result = {
         "industry": industry_name,
@@ -56,6 +57,8 @@ def build_brief_json(
         result["tort_environment"] = tort_environment
     if cat_exposures:
         result["cat_exposures"] = cat_exposures
+    if location_intel:
+        result["location_intel"] = location_intel
 
     return result
 
@@ -79,11 +82,83 @@ def _render_state_sections(bj: dict) -> str:
     return "\n\n".join(sections)
 
 
+def _render_location_intel(bj: dict) -> str:
+    """Render location intelligence from public data sources."""
+    intel = bj.get("location_intel")
+    if not intel:
+        return ""
+
+    sections = []
+
+    # Header with geocoded address
+    if intel.get("geocoded_address"):
+        sections.append(f"LOCATION INTELLIGENCE — {intel['geocoded_address']}")
+    else:
+        sections.append("LOCATION INTELLIGENCE")
+
+    # Natural hazards summary
+    hazard_lines = []
+    if intel.get("flood_zone"):
+        risk = intel.get("flood_risk", "unknown")
+        hazard_lines.append(f"Flood Zone: {intel['flood_zone']} ({risk} risk)")
+    if intel.get("seismic_risk"):
+        hazard_lines.append(f"Seismic: {intel['seismic_risk']} risk")
+    if intel.get("wildfire_risk"):
+        hazard_lines.append(f"Wildfire: {intel['wildfire_risk']} hazard")
+    if intel.get("tornado_risk"):
+        hazard_lines.append(f"Tornado: {intel['tornado_risk']} risk")
+    if intel.get("hail_risk"):
+        hazard_lines.append(f"Hail: {intel['hail_risk']} risk")
+    if intel.get("hurricane_risk"):
+        hazard_lines.append(f"Hurricane: {intel['hurricane_risk']} risk")
+
+    if hazard_lines:
+        sections.append("Natural Hazards\n" + "\n".join(f"  {h}" for h in hazard_lines))
+
+    # Location-specific hazard alerts
+    if intel.get("location_hazards"):
+        sections.append("Hazard Alerts\n" + _bullets(intel["location_hazards"]))
+
+    # OSHA
+    if intel.get("osha_top_citations"):
+        osha_block = "OSHA — Top Cited Standards\n" + _bullets(intel["osha_top_citations"])
+        if intel.get("osha_inspection_summary"):
+            osha_block += f"\n  Recent activity: {intel['osha_inspection_summary']}"
+        sections.append(osha_block)
+
+    # Economic
+    econ_lines = []
+    if intel.get("county_employment"):
+        econ_lines.append(f"County employment: {intel['county_employment']:,}")
+    if intel.get("county_establishments"):
+        econ_lines.append(f"Establishments: {intel['county_establishments']:,}")
+    if intel.get("county_avg_weekly_wage"):
+        econ_lines.append(f"Avg weekly wage: ${intel['county_avg_weekly_wage']:,}")
+    if intel.get("county_top_industries"):
+        econ_lines.append("Top sectors:\n" + _bullets(intel["county_top_industries"]))
+
+    if econ_lines:
+        sections.append("Market / Economic Data\n" + "\n".join(f"  {e}" for e in econ_lines[:3]))
+        if intel.get("county_top_industries"):
+            sections.append("County Industry Mix\n" + _bullets(intel["county_top_industries"]))
+
+    # Data sources attribution
+    if intel.get("data_sources"):
+        sources = ", ".join(intel["data_sources"])
+        query_ms = intel.get("query_time_ms", 0)
+        sections.append(f"Sources: {sources} ({query_ms}ms)")
+
+    return "\n\n".join(sections)
+
+
 def render_brief_text(brief_json: dict, metadata: dict | None = None) -> str:
     bj = brief_json
 
     state_block = _render_state_sections(bj)
     state_section = f"\n\n{state_block}" if state_block else ""
+
+    intel_block = _render_location_intel(bj)
+    intel_section = f"\n\n{intel_block}" if intel_block else ""
 
     return f"""WAYOS PREP — CLIENT BRIEF
 
@@ -104,7 +179,7 @@ REGIONAL / LOCAL RISK NOTES
 
 COVERAGE EXPOSURES (what to stress-test)
 
-{_bullets(bj['coverage_exposures'])}{state_section}
+{_bullets(bj['coverage_exposures'])}{state_section}{intel_section}
 
 CONVERSATION STARTERS (producer ammo)
 
@@ -127,6 +202,24 @@ def render_underwriter_email(brief_json: dict) -> str:
     if bj.get("state_compliance_items"):
         state_lines += f"\nKEY COMPLIANCE ITEMS\n{_bullets(bj['state_compliance_items'])}\n"
 
+    # Location intel for underwriter
+    intel_lines = ""
+    intel = bj.get("location_intel")
+    if intel:
+        parts = []
+        if intel.get("flood_zone"):
+            parts.append(f"Flood Zone: {intel['flood_zone']} ({intel.get('flood_risk', 'unknown')} risk)")
+        if intel.get("seismic_risk") and intel["seismic_risk"] != "low":
+            parts.append(f"Seismic risk: {intel['seismic_risk']}")
+        if intel.get("wildfire_risk") and intel["wildfire_risk"] not in ("very low", "low", "unknown"):
+            parts.append(f"Wildfire hazard: {intel['wildfire_risk']}")
+        if intel.get("osha_top_citations"):
+            parts.append("Top OSHA citations: " + ", ".join(
+                s.split(" — ")[0] for s in intel["osha_top_citations"][:3]
+            ))
+        if parts:
+            intel_lines = "\nLOCATION DATA (public sources)\n" + _bullets(parts) + "\n"
+
     return f"""Subject: {bj['industry']} Risk Notes and Questions
 
 Hi,
@@ -143,7 +236,7 @@ REGIONAL RISK NOTES
 
 COVERAGE EXPOSURES
 {_bullets(bj['coverage_exposures'])}
-{state_lines}
+{state_lines}{intel_lines}
 QUESTIONS I PLAN TO ASK
 {_bullets(bj['conversation_starters'])}
 
@@ -163,6 +256,20 @@ def render_internal_note(brief_json: dict) -> str:
     if bj.get("state_compliance_items"):
         compliance_block = f"\n\nCompliance watch\n{_bullets(bj['state_compliance_items'])}"
 
+    # Location intel summary for CSR
+    intel_block = ""
+    intel = bj.get("location_intel")
+    if intel:
+        lines = []
+        if intel.get("flood_zone"):
+            lines.append(f"Flood: Zone {intel['flood_zone']} ({intel.get('flood_risk', '?')})")
+        if intel.get("wildfire_risk") and intel["wildfire_risk"] not in ("very low", "low", "unknown"):
+            lines.append(f"Wildfire: {intel['wildfire_risk']}")
+        if intel.get("location_hazards"):
+            lines.extend(intel["location_hazards"][:2])
+        if lines:
+            intel_block = f"\n\nLocation flags\n{_bullets(lines)}"
+
     return f"""WAYOS PREP — ACCOUNT PREP
 
 Industry: {bj['industry']}
@@ -176,7 +283,7 @@ Claim patterns
 
 Questions for insured
 {_bullets(bj['conversation_starters'])}
-{compliance_block}
+{compliance_block}{intel_block}
 Docs to request
 • Loss runs
 • Payroll by class code

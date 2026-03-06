@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import time
@@ -73,6 +74,40 @@ def _lookup_state(state_code: str, db: Session) -> StateProfile | None:
     ).first()
 
 
+def _run_data_mining(location: str, industry_name: str) -> dict | None:
+    """Run the async data mining orchestrator from sync context.
+
+    Returns the brief-ready dict from LocationIntel, or None on failure.
+    """
+    if location in ("Not specified", ""):
+        return None
+
+    try:
+        from app.services.data_mining.orchestrator import gather_location_intel
+
+        # Get or create event loop
+        try:
+            loop = asyncio.get_running_loop()
+            # We're already in an async context (shouldn't happen in sync endpoints)
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                result = pool.submit(
+                    asyncio.run,
+                    gather_location_intel(location, industry_name)
+                ).result(timeout=30)
+        except RuntimeError:
+            # No running loop — normal case for sync endpoints
+            result = asyncio.run(gather_location_intel(location, industry_name))
+
+        if result:
+            return result.to_brief_dict()
+        return None
+
+    except Exception:
+        logger.exception("Data mining failed for %s", location)
+        return None
+
+
 def _enhance_with_llm(profile: IndustryRiskProfile, location: str | None) -> str | None:
     """Optionally enhance regional notes using LLM."""
     if settings.llm_provider == "none" or not location:
@@ -144,6 +179,9 @@ def generate_brief(
             tort_environment = state_profile.tort_environment
             cat_exposures = state_profile.cat_exposures or []
 
+    # Data mining — public data sources
+    location_intel = _run_data_mining(location, profile.industry_name)
+
     brief_json = build_brief_json(
         industry_name=profile.industry_name,
         location=location,
@@ -158,6 +196,7 @@ def generate_brief(
         state_compliance_items=state_compliance_items,
         tort_environment=tort_environment,
         cat_exposures=cat_exposures,
+        location_intel=location_intel,
     )
 
     brief_text = render_brief_text(brief_json)
