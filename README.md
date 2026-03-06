@@ -126,7 +126,8 @@ final_score = 0.45 * vector_similarity
             + 0.10 * jurisdiction_match
 ```
 
-Without embeddings, vector_similarity defaults to 0.5 and tag-based scoring drives ranking.
+Without embeddings, vector_similarity is 0.0 and tag-based scoring drives ranking.
+Both vector and tag-based search pre-filter by industry and jurisdiction tags.
 
 ## Project Structure
 
@@ -153,7 +154,7 @@ app/
   main.py                # FastAPI app entry point
 alembic/                 # Database migrations
 tests/                   # 32 unit tests
-docker/Dockerfile
+Dockerfile
 docker-compose.yml
 seed_data.py             # 3 demo sources (roofing, trucking, manufacturing)
 ```

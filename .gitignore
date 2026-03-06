@@ -5,11 +5,7 @@ __pycache__/
 dist/
 .venv/
 venv/
-
-# Node
-node_modules/
-*.tsbuildinfo
-frontend/dist/
+.pytest_cache/
 
 # Environment
 .env
