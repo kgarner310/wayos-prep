@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, func
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import String, Text, DateTime, JSON, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -12,13 +11,13 @@ class IndustryRiskProfile(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     industry_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    synonyms: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    synonyms: Mapped[list[str]] = mapped_column(JSON, default=list)
 
-    top_workers_comp_claims: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
-    commercial_auto_claims: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
-    general_liability_exposures: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    top_workers_comp_claims: Mapped[list[str]] = mapped_column(JSON, default=list)
+    commercial_auto_claims: Mapped[list[str]] = mapped_column(JSON, default=list)
+    general_liability_exposures: Mapped[list[str]] = mapped_column(JSON, default=list)
 
-    conversation_prompts: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    conversation_prompts: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     regional_risk_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 

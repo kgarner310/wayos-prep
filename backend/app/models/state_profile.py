@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, func
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import String, Text, DateTime, JSON, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -24,15 +23,15 @@ class StateProfile(Base):
     tort_environment: Mapped[str | None] = mapped_column(String(50), nullable=True)  # plaintiff-friendly | moderate | tort-reform
 
     # Weather / catastrophe exposure
-    cat_exposures: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    cat_exposures: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     # Key compliance items
-    compliance_items: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    compliance_items: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     # Market characteristics
     market_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Top industries in state
-    top_industries: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    top_industries: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

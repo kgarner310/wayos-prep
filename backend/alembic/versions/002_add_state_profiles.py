@@ -6,7 +6,6 @@ Create Date: 2026-03-06
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 revision = "002"
 down_revision = "001"
@@ -25,10 +24,10 @@ def upgrade() -> None:
         sa.Column("wc_notes", sa.Text(), nullable=True),
         sa.Column("regulatory_notes", sa.Text(), nullable=True),
         sa.Column("tort_environment", sa.String(50), nullable=True),
-        sa.Column("cat_exposures", postgresql.ARRAY(sa.String()), nullable=True),
-        sa.Column("compliance_items", postgresql.ARRAY(sa.String()), nullable=True),
+        sa.Column("cat_exposures", sa.JSON(), nullable=True),
+        sa.Column("compliance_items", sa.JSON(), nullable=True),
         sa.Column("market_notes", sa.Text(), nullable=True),
-        sa.Column("top_industries", postgresql.ARRAY(sa.String()), nullable=True),
+        sa.Column("top_industries", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.PrimaryKeyConstraint("id"),
     )

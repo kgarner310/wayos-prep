@@ -31,10 +31,13 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
 
-    # Add account_id FK to existing tables
-    op.add_column("loss_run_reviews", sa.Column("account_id", sa.Integer(), sa.ForeignKey("accounts.id"), nullable=True))
-    op.add_column("experience_mod_reviews", sa.Column("account_id", sa.Integer(), sa.ForeignKey("accounts.id"), nullable=True))
-    op.add_column("query_logs", sa.Column("account_id", sa.Integer(), sa.ForeignKey("accounts.id"), nullable=True))
+    # Add account_id FK to existing tables (batch mode for SQLite compat)
+    with op.batch_alter_table("loss_run_reviews") as batch_op:
+        batch_op.add_column(sa.Column("account_id", sa.Integer(), nullable=True))
+    with op.batch_alter_table("experience_mod_reviews") as batch_op:
+        batch_op.add_column(sa.Column("account_id", sa.Integer(), nullable=True))
+    with op.batch_alter_table("query_logs") as batch_op:
+        batch_op.add_column(sa.Column("account_id", sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:

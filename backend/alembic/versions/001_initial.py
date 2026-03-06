@@ -6,7 +6,6 @@ Create Date: 2026-03-04
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 revision = "001"
 down_revision = None
@@ -19,11 +18,11 @@ def upgrade() -> None:
         "industry_risk_profiles",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("industry_name", sa.String(255), nullable=False),
-        sa.Column("synonyms", postgresql.ARRAY(sa.String()), nullable=True),
-        sa.Column("top_workers_comp_claims", postgresql.ARRAY(sa.String()), nullable=True),
-        sa.Column("commercial_auto_claims", postgresql.ARRAY(sa.String()), nullable=True),
-        sa.Column("general_liability_exposures", postgresql.ARRAY(sa.String()), nullable=True),
-        sa.Column("conversation_prompts", postgresql.ARRAY(sa.String()), nullable=True),
+        sa.Column("synonyms", sa.JSON(), nullable=True),
+        sa.Column("top_workers_comp_claims", sa.JSON(), nullable=True),
+        sa.Column("commercial_auto_claims", sa.JSON(), nullable=True),
+        sa.Column("general_liability_exposures", sa.JSON(), nullable=True),
+        sa.Column("conversation_prompts", sa.JSON(), nullable=True),
         sa.Column("regional_risk_notes", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
