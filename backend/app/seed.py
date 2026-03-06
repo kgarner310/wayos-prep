@@ -11,6 +11,9 @@ Priority tiers:
 from sqlalchemy.orm import Session
 from app.database import engine, SessionLocal
 from app.models.industry import IndustryRiskProfile
+from app.tier1_industries import TIER_1_INDUSTRIES
+from app.tier2_industries import TIER_2_INDUSTRIES
+from app.tier3_industries import TIER_3_INDUSTRIES
 
 INDUSTRIES = [
     {
@@ -568,6 +571,9 @@ INDUSTRIES = [
 ]
 
 
+ALL_INDUSTRIES = INDUSTRIES + TIER_1_INDUSTRIES + TIER_2_INDUSTRIES + TIER_3_INDUSTRIES
+
+
 def seed_industries():
     db = SessionLocal()
     try:
@@ -576,15 +582,18 @@ def seed_industries():
             print(f"Database already has {existing} industries. Skipping seed.")
             return
 
-        for data in INDUSTRIES:
+        for data in ALL_INDUSTRIES:
             profile = IndustryRiskProfile(**data)
             db.add(profile)
 
         db.commit()
-        print(f"Seeded {len(INDUSTRIES)} industry risk profiles.")
+        print(f"Seeded {len(ALL_INDUSTRIES)} industry risk profiles.")
     finally:
         db.close()
 
 
 if __name__ == "__main__":
+    from app.seed_states import seed_states
+
     seed_industries()
+    seed_states()

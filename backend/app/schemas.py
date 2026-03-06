@@ -52,6 +52,10 @@ class BriefJson(BaseModel):
     coverage_exposures: list[str]
     conversation_starters: list[str]
     docs_to_request: list[str]
+    state_wc_notes: str | None = None
+    state_compliance_items: list[str] | None = None
+    tort_environment: str | None = None
+    cat_exposures: list[str] | None = None
 
 
 class BriefResponse(BaseModel):
@@ -60,6 +64,33 @@ class BriefResponse(BaseModel):
     brief_text: str
     underwriter_email_text: str
     internal_note_text: str
+
+    model_config = {"from_attributes": True}
+
+
+# --- State Profile ---
+
+class StateProfileListItem(BaseModel):
+    id: int
+    state_code: str
+    state_name: str
+
+    model_config = {"from_attributes": True}
+
+
+class StateProfileOut(BaseModel):
+    id: int
+    state_code: str
+    state_name: str
+    wc_monopolistic: bool
+    wc_competitive: bool
+    wc_notes: str | None
+    regulatory_notes: str | None
+    tort_environment: str | None
+    cat_exposures: list[str]
+    compliance_items: list[str]
+    market_notes: str | None
+    top_industries: list[str]
 
     model_config = {"from_attributes": True}
 

@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 from app.models.industry import IndustryRiskProfile
 from app.models.query_log import QueryLog
+from app.models.state_profile import StateProfile
 from app.services.brief_renderer import (
     build_brief_json,
     render_brief_text,
@@ -14,6 +16,61 @@ from app.services.brief_renderer import (
     render_internal_note,
 )
 from app.config import settings
+
+# Mapping of full state names to two-letter codes
+_STATE_NAME_TO_CODE: dict[str, str] = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+    "wisconsin": "WI", "wyoming": "WY",
+}
+
+_VALID_CODES = set(_STATE_NAME_TO_CODE.values())
+
+
+def extract_state_code(location: str) -> str | None:
+    """Extract a two-letter state code from a location string.
+
+    Handles formats like: "NC", "North Carolina", "Asheville, NC",
+    "Charlotte, North Carolina", "Asheville NC".
+    """
+    if not location:
+        return None
+
+    text = location.strip()
+
+    # Check for two-letter code at end: "Asheville, NC" or "Asheville NC"
+    match = re.search(r'\b([A-Z]{2})\s*$', text)
+    if match and match.group(1) in _VALID_CODES:
+        return match.group(1)
+
+    # Check for full state name
+    lower = text.lower()
+    for name, code in _STATE_NAME_TO_CODE.items():
+        if name in lower:
+            return code
+
+    # Check if the entire string is a two-letter code
+    if text.upper() in _VALID_CODES and len(text) == 2:
+        return text.upper()
+
+    return None
+
+
+def _lookup_state(state_code: str, db: Session) -> StateProfile | None:
+    """Look up a state profile by code."""
+    return db.query(StateProfile).filter(
+        StateProfile.state_code == state_code
+    ).first()
 
 
 def _enhance_with_llm(profile: IndustryRiskProfile, location: str | None) -> str | None:
@@ -72,6 +129,21 @@ def generate_brief(
         regional_notes = enhanced
         llm_used = settings.llm_provider
 
+    # State enrichment
+    state_wc_notes = None
+    state_compliance_items = None
+    tort_environment = None
+    cat_exposures = None
+
+    state_code = extract_state_code(location)
+    if state_code:
+        state_profile = _lookup_state(state_code, db)
+        if state_profile:
+            state_wc_notes = state_profile.wc_notes
+            state_compliance_items = state_profile.compliance_items or []
+            tort_environment = state_profile.tort_environment
+            cat_exposures = state_profile.cat_exposures or []
+
     brief_json = build_brief_json(
         industry_name=profile.industry_name,
         location=location,
@@ -82,6 +154,10 @@ def generate_brief(
         regional_notes=regional_notes,
         coverage_exposures=profile.general_liability_exposures,
         conversation_starters=profile.conversation_prompts,
+        state_wc_notes=state_wc_notes,
+        state_compliance_items=state_compliance_items,
+        tort_environment=tort_environment,
+        cat_exposures=cat_exposures,
     )
 
     brief_text = render_brief_text(brief_json)

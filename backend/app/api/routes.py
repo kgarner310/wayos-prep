@@ -7,6 +7,7 @@ from app.middleware.auth import api_key_auth
 from app.models.industry import IndustryRiskProfile
 from app.models.query_log import QueryLog
 from app.models.feedback import Feedback
+from app.models.state_profile import StateProfile
 from app.schemas import (
     IndustryOut,
     IndustryListItem,
@@ -15,6 +16,8 @@ from app.schemas import (
     BriefResponse,
     FeedbackRequest,
     FeedbackOut,
+    StateProfileListItem,
+    StateProfileOut,
 )
 from app.services.industry_matcher import match_industry
 from app.services.brief_generator import generate_brief
@@ -129,6 +132,28 @@ def create_feedback(
     db.commit()
     db.refresh(fb)
     return fb
+
+
+@router.get("/states", response_model=list[StateProfileListItem])
+def list_states(
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    return db.query(StateProfile).order_by(StateProfile.state_name).all()
+
+
+@router.get("/states/{state_code}", response_model=StateProfileOut)
+def get_state(
+    state_code: str,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    profile = db.query(StateProfile).filter(
+        StateProfile.state_code == state_code.upper()
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail=f"State '{state_code}' not found")
+    return profile
 
 
 def _log_to_response(log: QueryLog) -> dict:

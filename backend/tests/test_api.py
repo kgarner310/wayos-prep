@@ -69,3 +69,30 @@ def test_custom_request_id_forwarded():
     """A provided X-Request-ID should be echoed back."""
     response = client.get("/health", headers={"X-Request-ID": "test-123"})
     assert response.headers.get("x-request-id") == "test-123"
+
+
+def test_list_states():
+    mock_db = MagicMock()
+    mock_state = MagicMock()
+    mock_state.id = 1
+    mock_state.state_code = "NC"
+    mock_state.state_name = "North Carolina"
+    mock_db.query.return_value.order_by.return_value.all.return_value = [mock_state]
+
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    response = client.get("/api/v1/states")
+    assert response.status_code == 200
+
+    app.dependency_overrides[get_db] = _get_mock_db
+
+
+def test_get_state_not_found():
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.first.return_value = None
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    response = client.get("/api/v1/states/ZZ")
+    assert response.status_code == 404
+
+    app.dependency_overrides[get_db] = _get_mock_db

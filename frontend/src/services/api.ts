@@ -27,6 +27,28 @@ export interface BriefJson {
   coverage_exposures: string[];
   conversation_starters: string[];
   docs_to_request: string[];
+  state_wc_notes?: string | null;
+  state_compliance_items?: string[] | null;
+  tort_environment?: string | null;
+  cat_exposures?: string[] | null;
+}
+
+export interface StateListItem {
+  id: number;
+  state_code: string;
+  state_name: string;
+}
+
+export interface StateDetail extends StateListItem {
+  wc_monopolistic: boolean;
+  wc_competitive: boolean;
+  wc_notes: string | null;
+  regulatory_notes: string | null;
+  tort_environment: string | null;
+  cat_exposures: string[];
+  compliance_items: string[];
+  market_notes: string | null;
+  top_industries: string[];
 }
 
 export interface BriefResponse {
@@ -92,4 +114,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  listStates: () => request<StateListItem[]>('/states'),
+  getState: (stateCode: string) => request<StateDetail>(`/states/${stateCode}`),
 };
