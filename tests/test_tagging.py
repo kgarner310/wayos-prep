@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 from app.services.tagging import (
-    INDUSTRY_KEYWORDS, COVERAGE_KEYWORDS, RISK_THEME_KEYWORDS,
+    INDUSTRY_KEYWORDS, COVERAGE_KEYWORDS,
     tag_source, tag_chunk,
 )
 from app.models.models import Source, SourceChunk
