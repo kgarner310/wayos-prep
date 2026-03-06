@@ -28,3 +28,6 @@ Thumbs.db
 
 # SQLite
 *.db
+
+# Postgres
+pgdata/

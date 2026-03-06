@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Brief Detail - WAYOS PREP{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h1 style="font-size:20px;">Brief Detail</h1>
+  <a href="/admin/briefs" class="btn btn-outline btn-sm">Back to Briefs</a>
+</div>
+
+<div class="card">
+  <h2>Query Info</h2>
+  {% if query %}
+  <table>
+    <tr><th style="width:150px;">Query ID</th><td class="text-sm" style="font-family:var(--mono);">{{ query.id }}</td></tr>
+    <tr><th>Industry</th><td>{{ query.requested_industry }}</td></tr>
+    <tr><th>State</th><td>{{ query.requested_state }}</td></tr>
+    <tr><th>Employees</th><td>{{ query.employee_count or '—' }}</td></tr>
+    <tr><th>Mod</th><td>{{ query.current_mod or '—' }}</td></tr>
+    <tr><th>Raw Query</th><td>{{ query.raw_query }}</td></tr>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="flex justify-between items-center mb-2">
+    <h2>Brief Output</h2>
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline" onclick="showTab('md')">Markdown</button>
+      <button class="btn btn-sm btn-outline" onclick="showTab('js')">JSON</button>
+    </div>
+  </div>
+  <div id="tab-md" class="brief-markdown">{{ brief.rendered_markdown | replace('\n', '<br>') | safe }}</div>
+  <div id="tab-js" class="brief-output" style="display:none;">{{ brief.brief_json | tojson(indent=2) }}</div>
+
+  <div class="feedback-bar">
+    <button class="btn btn-sm btn-success" onclick="fb('thumbs_up')">Thumbs Up</button>
+    <button class="btn btn-sm btn-danger" onclick="fb('thumbs_down')">Thumbs Down</button>
+    <button class="btn btn-sm btn-warning" onclick="fb('flag_hallucination')">Flag Hallucination</button>
+    <button class="btn btn-sm btn-warning" onclick="fb('flag_wrong_state')">Wrong State</button>
+    <button class="btn btn-sm btn-outline" onclick="fb('flag_weak_source')">Weak Source</button>
+  </div>
+</div>
+
+{% if retrieval_run %}
+<div class="card">
+  <h2>Retrieval Debug</h2>
+  <table>
+    <tr><th style="width:150px;">Run ID</th><td class="text-sm" style="font-family:var(--mono);">{{ retrieval_run.id }}</td></tr>
+    <tr><th>Model</th><td>{{ retrieval_run.embedding_model or '—' }}</td></tr>
+    <tr><th>Candidates</th><td>{{ retrieval_run.candidate_count }}</td></tr>
+    <tr><th>Selected</th><td>{{ retrieval_run.selected_count }}</td></tr>
+    <tr><th>Filters</th><td class="text-sm" style="font-family:var(--mono);">{{ retrieval_run.filters_json }}</td></tr>
+  </table>
+
+  {% if retrieval_results %}
+  <h3 class="mt-4 mb-2">Retrieved Chunks</h3>
+  {% for item in retrieval_results %}
+  <div class="chunk">
+    <div class="chunk-header">
+      <span>#{{ item.result.rank_position }} — {{ item.source.title if item.source else 'Unknown' }}</span>
+      <span>
+        sim: {{ '%.4f' % (item.result.similarity_score | float) if item.result.similarity_score else '—' }}
+        | rerank: {{ '%.4f' % (item.result.rerank_score | float) if item.result.rerank_score else '—' }}
+        {% if item.result.selected %}<span class="badge badge-ready">selected</span>{% endif %}
+      </span>
+    </div>
+    <div class="chunk-text">{{ item.chunk.text_content[:300] if item.chunk else '' }}{% if item.chunk and item.chunk.text_content|length > 300 %}...{% endif %}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endif %}
+
+{% if feedback %}
+<div class="card">
+  <h2>Feedback ({{ feedback|length }})</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Value</th><th>User</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for f in feedback %}
+      <tr>
+        <td>{{ f.event_type }}</td>
+        <td>{{ f.event_value or '—' }}</td>
+        <td>{{ f.user_id or '—' }}</td>
+        <td class="text-sm text-muted">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tab) {
+  document.getElementById('tab-md').style.display = tab === 'md' ? 'block' : 'none';
+  document.getElementById('tab-js').style.display = tab === 'js' ? 'block' : 'none';
+}
+
+async function fb(eventType) {
+  await apiPost('/api/v1/feedback', {
+    brief_id: '{{ brief.id }}',
+    query_id: '{{ brief.query_id }}',
+    event_type: eventType,
+  });
+  alert('Feedback: ' + eventType);
+  location.reload();
+}
+</script>
+{% endblock %}

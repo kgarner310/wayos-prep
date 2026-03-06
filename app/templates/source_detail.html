@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ source.title }} - WAYOS PREP{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h1 style="font-size:20px;">{{ source.title }}</h1>
+  <a href="/admin/sources" class="btn btn-outline btn-sm">Back to Sources</a>
+</div>
+
+<div class="card">
+  <h2>Details</h2>
+  <table>
+    <tr><th style="width:150px;">ID</th><td class="text-sm" style="font-family:var(--mono);">{{ source.id }}</td></tr>
+    <tr><th>Type</th><td>{{ source.source_type }}</td></tr>
+    <tr><th>Status</th><td><span class="badge badge-{{ source.status }}">{{ source.status }}</span></td></tr>
+    <tr><th>Authority</th><td>{{ source.authority_level }} (score: {{ source.authority_score }})</td></tr>
+    <tr><th>Freshness</th><td>{{ source.freshness_score }}</td></tr>
+    <tr><th>State</th><td>{{ source.jurisdiction_state or '—' }}</td></tr>
+    <tr><th>URL</th><td>{% if source.url %}<a href="{{ source.url }}" target="_blank">{{ source.url[:60] }}</a>{% else %}—{% endif %}</td></tr>
+    <tr><th>Publisher</th><td>{{ source.publisher or '—' }}</td></tr>
+    <tr><th>Hash</th><td class="text-sm" style="font-family:var(--mono);">{{ (source.document_hash or '')[:16] }}...</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Actions</h2>
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="apiAction('/api/v1/sources/{{ source.id }}/parse')">Parse & Tag</button>
+    <button class="btn btn-primary" onclick="apiAction('/api/v1/sources/{{ source.id }}/chunk')">Chunk</button>
+    <button class="btn btn-primary" onclick="apiAction('/api/v1/sources/{{ source.id }}/embed')">Embed</button>
+  </div>
+  <p class="text-muted text-sm mt-2">Run in order: Parse → Chunk → Embed. Source becomes "ready" after embedding.</p>
+</div>
+
+{% if tags %}
+<div class="card">
+  <h2>Tags ({{ tags|length }})</h2>
+  <div>
+    {% for tag in tags %}
+    <span class="tag tag-{{ tag.tag_type }}">{{ tag.tag_type }}:{{ tag.tag_value }} ({{ tag.confidence }})</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if chunks %}
+<div class="card">
+  <h2>Chunks ({{ chunks|length }})</h2>
+  {% for item in chunks %}
+  <div class="chunk">
+    <div class="chunk-header">
+      <span>Chunk #{{ item.chunk.chunk_index }}{% if item.chunk.heading %} — {{ item.chunk.heading }}{% endif %}</span>
+      <span>
+        {{ item.chunk.token_count or 0 }} tokens
+        {% if item.has_embedding %}<span class="badge badge-ready">embedded</span>{% endif %}
+      </span>
+    </div>
+    {% if item.tags %}
+    <div class="mb-2">
+      {% for t in item.tags %}
+      <span class="tag tag-{{ t.tag_type }}">{{ t.tag_type }}:{{ t.tag_value }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="chunk-text">{{ item.chunk.text_content[:500] }}{% if item.chunk.text_content|length > 500 %}...{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if source.raw_text %}
+<div class="card">
+  <h2>Raw Text ({{ source.raw_text|length }} chars)</h2>
+  <div class="chunk-text" style="max-height:300px;">{{ source.raw_text[:3000] }}{% if source.raw_text|length > 3000 %}...{% endif %}</div>
+</div>
+{% endif %}
+{% endblock %}

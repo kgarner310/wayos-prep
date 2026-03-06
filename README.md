@@ -1,165 +1,166 @@
 # WAYOS PREP
 
-**Better meetings. Better coverage.**
+**Retrieval-augmented meeting brief engine for commercial insurance producers.**
 
-WAYOS PREP is a meeting preparation engine for commercial insurance producers, delivered as an **Outlook Add-in**. It generates structured client risk briefs for any industry — right inside the tool producers already use all day.
+WAYOS PREP ingests insurance-related sources, chunks and tags them, stores embeddings in Postgres with pgvector, retrieves relevant context for a producer query, and generates a structured pre-meeting brief.
 
 ## Tech Stack
 
-- **Frontend:** Outlook Add-in (Office.js + React + Vite)
-- **Backend:** Python + FastAPI + Pydantic + SQLAlchemy + Alembic
-- **Database:** PostgreSQL
-- **LLM:** OpenAI / Anthropic / None (deterministic mode)
+- **Backend:** Python + FastAPI + SQLAlchemy + Alembic
+- **Database:** PostgreSQL + pgvector
+- **LLM/Embeddings:** OpenAI API (GPT-4o-mini + text-embedding-3-small)
+- **Frontend:** Server-rendered admin UI (Jinja2 templates)
+- **Dev:** Docker Compose
 
 ## Quick Start
 
-### 1. Clone and configure
+### 1. Configure
 
 ```bash
 cp .env.example .env
-# Edit .env if you want to use an LLM provider (optional)
+# Edit .env — add your OPENAI_API_KEY for embeddings + LLM brief generation
+# The app works without it (tag-based retrieval + fallback briefs) but is better with it
 ```
 
-### 2. Start everything with Docker
+### 2. Start with Docker Compose
 
 ```bash
-cd infra
 docker compose up --build
 ```
 
 This starts:
-- **PostgreSQL** on port 5432
-- **FastAPI backend** on port 8000 (runs migrations + seeds 20 industries)
-- **Vite dev server** on port 3000 (serves the Outlook Add-in)
+- **PostgreSQL + pgvector** on port 5432
+- **FastAPI app** on port 8000 (runs migrations, seeds demo data, starts uvicorn with reload)
 
 ### 3. Verify
 
 ```bash
 curl http://localhost:8000/health
-# {"status":"ok","service":"wayos-prep","database":"connected"}
+# {"status":"ok","service":"wayos-prep"}
 
-# Open the task pane standalone in a browser:
-open http://localhost:3000
+# Open admin UI:
+open http://localhost:8000/admin/
 ```
 
-### 4. Sideload into Outlook
+### 4. Demo Flow
 
-**For Outlook on the web (easiest for testing):**
+The seed script auto-creates 3 sample sources (roofing, trucking, manufacturing) with chunks and tags.
 
-1. Open Outlook at https://outlook.office.com
-2. Click the **Get Add-ins** button (or **Manage Add-ins** from the ... menu)
-3. Click **My add-ins** → **Add a custom add-in** → **Add from file**
-4. Upload `frontend/public/manifest.xml`
-5. The **WAYOS PREP** button appears in the ribbon
-
-**For Outlook desktop:**
-
-1. Open Outlook → File → Manage Add-ins
-2. Under **Custom add-ins**, click **Add from file**
-3. Select `frontend/public/manifest.xml`
-
-**Note:** For production, update the URLs in `manifest.xml` from `https://localhost:3000` to your deployed domain.
-
-### 5. Standalone browser mode
-
-The add-in also works as a standalone web app at `http://localhost:3000`. Outside Outlook, the Send Pack buttons copy to clipboard instead of opening compose windows.
-
-## How It Works in Outlook
-
-1. **Open a calendar invite** for a client meeting → Click **WAYOS PREP** in the ribbon
-2. The add-in reads the appointment subject and suggests the industry
-3. **Generate a brief** with one click
-4. **Send Pack** opens a new email compose window pre-filled with the underwriter email or CSR note
-5. The producer never leaves Outlook
+1. **View sources** at http://localhost:8000/admin/sources
+2. **Click a source** to see details, tags, chunks
+3. **If you have an OpenAI key:** click "Embed" on each source to generate embeddings
+4. **Run a prep query** at http://localhost:8000/admin/prep
+   - Industry: `roofing`, State: `NC`, Employees: `22`
+   - Click "Generate Brief"
+5. **View the brief** with markdown + JSON output
+6. **Submit feedback** (thumbs up/down, flag hallucination, etc.)
+7. **Inspect retrieval debug** at http://localhost:8000/admin/briefs/{brief_id}
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check (includes DB status) |
-| GET | `/industries` | List all industries |
-| GET | `/industries/{id}` | Get industry detail |
-| POST | `/briefs/ask` | Generate brief from a question |
-| POST | `/briefs/prep` | Generate brief from account details |
-| GET | `/briefs/{id}` | Retrieve a generated brief |
-| POST | `/feedback` | Submit brief feedback |
+| GET | `/health` | Health check |
+| POST | `/api/v1/sources/ingest` | Ingest source from raw text |
+| POST | `/api/v1/sources/ingest/url` | Ingest source from URL |
+| POST | `/api/v1/sources/ingest/file` | Ingest source from file upload |
+| POST | `/api/v1/sources/{id}/parse` | Parse, clean, and tag source |
+| POST | `/api/v1/sources/{id}/chunk` | Chunk source text |
+| POST | `/api/v1/sources/{id}/embed` | Generate embeddings for chunks |
+| GET | `/api/v1/sources` | List all sources |
+| GET | `/api/v1/sources/{id}` | Source detail with tags and chunks |
+| POST | `/api/v1/prep/query` | Submit prep query, get brief |
+| GET | `/api/v1/prep/brief/{id}` | Get stored brief |
+| POST | `/api/v1/feedback` | Submit feedback on a brief |
+| GET | `/api/v1/retrieval/debug/{query_id}` | Retrieval debug info |
 
-## Core Features
+Interactive API docs at http://localhost:8000/docs
 
-### 1. Ask Risk Question
-Ask a natural language question like "What risks should I discuss with a roofing contractor?" and get a full client brief.
+## Admin UI
 
-### 2. Prep This Account
-Enter industry, location, employee count, MOD, and vehicle exposure to generate a tailored brief.
+- **Dashboard** — `/admin/` — stats, quick actions, source ingestion form
+- **Sources** — `/admin/sources` — list all sources with status
+- **Source Detail** — `/admin/sources/{id}` — tags, chunks, parse/chunk/embed buttons
+- **Run Prep** — `/admin/prep` — query form with brief output + feedback
+- **Briefs** — `/admin/briefs` — list generated briefs
+- **Brief Detail** — `/admin/briefs/{id}` — brief output, retrieval debug, feedback
 
-### 3. Industry Lookup
-Browse and search 20 seeded industries. View risk profiles and generate briefs.
+## Pipeline
 
-### Brief Output
-Each brief includes:
-- **Top Claim Drivers** — what actually hurts in this industry
-- **Regional Risk Notes** — location-specific considerations
-- **Coverage Exposures** — what to stress-test
-- **Conversation Starters** — questions producers can ask
-- **Quick Docs to Request** — standard document checklist
+```
+Source Ingestion → Parse/Clean → Chunk → Tag → Embed → Ready
+                                                         ↓
+Query → Normalize → Filter → Vector Search → Rerank → Brief Generation
+                                                         ↓
+                                              JSON Brief + Markdown + Citations
+```
 
-### Send Pack (Outlook-Native Sharing)
-From any brief, launch pre-formatted messages:
-- **Underwriter Email** — opens Outlook compose with subject line and body pre-filled
-- **Internal Note** — opens compose with CSR-ready account prep summary
+### Retrieval Scoring
 
-When running outside Outlook (standalone browser), Send Pack copies to clipboard instead.
-
-## LLM Configuration
-
-Set `LLM_PROVIDER` in `.env`:
-
-| Value | Behavior |
-|-------|----------|
-| `none` | Deterministic briefs from seed data (default, no API key needed) |
-| `openai` | Uses GPT-4o-mini for industry matching and regional notes |
-| `anthropic` | Uses Claude Haiku for industry matching and regional notes |
-
-The system works fully without any LLM — the seed data provides complete risk profiles.
-
-## Running Tests
-
-```bash
-cd backend
-pip install -r requirements.txt
-DATABASE_URL=sqlite:///test.db pytest tests/ -v
+```
+final_score = 0.45 * vector_similarity
+            + 0.20 * tag_overlap
+            + 0.15 * authority_score_normalized
+            + 0.10 * freshness_score_normalized
+            + 0.10 * jurisdiction_match
 ```
 
 ## Project Structure
 
 ```
 /wayos-prep
-  /backend
-    /app
-      /models        # SQLAlchemy models
-      /services      # Business logic (matching, brief rendering, LLM)
-      /api           # FastAPI routes
-    /tests           # pytest tests
-    /alembic         # Database migrations
-  /frontend
-    /public          # manifest.xml (Office Add-in), taskpane.html
-    /src
-      /components    # Button, Card, Input, Section
-      /screens       # Home, Ask, Prep, Lookup, IndustryDetail, Brief
-      /services      # API client, Office.js helpers, theme
-  /infra
-    docker-compose.yml
-  /docs
-    demo.md
+  /app
+    /api            # FastAPI routes (API + admin UI)
+    /core           # Config, enums, constants
+    /db             # Database session
+    /models         # SQLAlchemy models (pgvector)
+    /schemas        # Pydantic request/response schemas
+    /services       # Business logic
+      ingestion.py    # Source ingestion (text, URL, file)
+      parser.py       # Text cleaning
+      chunker.py      # Heading-aware chunking
+      tagging.py      # Rule-based + LLM tag extraction
+      embeddings.py   # OpenAI embedding generation
+      retrieval.py    # Vector search + reranking
+      brief_generator.py  # LLM brief generation
+      scoring.py      # Authority + freshness scoring
+    /templates      # Jinja2 HTML templates
+    /static         # CSS
+    main.py         # FastAPI app
+  /alembic          # Database migrations
+  /tests            # pytest tests
+  /docker           # Dockerfile
+  docker-compose.yml
+  seed_data.py      # Demo data seeder
+  requirements.txt
+  .env.example
 ```
 
-## Manifest Configuration
+## Running Tests
 
-The add-in manifest (`frontend/public/manifest.xml`) registers WAYOS PREP for:
+```bash
+# Unit tests (no database needed)
+pytest tests/test_chunker.py tests/test_parser.py tests/test_tagging.py tests/test_scoring.py tests/test_brief_schema.py -v
 
-- **Message Read** — prep while reading client emails
-- **Message Compose** — insert brief content into emails
-- **Appointment Organizer** — prep before meetings you scheduled
-- **Appointment Attendee** — prep before meetings you're invited to
+# API tests (requires test database)
+TEST_DATABASE_URL=postgresql://wayos:wayos_dev_password@localhost:5432/wayos_prep_test pytest tests/test_api.py -v
+```
 
-Update `<SourceLocation>` URLs for production deployment.
+## Assumptions
+
+- OpenAI API key is optional but recommended for full functionality (embeddings + LLM briefs)
+- Without an API key, the system uses tag-based retrieval and fallback brief generation
+- pgvector IVFFlat index uses 100 lists (appropriate for <100K vectors)
+- Chunks target 300-800 tokens with light overlap
+- Demo sources cover roofing, trucking, and manufacturing in NC
+
+## Next Steps
+
+- Add more seed sources across all starter industries
+- Implement PDF upload parsing
+- Add batch processing endpoint for ingestion pipeline
+- Build source freshness decay job
+- Add user auth when needed
+- Implement proper reranker (cross-encoder)
+- Add brief template customization
+- Build export (PDF/email) for briefs
