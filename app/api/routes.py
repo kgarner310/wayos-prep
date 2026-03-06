@@ -21,6 +21,7 @@ from app.schemas.schemas import (
     RiskScoreRequest, RiskScoreResponse, RiskScoreOutput,
     CoverageGapInsightRequest, CoverageGapInsightResponse,
     ProducerAmmoRequest, ProducerAmmoResponse,
+    AgencyAmmoFeedResponse,
 )
 from app.services.ingestion import ingest_raw_text, ingest_url, ingest_file
 from app.services.parser import clean_text
@@ -32,6 +33,7 @@ from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
 from app.services.coverage_gap_detector import detect_coverage_gaps
 from app.services.producer_ammo import generate_producer_ammo
+from app.services.agency_ammo_feed import build_agency_ammo_feed
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -508,3 +510,24 @@ def producer_ammo_questions(payload: ProducerAmmoRequest):
     }
     result = generate_producer_ammo(profile)
     return ProducerAmmoResponse(**result)
+
+
+# --- Agency Ammo Feed ---
+
+@router.get("/intel/agency-ammo-feed", response_model=AgencyAmmoFeedResponse, tags=["intel"])
+def agency_ammo_feed(
+    industry: str = "",
+    state: str = "",
+    date_range_days: int = 30,
+    account_stage: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Aggregated intelligence feed of producer question patterns, coverage gap trends, and rising risk topics."""
+    filters = {
+        "industry": industry,
+        "state": state,
+        "date_range_days": date_range_days,
+        "account_stage": account_stage,
+    }
+    result = build_agency_ammo_feed(filters, db=db)
+    return AgencyAmmoFeedResponse(**result)

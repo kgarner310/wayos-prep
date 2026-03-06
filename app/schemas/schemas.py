@@ -300,6 +300,21 @@ class ProducerAmmoResponse(BaseModel):
     ammo_questions: AmmoQuestions
 
 
+# --- Agency Ammo Feed ---
+
+class AgencyAmmoFeedSummary(BaseModel):
+    top_question_themes: list[str] = []
+    rising_risk_topics: list[str] = []
+    common_coverage_gaps: list[str] = []
+    suggested_openers: list[str] = []
+
+class AgencyAmmoFeedResponse(BaseModel):
+    industry: str
+    state: str
+    date_range_days: int
+    summary: AgencyAmmoFeedSummary
+
+
 class RetrievalDebugResult(BaseModel):
     chunk_id: UUID
     rank_position: int
