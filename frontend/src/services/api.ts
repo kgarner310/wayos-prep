@@ -59,6 +59,38 @@ export interface BriefResponse {
   internal_note_text: string;
 }
 
+export interface LossRunLineEntry {
+  line_of_business: string;
+  policy_year?: string;
+  premium?: number;
+  num_claims?: number;
+  total_incurred?: number;
+  total_paid?: number;
+  open_reserves?: number;
+  large_claims?: string[];
+}
+
+export interface LossRunAnalysisResponse {
+  id: number;
+  account_name: string;
+  total_incurred: number | null;
+  total_claims: number | null;
+  loss_ratio: number | null;
+  analysis_json: any;
+  analysis_text: string | null;
+  talking_points: string | null;
+}
+
+export interface ExperienceModAnalysisResponse {
+  id: number;
+  account_name: string;
+  current_mod: number | null;
+  prior_mod: number | null;
+  analysis_json: any;
+  analysis_text: string | null;
+  talking_points: string | null;
+}
+
 function getApiKey(): string | null {
   return (window as any).__WAYOS_API_KEY__ || null;
 }
@@ -116,4 +148,38 @@ export const api = {
     }),
   listStates: () => request<StateListItem[]>('/states'),
   getState: (stateCode: string) => request<StateDetail>(`/states/${stateCode}`),
+
+  analyzeLossRuns: (data: {
+    account_name: string;
+    policy_period_start?: string;
+    policy_period_end?: string;
+    industry?: string;
+    location?: string;
+    line_entries: LossRunLineEntry[];
+  }) =>
+    request<LossRunAnalysisResponse>('/loss-runs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getLossRunReview: (id: number) => request<LossRunAnalysisResponse>(`/loss-runs/${id}`),
+
+  analyzeExperienceMod: (data: {
+    account_name: string;
+    current_mod: number;
+    prior_mod?: number;
+    expected_losses?: number;
+    actual_primary_losses?: number;
+    actual_excess_losses?: number;
+    total_payroll?: number;
+    state_code?: string;
+    effective_date?: string;
+    class_code_entries?: any[];
+    mod_claims?: any[];
+  }) =>
+    request<ExperienceModAnalysisResponse>('/experience-mod', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getExperienceModReview: (id: number) =>
+    request<ExperienceModAnalysisResponse>(`/experience-mod/${id}`),
 };

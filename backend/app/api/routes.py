@@ -8,6 +8,8 @@ from app.models.industry import IndustryRiskProfile
 from app.models.query_log import QueryLog
 from app.models.feedback import Feedback
 from app.models.state_profile import StateProfile
+from app.models.loss_run import LossRunReview
+from app.models.experience_mod import ExperienceModReview
 from app.schemas import (
     IndustryOut,
     IndustryListItem,
@@ -18,9 +20,15 @@ from app.schemas import (
     FeedbackOut,
     StateProfileListItem,
     StateProfileOut,
+    LossRunRequest,
+    LossRunAnalysis,
+    ExperienceModRequest,
+    ExperienceModAnalysis,
 )
 from app.services.industry_matcher import match_industry
 from app.services.brief_generator import generate_brief
+from app.services.loss_run_analyzer import analyze_loss_runs, render_loss_run_text
+from app.services.experience_mod_analyzer import analyze_experience_mod, render_experience_mod_text
 
 router = APIRouter()
 
@@ -154,6 +162,119 @@ def get_state(
     if not profile:
         raise HTTPException(status_code=404, detail=f"State '{state_code}' not found")
     return profile
+
+
+# --- Loss Runs ---
+
+
+@router.post("/loss-runs", response_model=LossRunAnalysis)
+def create_loss_run_review(
+    req: LossRunRequest,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    entries = [e.model_dump() for e in req.line_entries]
+    analysis = analyze_loss_runs(entries)
+
+    totals = analysis.get("totals", {})
+    analysis_text = render_loss_run_text(analysis, req.account_name)
+    talking_points = "\n".join(f"• {p}" for p in analysis.get("talking_points", []))
+
+    industry_id = None
+    if req.industry:
+        profile = match_industry(req.industry, db)
+        if profile:
+            industry_id = profile.id
+
+    review = LossRunReview(
+        account_name=req.account_name,
+        policy_period_start=req.policy_period_start,
+        policy_period_end=req.policy_period_end,
+        industry_id=industry_id,
+        location=req.location,
+        line_entries=entries,
+        analysis_json=analysis,
+        analysis_text=analysis_text,
+        talking_points=talking_points,
+        total_incurred=totals.get("incurred"),
+        total_claims=totals.get("claims"),
+        loss_ratio=totals.get("loss_ratio"),
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    return review
+
+
+@router.get("/loss-runs/{review_id}", response_model=LossRunAnalysis)
+def get_loss_run_review(
+    review_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    review = db.query(LossRunReview).filter(LossRunReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Loss run review not found")
+    return review
+
+
+# --- Experience Mod ---
+
+
+@router.post("/experience-mod", response_model=ExperienceModAnalysis)
+def create_experience_mod_review(
+    req: ExperienceModRequest,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    analysis = analyze_experience_mod(
+        current_mod=req.current_mod,
+        prior_mod=req.prior_mod,
+        expected_losses=req.expected_losses,
+        actual_primary_losses=req.actual_primary_losses,
+        actual_excess_losses=req.actual_excess_losses,
+        total_payroll=req.total_payroll,
+        class_code_entries=[e.model_dump() for e in req.class_code_entries] if req.class_code_entries else None,
+        mod_claims=[c.model_dump() for c in req.mod_claims] if req.mod_claims else None,
+    )
+
+    analysis_text = render_experience_mod_text(analysis, req.account_name)
+    talking_points = "\n".join(f"• {p}" for p in analysis.get("talking_points", []))
+
+    review = ExperienceModReview(
+        account_name=req.account_name,
+        state_code=req.state_code.upper() if req.state_code else None,
+        effective_date=req.effective_date,
+        current_mod=req.current_mod,
+        prior_mod=req.prior_mod,
+        expected_losses=req.expected_losses,
+        actual_primary_losses=req.actual_primary_losses,
+        actual_excess_losses=req.actual_excess_losses,
+        total_payroll=req.total_payroll,
+        class_code_entries=[e.model_dump() for e in req.class_code_entries] if req.class_code_entries else None,
+        mod_claims=[c.model_dump() for c in req.mod_claims] if req.mod_claims else None,
+        analysis_json=analysis,
+        analysis_text=analysis_text,
+        talking_points=talking_points,
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    return review
+
+
+@router.get("/experience-mod/{review_id}", response_model=ExperienceModAnalysis)
+def get_experience_mod_review(
+    review_id: int,
+    db: Session = Depends(get_db),
+    _auth: str | None = Depends(api_key_auth),
+):
+    review = db.query(ExperienceModReview).filter(ExperienceModReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Experience mod review not found")
+    return review
 
 
 def _log_to_response(log: QueryLog) -> dict:

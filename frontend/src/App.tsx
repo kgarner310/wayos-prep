@@ -5,6 +5,8 @@ import { PrepScreen } from './screens/PrepScreen';
 import { LookupScreen } from './screens/LookupScreen';
 import { IndustryDetailScreen } from './screens/IndustryDetailScreen';
 import { BriefScreen } from './screens/BriefScreen';
+import { LossRunScreen } from './screens/LossRunScreen';
+import { ExperienceModScreen } from './screens/ExperienceModScreen';
 
 interface NavState {
   screen: string;
@@ -62,6 +64,10 @@ export default function App() {
           onNavigate={navigate}
         />
       );
+    case 'lossRuns':
+      return <LossRunScreen onNavigate={navigate} onBack={goBack} />;
+    case 'experienceMod':
+      return <ExperienceModScreen onNavigate={navigate} onBack={goBack} />;
     default:
       return <HomeScreen onNavigate={navigate} />;
   }

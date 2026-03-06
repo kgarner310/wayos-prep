@@ -102,6 +102,16 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           variant="primary"
         />
         <Button
+          title="Loss Run Review"
+          onClick={() => onNavigate('lossRuns')}
+          variant="primary"
+        />
+        <Button
+          title="Experience Mod Review"
+          onClick={() => onNavigate('experienceMod')}
+          variant="primary"
+        />
+        <Button
           title="Industry Lookup"
           onClick={() => onNavigate('lookup')}
           variant="secondary"
