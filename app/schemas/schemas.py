@@ -248,6 +248,31 @@ class RiskScoreResponse(BaseModel):
 
 # --- Retrieval Debug ---
 
+# --- Coverage Gap Insight Engine ---
+
+class CoverageGapInsightRequest(BaseModel):
+    industry: str
+    state: str
+    employees: Optional[int] = None
+    employee_count: Optional[int] = None
+    vehicles: Optional[int] = None
+    vehicle_count: Optional[int] = None
+    annual_revenue: Optional[float] = None
+    experience_mod: Optional[float] = None
+    current_mod: Optional[float] = None
+    uses_subcontractors: Optional[bool] = False
+    current_coverages: list[str] = []
+
+class CoverageGapDetail(BaseModel):
+    coverage: str
+    reason: str
+    risk_level: Literal["high", "medium", "low"]
+
+class CoverageGapInsightResponse(BaseModel):
+    coverage_gaps: list[CoverageGapDetail] = []
+    suggested_questions: list[str] = []
+
+
 class RetrievalDebugResult(BaseModel):
     chunk_id: UUID
     rank_position: int

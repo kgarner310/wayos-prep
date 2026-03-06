@@ -304,3 +304,277 @@ def detect_gaps(
     severity_order = {"high": 0, "medium": 1, "low": 2}
     gaps.sort(key=lambda g: severity_order.get(g["severity"], 3))
     return gaps[:10]
+
+
+# ============================================================
+# COVERAGE GAP INSIGHT ENGINE
+# ============================================================
+# Standalone function accepting an account profile dict and
+# returning structured coverage gaps + suggested producer questions.
+
+# Normalize common industry name variants to canonical keys
+_INDUSTRY_ALIASES = {
+    "roofing contractor": "roofing",
+    "roofing contractors": "roofing",
+    "roofer": "roofing",
+    "truck": "trucking",
+    "trucking company": "trucking",
+    "mfg": "manufacturing",
+    "manufacturer": "manufacturing",
+    "food service": "restaurant",
+    "restaurants": "restaurant",
+    "lawn care": "landscaping",
+    "landscape": "landscaping",
+    "heating and cooling": "hvac",
+    "hvac contractor": "hvac",
+}
+
+
+def _normalize_industry(raw: str) -> str:
+    """Map common industry aliases to canonical INDUSTRY_EXPECTED_COVERAGES keys."""
+    key = raw.strip().lower()
+    return _INDUSTRY_ALIASES.get(key, key)
+
+
+# Coverage display names for human-readable output
+_COVERAGE_DISPLAY = {
+    "workers_comp": "Workers' Compensation",
+    "general_liability": "General Liability",
+    "commercial_auto": "Commercial Auto",
+    "umbrella": "Umbrella / Excess Liability",
+    "inland_marine": "Inland Marine / Equipment Floater",
+    "builders_risk": "Builders Risk",
+    "property": "Commercial Property",
+    "cargo": "Motor Truck Cargo",
+    "cyber": "Cyber Liability",
+    "epli": "Employment Practices Liability (EPLI)",
+    "professional_liability": "Professional Liability / E&O",
+    "hired_non_owned_auto": "Hired and Non-Owned Auto",
+}
+
+# Reasons why each coverage is important, keyed by coverage slug
+_COVERAGE_REASONS = {
+    "workers_comp": "State-mandated coverage for employee injuries; missing it exposes the employer to personal liability and penalties",
+    "general_liability": "Covers third-party bodily injury and property damage claims arising from operations",
+    "commercial_auto": "Required when company-owned or leased vehicles are used; personal auto policies exclude business use",
+    "umbrella": "Provides excess limits above primary GL, auto, and employer's liability to protect against catastrophic verdicts",
+    "inland_marine": "Covers tools, equipment, and materials in transit or at job sites — standard property often excludes mobile assets",
+    "builders_risk": "Protects structures under construction or renovation from damage before project completion",
+    "property": "Covers owned or leased buildings, contents, and business personal property against covered perils",
+    "cargo": "Covers goods in transit; motor carriers face liability for freight damage",
+    "cyber": "Covers data breach response, ransomware, and business interruption from cyber events",
+    "epli": "Covers employment-related claims including discrimination, harassment, and wrongful termination",
+    "professional_liability": "Covers errors, omissions, and faulty workmanship claims in professional services",
+    "hired_non_owned_auto": "Employees may use personal vehicles for job activities",
+}
+
+# Risk levels for missing coverages based on how critical they typically are
+_COVERAGE_RISK_LEVELS = {
+    "workers_comp": "high",
+    "general_liability": "high",
+    "commercial_auto": "high",
+    "umbrella": "medium",
+    "inland_marine": "medium",
+    "builders_risk": "low",
+    "property": "medium",
+    "cargo": "high",
+    "cyber": "low",
+    "epli": "medium",
+    "professional_liability": "medium",
+    "hired_non_owned_auto": "medium",
+}
+
+# Contextual questions organized by coverage and account attribute
+_SUGGESTED_QUESTIONS_BY_COVERAGE = {
+    "workers_comp": "What is your current experience modification rate, and how do you manage return-to-work?",
+    "general_liability": "What types of contracts do you sign, and do they require specific GL limits or AI endorsements?",
+    "commercial_auto": "How many vehicles are in your fleet, and who is authorized to drive them?",
+    "umbrella": "What are your current underlying limits, and have you reviewed umbrella adequacy against contract requirements?",
+    "inland_marine": "What is the total value of tools and equipment you move between locations?",
+    "builders_risk": "Do your contracts specify who carries builders risk during active projects?",
+    "property": "When was the last time your property values were appraised for insurance purposes?",
+    "cargo": "What is the maximum value of a single load, and do you carry refrigerated or hazmat freight?",
+    "cyber": "How do you store employee PII and customer payment data?",
+    "epli": "Do you have an employee handbook reviewed by employment counsel?",
+    "professional_liability": "Have you had any professional liability or E&O claims in the past 5 years?",
+    "hired_non_owned_auto": "Do any employees drive personal vehicles to job sites?",
+}
+
+_SUGGESTED_QUESTIONS_BY_ATTRIBUTE = {
+    "uses_subcontractors": "Are subcontractors required to provide certificates of insurance before starting work?",
+    "high_employee_count": "Do you have formal HR policies covering hiring, termination, and anti-harassment?",
+    "high_vehicle_count": "Do you run MVR checks on all drivers at hire and annually?",
+    "high_revenue": "Have you reviewed your liability limits relative to your annual revenue and contractual requirements?",
+    "high_mod": "Your experience mod suggests elevated losses — what loss control measures have you implemented?",
+    "wind_state": "What is your current named-storm deductible, and have you stress-tested a wind loss?",
+    "flood_state": "Is your property in a flood zone, and do you carry separate flood coverage?",
+    "earthquake_state": "Do you carry earthquake coverage, and has your building's seismic vulnerability been assessed?",
+}
+
+
+def detect_coverage_gaps(account_profile: dict) -> dict:
+    """Coverage Gap Insight Engine.
+
+    Given an industry profile and basic account attributes, return likely
+    insurance coverage gaps and suggested producer questions.
+
+    Args:
+        account_profile: dict with optional keys:
+            industry, state, employee_count, vehicle_count,
+            annual_revenue, experience_mod, uses_subcontractors,
+            current_coverages
+
+    Returns:
+        {
+            "coverage_gaps": [
+                {"coverage": str, "reason": str, "risk_level": str},
+                ...
+            ],
+            "suggested_questions": [str, ...]
+        }
+    """
+    industry_raw = account_profile.get("industry", "")
+    industry = _normalize_industry(industry_raw)
+    state = (account_profile.get("state") or "").upper()
+    employee_count = account_profile.get("employee_count") or account_profile.get("employees") or 0
+    vehicle_count = account_profile.get("vehicle_count") or account_profile.get("vehicles") or 0
+    annual_revenue = account_profile.get("annual_revenue") or 0
+    experience_mod = account_profile.get("experience_mod") or account_profile.get("current_mod")
+    uses_subcontractors = account_profile.get("uses_subcontractors", False)
+    current_coverages = set(
+        c.strip().lower() for c in (account_profile.get("current_coverages") or [])
+    )
+
+    logger.info(
+        "Coverage gap analysis: industry=%s state=%s employees=%d vehicles=%d",
+        industry, state, employee_count, vehicle_count,
+    )
+
+    coverage_gaps = []
+    questions = []
+
+    # 1. Compare expected coverages vs declared coverages
+    expected = INDUSTRY_EXPECTED_COVERAGES.get(industry, [])
+    for cov in expected:
+        if cov not in current_coverages:
+            coverage_gaps.append({
+                "coverage": _COVERAGE_DISPLAY.get(cov, cov.replace("_", " ").title()),
+                "reason": _COVERAGE_REASONS.get(cov, f"Standard coverage for {industry} operations is missing"),
+                "risk_level": _COVERAGE_RISK_LEVELS.get(cov, "medium"),
+            })
+            q = _SUGGESTED_QUESTIONS_BY_COVERAGE.get(cov)
+            if q and q not in questions:
+                questions.append(q)
+
+    # 2. Vehicle-driven gaps
+    if vehicle_count > 0 and "commercial_auto" not in current_coverages:
+        auto_gap = {
+            "coverage": _COVERAGE_DISPLAY["commercial_auto"],
+            "reason": f"Account operates {vehicle_count} vehicles but has no commercial auto coverage",
+            "risk_level": "high",
+        }
+        if not any(g["coverage"] == auto_gap["coverage"] for g in coverage_gaps):
+            coverage_gaps.append(auto_gap)
+
+    if vehicle_count > 0 and "hired_non_owned_auto" not in current_coverages:
+        hnoa_gap = {
+            "coverage": _COVERAGE_DISPLAY["hired_non_owned_auto"],
+            "reason": "Employees may use personal vehicles for job activities",
+            "risk_level": "medium",
+        }
+        if not any(g["coverage"] == hnoa_gap["coverage"] for g in coverage_gaps):
+            coverage_gaps.append(hnoa_gap)
+            q = _SUGGESTED_QUESTIONS_BY_COVERAGE["hired_non_owned_auto"]
+            if q not in questions:
+                questions.append(q)
+
+    # 3. Employee-count-driven gaps
+    if employee_count >= 50 and "epli" not in current_coverages:
+        epli_gap = {
+            "coverage": _COVERAGE_DISPLAY["epli"],
+            "reason": f"With {employee_count} employees, employment practices claims become statistically likely",
+            "risk_level": "medium",
+        }
+        if not any(g["coverage"] == epli_gap["coverage"] for g in coverage_gaps):
+            coverage_gaps.append(epli_gap)
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["high_employee_count"]
+        if q not in questions:
+            questions.append(q)
+
+    if employee_count >= 25 and "cyber" not in current_coverages:
+        cyber_gap = {
+            "coverage": _COVERAGE_DISPLAY["cyber"],
+            "reason": f"A {employee_count}-employee operation stores employee PII and likely processes data electronically",
+            "risk_level": "low" if employee_count < 50 else "medium",
+        }
+        if not any(g["coverage"] == cyber_gap["coverage"] for g in coverage_gaps):
+            coverage_gaps.append(cyber_gap)
+
+    # 4. Subcontractor exposure
+    if uses_subcontractors:
+        if "general_liability" not in current_coverages:
+            gl_gap = {
+                "coverage": _COVERAGE_DISPLAY["general_liability"],
+                "reason": "Subcontractor usage without confirmed GL creates upstream liability risk",
+                "risk_level": "high",
+            }
+            if not any(g["coverage"] == gl_gap["coverage"] for g in coverage_gaps):
+                coverage_gaps.append(gl_gap)
+
+        if "umbrella" not in current_coverages:
+            umb_gap = {
+                "coverage": _COVERAGE_DISPLAY["umbrella"],
+                "reason": "Subcontractor operations amplify excess liability exposure beyond primary limits",
+                "risk_level": "medium",
+            }
+            if not any(g["coverage"] == umb_gap["coverage"] for g in coverage_gaps):
+                coverage_gaps.append(umb_gap)
+
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["uses_subcontractors"]
+        if q not in questions:
+            questions.append(q)
+
+    # 5. Experience mod concerns
+    if experience_mod is not None and experience_mod > 1.0:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["high_mod"]
+        if q not in questions:
+            questions.append(q)
+
+    # 6. State-based exposure questions
+    if state in HIGH_WIND_STATES:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["wind_state"]
+        if q not in questions:
+            questions.append(q)
+
+    if state in FLOOD_RISK_STATES:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["flood_state"]
+        if q not in questions:
+            questions.append(q)
+
+    if state in EARTHQUAKE_STATES:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["earthquake_state"]
+        if q not in questions:
+            questions.append(q)
+
+    # 7. Revenue-driven question
+    if annual_revenue and annual_revenue > 1_000_000:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE["high_revenue"]
+        if q not in questions:
+            questions.append(q)
+
+    # 8. Vehicle-driven question
+    if vehicle_count > 0:
+        q = _SUGGESTED_QUESTIONS_BY_ATTRIBUTE.get("high_vehicle_count")
+        if q and q not in questions:
+            questions.append(q)
+
+    # Sort gaps: high > medium > low
+    severity_order = {"high": 0, "medium": 1, "low": 2}
+    coverage_gaps.sort(key=lambda g: severity_order.get(g["risk_level"], 3))
+
+    logger.info("Coverage gap analysis complete: %d gaps, %d questions", len(coverage_gaps), len(questions))
+
+    return {
+        "coverage_gaps": coverage_gaps,
+        "suggested_questions": questions,
+    }

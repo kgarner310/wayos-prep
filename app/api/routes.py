@@ -19,6 +19,7 @@ from app.schemas.schemas import (
     FeedbackRequest, FeedbackResponse,
     RetrievalDebugResponse, RetrievalDebugResult,
     RiskScoreRequest, RiskScoreResponse, RiskScoreOutput,
+    CoverageGapInsightRequest, CoverageGapInsightResponse,
 )
 from app.services.ingestion import ingest_raw_text, ingest_url, ingest_file
 from app.services.parser import clean_text
@@ -28,6 +29,7 @@ from app.services.embeddings import embed_chunks
 from app.services.retrieval import run_retrieval
 from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
+from app.services.coverage_gap_detector import detect_coverage_gaps
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -463,3 +465,22 @@ def create_risk_score(payload: RiskScoreRequest, db: Session = Depends(get_db)):
         score=RiskScoreOutput(**result),
         created_at=run.created_at,
     )
+
+
+# --- Coverage Gap Insight Engine ---
+
+@router.post("/risk/coverage-gaps", response_model=CoverageGapInsightResponse, tags=["risk-scoring"])
+def coverage_gap_insights(payload: CoverageGapInsightRequest):
+    """Analyze an account profile and return likely coverage gaps with suggested producer questions."""
+    account_profile = {
+        "industry": payload.industry,
+        "state": payload.state,
+        "employee_count": payload.employee_count or payload.employees,
+        "vehicle_count": payload.vehicle_count or payload.vehicles,
+        "annual_revenue": payload.annual_revenue,
+        "experience_mod": payload.experience_mod or payload.current_mod,
+        "uses_subcontractors": payload.uses_subcontractors,
+        "current_coverages": payload.current_coverages,
+    }
+    result = detect_coverage_gaps(account_profile)
+    return CoverageGapInsightResponse(**result)
