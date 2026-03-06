@@ -11,6 +11,16 @@ NOT generic conversation starters. These should feel usable in a real meeting.
 
 import logging
 
+from app.services.coverage_gap_detector import (
+    INDUSTRY_EXPECTED_COVERAGES,
+    HIGH_WIND_STATES,
+    EARTHQUAKE_STATES,
+    FLOOD_RISK_STATES,
+    INDUSTRY_FLEET_HEAVY,
+    INDUSTRY_GL_HEAVY,
+    _normalize_industry,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -273,4 +283,318 @@ def generate_ammo(
         "underwriting_hot_buttons": underwriting[:5],
         "cross_sell_openings": cross_sell[:5],
         "hard_questions_to_ask": hard_questions[:5],
+    }
+
+
+# ============================================================
+# PRODUCER AMMO QUESTIONS ENGINE
+# ============================================================
+# Standalone function for pre-call planning, discovery meetings,
+# renewals, and account reviews. Stage-aware, industry-tailored.
+
+_VALID_STAGES = {"prospect", "renewal", "remarket", "service_review"}
+
+# --- Industry-specific question banks ---
+
+_INDUSTRY_TOP_QUESTIONS = {
+    "roofing": [
+        "Have any employees begun using personal vehicles between job sites?",
+        "How are subcontractor certificates and additional insured requirements being tracked today?",
+        "Have you taken on any larger or steeper-slope jobs since the last renewal?",
+        "What is your fall protection program, and who conducts safety audits?",
+        "Do you carry separate builders risk, or does the property owner handle that contractually?",
+    ],
+    "trucking": [
+        "How many drivers are on your roster today versus last renewal?",
+        "What is the maximum cargo value per load, and do you haul any hazmat or temperature-sensitive freight?",
+        "Do you run MVR checks at hire and annually on all drivers?",
+        "What telematics or dashcam systems are installed in the fleet?",
+        "Have you had any DOT violations or out-of-service orders in the past 12 months?",
+    ],
+    "manufacturing": [
+        "Walk me through your lockout/tagout program — who manages compliance?",
+        "Has any new machinery been added or processes changed since last renewal?",
+        "What is your approach to machine guarding inspections and documentation?",
+        "How do you handle temporary or staffing-agency workers on the floor?",
+        "Have you received any OSHA citations in the past 3 years?",
+    ],
+    "restaurant": [
+        "Have you added delivery, catering, or food truck operations since last year?",
+        "What is your approach to slip-and-fall prevention in the kitchen and dining areas?",
+        "How many employees handle alcohol service, and are they TIPS/ServSafe certified?",
+        "Do you use any third-party delivery platforms, and how does liability work under those contracts?",
+        "Has your menu or cooking equipment changed in ways that affect fire suppression?",
+    ],
+    "landscaping": [
+        "How many crews are running simultaneously, and who supervises each?",
+        "What is the total value of tools and equipment you move between job sites?",
+        "Do any employees operate heavy equipment like skid-steers or excavators?",
+        "How are herbicide and pesticide applications managed and documented?",
+        "Have you expanded into tree removal, irrigation, or hardscaping?",
+    ],
+    "hvac": [
+        "Do you perform design or engineering work in addition to installation?",
+        "How many service vehicles run daily, and who is authorized to drive?",
+        "What is your refrigerant handling and EPA 608 compliance process?",
+        "Have you taken on any commercial or industrial jobs that differ from your typical residential work?",
+        "Do you use subcontractors for electrical, plumbing, or ductwork?",
+    ],
+}
+
+_INDUSTRY_COVERAGE_TRAPS = {
+    "roofing": [
+        "Hired/non-owned auto often gets missed when estimators or supervisors use personal vehicles.",
+        "Tools and equipment coverage may be inadequate if theft from trucks is increasing.",
+        "Waiver of subrogation and additional insured wording can create contract problems if not reviewed.",
+        "Completed operations exclusions can leave the contractor exposed after project handoff.",
+    ],
+    "trucking": [
+        "Motor truck cargo limits may not match the actual max load value being hauled.",
+        "Trailer interchange coverage is frequently overlooked for owner-operators pulling borrowed trailers.",
+        "Non-trucking liability gaps appear when drivers use rigs for personal errands.",
+        "Pollution liability from fuel spills is excluded on standard auto policies.",
+    ],
+    "manufacturing": [
+        "Product recall expense is rarely covered under standard GL and must be added separately.",
+        "Equipment breakdown coverage fills gaps left by standard property policies for mechanical failure.",
+        "Pollution liability from chemical processes or waste disposal is typically excluded.",
+        "Business income limits may not reflect current revenue if set during a lower-volume year.",
+    ],
+    "restaurant": [
+        "Liquor liability is often excluded from standard GL and requires a separate endorsement.",
+        "Food contamination / spoilage coverage is not automatic on property policies.",
+        "Third-party delivery contracts may shift liability back to the restaurant without clear coverage.",
+        "Employment practices exposure increases sharply with tip-pool disputes and wage claims.",
+    ],
+    "landscaping": [
+        "Pesticide and herbicide application liability may be excluded without a specific endorsement.",
+        "Inland marine limits may not cover newer, more expensive equipment purchases.",
+        "Tree removal operations carry higher GL and WC exposure than general landscaping.",
+        "Damage to customer property (irrigation lines, underground utilities) can exceed GL sub-limits.",
+    ],
+    "hvac": [
+        "Professional liability / E&O is missed when HVAC contractors provide design or engineering services.",
+        "Refrigerant leak liability and EPA fines are not covered under standard GL.",
+        "Faulty workmanship exclusions in GL can leave callbacks and redo work uninsured.",
+        "Indoor air quality claims from mold or contamination may trigger pollution exclusions.",
+    ],
+}
+
+_INDUSTRY_UNDERWRITING_FLAGS = {
+    "roofing": [
+        "High-mod or recent claims may trigger loss control scrutiny.",
+        "Mixed residential/commercial work may create class code or appetite issues.",
+        "Steep-slope work (>6:12 pitch) is a hard market trigger for many carriers.",
+    ],
+    "trucking": [
+        "Radius of operations beyond 500 miles changes carrier appetite significantly.",
+        "Owner-operator models versus W-2 drivers affect class code and underwriting treatment.",
+        "DOT safety scores and CSA data are reviewed by every underwriter.",
+    ],
+    "manufacturing": [
+        "Combustible dust exposure triggers OSHA NEP and carrier scrutiny.",
+        "Foreign-sourced components may introduce product liability gaps.",
+        "Temp labor usage above 20% of workforce raises WC classification questions.",
+    ],
+    "restaurant": [
+        "Late-night hours and alcohol service raise GL and assault/battery concerns.",
+        "Multiple locations with different menus or concepts may need separate class codes.",
+        "High employee turnover drives WC frequency and training adequacy questions.",
+    ],
+    "landscaping": [
+        "Tree removal and stump grinding operations trigger different class codes and carrier appetite.",
+        "Pesticide application licensing and compliance affect GL underwriting.",
+        "Seasonal workforce fluctuation creates payroll audit and classification risk.",
+    ],
+    "hvac": [
+        "New construction versus service/repair split affects class code assignment.",
+        "Rooftop unit work on commercial buildings raises falls-from-height exposure.",
+        "Subcontractor use for electrical or plumbing work introduces risk transfer questions.",
+    ],
+}
+
+# --- Stage-specific operational change questions ---
+
+_STAGE_OPERATIONAL_QUESTIONS = {
+    "prospect": [
+        "What does your current insurance program look like, and what's working or not?",
+        "What types of contracts do you sign, and what insurance requirements do they impose?",
+        "How have operations changed in the past 2 years — new services, locations, or headcount?",
+        "Who handles your safety program, and is it documented?",
+        "What is your biggest operational concern heading into next year?",
+    ],
+    "renewal": [
+        "Any changes in payroll, headcount, territory, or job mix since last renewal?",
+        "Any new services, locations, or operational shifts?",
+        "Any change in subcontractor usage or labor sourcing?",
+        "Have your contract requirements changed — new AI/WOS requirements from GCs or clients?",
+        "Any open claims or incidents that haven't been reported yet?",
+    ],
+    "remarket": [
+        "What is driving the remarket — rate, service, coverage gaps, or carrier appetite?",
+        "What documentation do you have ready: loss runs, mod worksheets, payroll by class?",
+        "Are there any claims in litigation or reserve increases the current carrier has flagged?",
+        "What coverage terms or endorsements are must-haves versus nice-to-haves?",
+        "Is the current carrier willing to re-quote, or have they given a firm non-renewal?",
+    ],
+    "service_review": [
+        "Have there been any operational changes since the policy was bound — fleet, headcount, revenue?",
+        "Are there any pending contract bids that require higher limits or specific endorsements?",
+        "Have any claims been filed since inception, and how were they handled?",
+        "Are vehicle schedules and driver lists current on the policy?",
+        "Have you added or removed any locations, equipment, or business activities?",
+    ],
+}
+
+# --- Generic fallback questions for unknown industries ---
+
+_GENERIC_TOP_QUESTIONS = [
+    "Walk me through your operations — what does a typical week look like?",
+    "How many employees do you have, and has headcount changed recently?",
+    "Do you use subcontractors or temporary workers for any part of your operations?",
+    "What vehicles or mobile equipment does your business operate?",
+    "What are your biggest concerns about your current insurance program?",
+]
+
+_GENERIC_COVERAGE_TRAPS = [
+    "Hired and non-owned auto is frequently missing when employees use personal vehicles for work.",
+    "Business income limits are often set years ago and may not reflect current revenue.",
+    "Umbrella coverage may not schedule all underlying policies, creating gaps at the excess layer.",
+    "Cyber liability is increasingly relevant but absent from most small commercial accounts.",
+]
+
+_GENERIC_UNDERWRITING_FLAGS = [
+    "Experience mod above unity will be the first thing underwriters review.",
+    "Incomplete loss runs or missing prior carrier information slows the submission process.",
+    "Operations changes since the last policy period may require class code reclassification.",
+]
+
+
+def generate_producer_ammo(profile: dict) -> dict:
+    """Producer Ammo Questions Engine.
+
+    Given an industry and account context, generate sharp, practical producer
+    questions for pre-call planning, discovery, renewals, and account reviews.
+
+    Args:
+        profile: dict with optional keys:
+            industry, state, employee_count, annual_revenue, vehicle_count,
+            experience_mod, uses_subcontractors, current_coverages,
+            claims_summary, account_stage, notes
+
+    Returns:
+        {
+            "industry": str,
+            "account_stage": str,
+            "ammo_questions": {
+                "top_questions": [...],
+                "coverage_traps": [...],
+                "operational_change_questions": [...],
+                "underwriting_flags": [...]
+            }
+        }
+    """
+    industry_raw = profile.get("industry", "")
+    industry = _normalize_industry(industry_raw)
+    state = (profile.get("state") or "").upper()
+    employee_count = profile.get("employee_count") or profile.get("employees") or 0
+    annual_revenue = profile.get("annual_revenue") or 0
+    vehicle_count = profile.get("vehicle_count") or profile.get("vehicles") or 0
+    experience_mod = profile.get("experience_mod") or profile.get("current_mod")
+    uses_subcontractors = profile.get("uses_subcontractors", False)
+    current_coverages = set(
+        c.strip().lower() for c in (profile.get("current_coverages") or [])
+    )
+    claims_summary = profile.get("claims_summary") or ""
+    account_stage = (profile.get("account_stage") or "renewal").strip().lower()
+    if account_stage not in _VALID_STAGES:
+        account_stage = "renewal"
+
+    logger.info(
+        "Producer ammo generation: industry=%s state=%s stage=%s employees=%d",
+        industry, state, account_stage, employee_count,
+    )
+
+    # --- Top Questions ---
+    top_questions = list(_INDUSTRY_TOP_QUESTIONS.get(industry, _GENERIC_TOP_QUESTIONS))
+
+    # Add context-driven questions
+    if uses_subcontractors and not any("subcontract" in q.lower() for q in top_questions):
+        top_questions.insert(0, "How are subcontractor certificates and additional insured requirements being tracked today?")
+
+    if vehicle_count > 0 and not any("vehicle" in q.lower() or "fleet" in q.lower() for q in top_questions):
+        top_questions.insert(0, f"You operate {vehicle_count} vehicles — who is authorized to drive, and what are your take-home policies?")
+
+    if experience_mod is not None and experience_mod > 1.0:
+        mod_q = f"Your experience mod is {experience_mod:.2f} — what loss control changes have been implemented since the largest claim?"
+        top_questions.insert(0, mod_q)
+
+    if employee_count >= 50 and "epli" not in current_coverages:
+        top_questions.append("Do you have an employee handbook, and when was it last reviewed by employment counsel?")
+
+    # --- Coverage Traps ---
+    coverage_traps = list(_INDUSTRY_COVERAGE_TRAPS.get(industry, _GENERIC_COVERAGE_TRAPS))
+
+    # Add coverage-specific traps based on missing coverages
+    expected = INDUSTRY_EXPECTED_COVERAGES.get(industry, [])
+    missing = [c for c in expected if c not in current_coverages]
+    if "umbrella" in missing and not any("umbrella" in t.lower() for t in coverage_traps):
+        coverage_traps.append("Umbrella coverage is missing — excess liability above primary GL and auto is baseline protection for this class.")
+    if "cyber" in missing and not any("cyber" in t.lower() for t in coverage_traps):
+        coverage_traps.append("Cyber liability is increasingly essential but absent from the current program.")
+
+    # State-specific traps (insert near top for visibility)
+    if state in EARTHQUAKE_STATES:
+        coverage_traps.insert(0, f"Earthquake is excluded from standard property in {state}. DIC or standalone EQ should be discussed.")
+    if state in FLOOD_RISK_STATES:
+        coverage_traps.insert(0, f"Standard property excludes flood in {state}. Separate flood coverage should be confirmed.")
+    if state in HIGH_WIND_STATES:
+        coverage_traps.insert(0, f"Named-storm deductibles in {state} can be 2-5% of insured value — confirm the client understands their retention.")
+
+    # --- Operational Change Questions ---
+    operational_questions = list(_STAGE_OPERATIONAL_QUESTIONS.get(account_stage, _STAGE_OPERATIONAL_QUESTIONS["renewal"]))
+
+    # Add industry-specific operational questions
+    if industry in INDUSTRY_FLEET_HEAVY and not any("fleet" in q.lower() or "vehicle" in q.lower() for q in operational_questions):
+        operational_questions.append("Any changes to the fleet — new vehicles, different drivers, expanded delivery radius?")
+
+    if uses_subcontractors and not any("subcontract" in q.lower() for q in operational_questions):
+        operational_questions.append("Any change in subcontractor usage or labor sourcing?")
+
+    if annual_revenue and annual_revenue > 1_000_000:
+        operational_questions.append("Has revenue changed materially? Liability limits and BI coverage should reflect current operations.")
+
+    # --- Underwriting Flags ---
+    underwriting_flags = list(_INDUSTRY_UNDERWRITING_FLAGS.get(industry, _GENERIC_UNDERWRITING_FLAGS))
+
+    if experience_mod is not None and experience_mod > 1.0:
+        flag = f"Experience mod of {experience_mod:.2f} will be scrutinized — prepare a loss narrative with corrective actions."
+        if not any("mod" in f.lower() for f in underwriting_flags):
+            underwriting_flags.insert(0, flag)
+
+    if claims_summary:
+        underwriting_flags.append("Active or recent claims history noted — ensure loss runs are current and narratives are ready.")
+
+    if employee_count > 100:
+        underwriting_flags.append("100+ employees — underwriters will expect a formal safety manual and dedicated safety personnel.")
+
+    if uses_subcontractors and industry in INDUSTRY_GL_HEAVY:
+        if not any("subcontract" in f.lower() for f in underwriting_flags):
+            underwriting_flags.append("Subcontractor usage in a GL-heavy class triggers certificate compliance and risk transfer review.")
+
+    logger.info(
+        "Producer ammo generated: top=%d traps=%d ops=%d flags=%d",
+        len(top_questions), len(coverage_traps),
+        len(operational_questions), len(underwriting_flags),
+    )
+
+    return {
+        "industry": industry_raw or industry,
+        "account_stage": account_stage,
+        "ammo_questions": {
+            "top_questions": top_questions[:5],
+            "coverage_traps": coverage_traps[:5],
+            "operational_change_questions": operational_questions[:5],
+            "underwriting_flags": underwriting_flags[:5],
+        },
     }

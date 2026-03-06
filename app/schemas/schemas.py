@@ -273,6 +273,33 @@ class CoverageGapInsightResponse(BaseModel):
     suggested_questions: list[str] = []
 
 
+# --- Producer Ammo Questions Engine ---
+
+class ProducerAmmoRequest(BaseModel):
+    industry: str
+    state: str
+    employee_count: Optional[int] = None
+    annual_revenue: Optional[float] = None
+    vehicle_count: Optional[int] = None
+    experience_mod: Optional[float] = None
+    uses_subcontractors: Optional[bool] = False
+    current_coverages: list[str] = []
+    claims_summary: Optional[str] = None
+    account_stage: Optional[str] = "renewal"
+    notes: Optional[str] = None
+
+class AmmoQuestions(BaseModel):
+    top_questions: list[str] = []
+    coverage_traps: list[str] = []
+    operational_change_questions: list[str] = []
+    underwriting_flags: list[str] = []
+
+class ProducerAmmoResponse(BaseModel):
+    industry: str
+    account_stage: str
+    ammo_questions: AmmoQuestions
+
+
 class RetrievalDebugResult(BaseModel):
     chunk_id: UUID
     rank_position: int

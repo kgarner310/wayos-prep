@@ -20,6 +20,7 @@ from app.schemas.schemas import (
     RetrievalDebugResponse, RetrievalDebugResult,
     RiskScoreRequest, RiskScoreResponse, RiskScoreOutput,
     CoverageGapInsightRequest, CoverageGapInsightResponse,
+    ProducerAmmoRequest, ProducerAmmoResponse,
 )
 from app.services.ingestion import ingest_raw_text, ingest_url, ingest_file
 from app.services.parser import clean_text
@@ -30,6 +31,7 @@ from app.services.retrieval import run_retrieval
 from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
 from app.services.coverage_gap_detector import detect_coverage_gaps
+from app.services.producer_ammo import generate_producer_ammo
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -484,3 +486,25 @@ def coverage_gap_insights(payload: CoverageGapInsightRequest):
     }
     result = detect_coverage_gaps(account_profile)
     return CoverageGapInsightResponse(**result)
+
+
+# --- Producer Ammo Questions Engine ---
+
+@router.post("/risk/producer-ammo", response_model=ProducerAmmoResponse, tags=["risk-scoring"])
+def producer_ammo_questions(payload: ProducerAmmoRequest):
+    """Generate sharp, practical producer questions for pre-call planning and account reviews."""
+    profile = {
+        "industry": payload.industry,
+        "state": payload.state,
+        "employee_count": payload.employee_count,
+        "annual_revenue": payload.annual_revenue,
+        "vehicle_count": payload.vehicle_count,
+        "experience_mod": payload.experience_mod,
+        "uses_subcontractors": payload.uses_subcontractors,
+        "current_coverages": payload.current_coverages,
+        "claims_summary": payload.claims_summary,
+        "account_stage": payload.account_stage,
+        "notes": payload.notes,
+    }
+    result = generate_producer_ammo(profile)
+    return ProducerAmmoResponse(**result)
