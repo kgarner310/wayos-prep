@@ -56,6 +56,8 @@ from app.services.account_refresh_service import (
 )
 from app.services.underwriter_narrative_generator import generate_underwriter_narrative
 from app.schemas.underwriter_narrative import UnderwriterNarrativeRequest, UnderwriterNarrativeResponse
+from app.services.renewal_workspace_service import build_renewal_workspace
+from app.schemas.renewal_workspace import RenewalWorkspaceRequest, RenewalWorkspaceResponse
 from app.services.account_service import (
     create_account, get_account, list_accounts, update_account, delete_account,
 )
@@ -864,3 +866,24 @@ def update_style_endpoint(producer_id: str, payload: ProducerStyleUpdate, db: Se
         raise HTTPException(404, "Producer style preferences not found")
     log_event(db, "producer_style_saved", payload={"producer_id": producer_id})
     return pref
+
+
+# --- Renewal Workspace ---
+
+@router.post("/workspace/renewal/{account_id}", response_model=RenewalWorkspaceResponse, tags=["workspace"])
+def renewal_workspace_endpoint(
+    account_id: UUID,
+    payload: RenewalWorkspaceRequest,
+    db: Session = Depends(get_db),
+):
+    """Build a unified renewal workspace for an account.
+
+    Orchestrates public web intel, renewal brief, coverage gaps,
+    producer ammo, and underwriter narrative into a single response.
+    """
+    result = build_renewal_workspace(db, account_id, payload.model_dump())
+
+    if result.get("error") == "Account not found":
+        raise HTTPException(404, result["error"])
+
+    return RenewalWorkspaceResponse(**result)
