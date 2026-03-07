@@ -20,6 +20,7 @@ def log_event(
     event_type: str,
     payload: dict | None = None,
     user_id: str | None = None,
+    session_id: str | None = None,
 ) -> None:
     """Record a product event to the event_log table.
 
@@ -29,12 +30,14 @@ def log_event(
                      "producer_ammo_run", "agency_feed_view", "discovery_capture"
         payload: Optional JSON-serializable dict with event details
         user_id: Optional user identifier
+        session_id: Optional demo/browser session identifier
     """
     try:
         event = EventLog(
             event_type=event_type,
             event_payload=payload,
             user_id=user_id,
+            session_id=session_id,
         )
         db.add(event)
         db.commit()

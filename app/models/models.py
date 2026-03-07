@@ -420,11 +420,13 @@ class EventLog(Base):
     event_type = Column(Text, nullable=False)
     event_payload = Column(JSONB)
     user_id = Column(Text)
+    session_id = Column(Text)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
 
     __table_args__ = (
         Index("ix_event_log_event_type", "event_type"),
         Index("ix_event_log_created_at", "created_at"),
+        Index("ix_event_log_session_id", "session_id"),
     )
 
 
@@ -563,4 +565,26 @@ class AuditEvent(Base):
         Index("ix_audit_events_user_id", "user_id"),
         Index("ix_audit_events_agency_id", "agency_id"),
         Index("ix_audit_events_created_at", "created_at"),
+    )
+
+
+class DemoFeedback(Base):
+    __tablename__ = "demo_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    user_id = Column(UUID(as_uuid=True), nullable=True)
+    agency_id = Column(UUID(as_uuid=True), nullable=True)
+    session_id = Column(Text)
+    account_id = Column(UUID(as_uuid=True), nullable=True)
+    would_use_before_meeting = Column(Text)
+    most_useful_part = Column(Text)
+    unclear_or_untrustworthy = Column(Text)
+    what_next = Column(Text)
+    overall_rating = Column(Integer)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_demo_feedback_user_id", "user_id"),
+        Index("ix_demo_feedback_created_at", "created_at"),
     )

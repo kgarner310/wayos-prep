@@ -60,6 +60,11 @@ from app.services.renewal_workspace_service import build_renewal_workspace
 from app.schemas.renewal_workspace import RenewalWorkspaceRequest, RenewalWorkspaceResponse
 from app.services.submission_packet_service import build_submission_packet
 from app.schemas.submission_packet import SubmissionPacketRequest, SubmissionPacketResponse
+from app.services.demo_session_service import build_demo_session_summary, list_recent_sessions
+from app.schemas.demo import (
+    DemoFeedbackRequest, DemoFeedbackResponse,
+    DemoSessionSummaryResponse, InstrumentEventRequest,
+)
 from app.services.account_service import (
     create_account, get_account, list_accounts, update_account, delete_account,
 )
@@ -906,3 +911,67 @@ def submission_packet_endpoint(
         raise HTTPException(404, result["error"])
 
     return SubmissionPacketResponse(**result)
+
+
+# --- Demo Instrumentation ---
+
+@router.post("/demo/event", tags=["demo"])
+def log_demo_event(payload: InstrumentEventRequest, db: Session = Depends(get_db)):
+    """Log a demo/UI interaction event for session tracking."""
+    log_event(
+        db,
+        event_type=payload.event_type,
+        payload=payload.payload,
+        session_id=payload.session_id,
+    )
+    return {"status": "ok"}
+
+
+@router.post("/demo/feedback", response_model=DemoFeedbackResponse, tags=["demo"])
+def submit_demo_feedback(payload: DemoFeedbackRequest, db: Session = Depends(get_db)):
+    """Submit demo tester feedback."""
+    from app.models.models import DemoFeedback
+    fb = DemoFeedback(
+        session_id=payload.session_id,
+        account_id=payload.account_id if payload.account_id else None,
+        would_use_before_meeting=payload.would_use_before_meeting,
+        most_useful_part=payload.most_useful_part,
+        unclear_or_untrustworthy=payload.unclear_or_untrustworthy,
+        what_next=payload.what_next,
+        overall_rating=payload.overall_rating,
+        notes=payload.notes,
+    )
+    db.add(fb)
+    db.commit()
+    db.refresh(fb)
+    log_event(db, "demo_feedback_submitted", payload={
+        "session_id": payload.session_id,
+        "overall_rating": payload.overall_rating,
+    }, session_id=payload.session_id)
+    import uuid as _uuid
+    from datetime import datetime as _dt, timezone as _tz
+    return DemoFeedbackResponse(
+        id=fb.id or _uuid.uuid4(),
+        session_id=fb.session_id,
+        overall_rating=fb.overall_rating,
+        created_at=fb.created_at.isoformat() if fb.created_at else _dt.now(_tz.utc).isoformat(),
+    )
+
+
+@router.get("/demo/session-summary", response_model=DemoSessionSummaryResponse, tags=["demo"])
+def get_session_summary(
+    session_id: str | None = None,
+    user_id: str | None = None,
+    hours: int = 24,
+    db: Session = Depends(get_db),
+):
+    """Get a summary of demo session activity."""
+    result = build_demo_session_summary(db, session_id=session_id, user_id=user_id, hours=hours)
+    return DemoSessionSummaryResponse(**result)
+
+
+@router.get("/demo/recent-sessions", tags=["demo"])
+def get_recent_sessions(hours: int = 24, limit: int = 20, db: Session = Depends(get_db)):
+    """List recent demo sessions with basic stats."""
+    sessions = list_recent_sessions(db, hours=hours, limit=limit)
+    return {"sessions": sessions, "count": len(sessions)}

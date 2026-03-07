@@ -181,6 +181,51 @@
     <div class="ws-section-body" id="submission-packet-body"></div>
   </div>
 
+  <!-- Demo Feedback (shown after packet) -->
+  <div class="ws-section" id="section-demo-feedback" style="display:none;">
+    <div class="ws-section-header">
+      <h2>How did this go?</h2>
+      <span class="text-muted text-sm">Quick feedback helps us improve</span>
+    </div>
+    <div class="ws-section-body">
+      <div class="form-group">
+        <label>Would you use this before a renewal meeting?</label>
+        <select id="fb-would-use" class="form-control">
+          <option value="">Select...</option>
+          <option value="definitely">Definitely</option>
+          <option value="probably">Probably</option>
+          <option value="maybe">Maybe</option>
+          <option value="unlikely">Unlikely</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>What part was most useful?</label>
+        <input type="text" id="fb-useful" class="form-control" placeholder="e.g. coverage gaps, narrative, questions...">
+      </div>
+      <div class="form-group">
+        <label>What felt unclear or untrustworthy?</label>
+        <input type="text" id="fb-unclear" class="form-control" placeholder="Any part that didn't feel right...">
+      </div>
+      <div class="form-group">
+        <label>What would you want next?</label>
+        <input type="text" id="fb-next" class="form-control" placeholder="Features, improvements...">
+      </div>
+      <div class="form-group">
+        <label>Overall (1-5)</label>
+        <select id="fb-rating" class="form-control" style="width:80px;">
+          <option value="">-</option>
+          <option value="5">5</option>
+          <option value="4">4</option>
+          <option value="3">3</option>
+          <option value="2">2</option>
+          <option value="1">1</option>
+        </select>
+      </div>
+      <div id="fb-status" class="text-muted text-sm" style="margin-bottom:8px;display:none;"></div>
+      <button class="btn btn-primary btn-sm" id="btn-submit-feedback" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+  </div>
+
 </div> <!-- end #workspace-output -->
 </div> <!-- end #authenticated-content -->
 {% endblock %}
@@ -192,6 +237,19 @@ let currentAccountName = null;
 let currentWorkspace = null;
 let currentPacket = null;
 let authToken = null;
+let demoSessionId = sessionStorage.getItem('wayos_session_id') || ('demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+sessionStorage.setItem('wayos_session_id', demoSessionId);
+let sessionStartTime = Date.now();
+
+// --- Demo Instrumentation ---
+function trackEvent(eventType, payload) {
+  try {
+    const body = {event_type: eventType, session_id: demoSessionId, payload: payload || {}};
+    const hdrs = {'Content-Type': 'application/json'};
+    if (authToken) hdrs['Authorization'] = 'Bearer ' + authToken;
+    fetch('/api/v1/demo/event', {method: 'POST', headers: hdrs, body: JSON.stringify(body)});
+  } catch(e) { /* silent */ }
+}
 
 // --- Session management ---
 
@@ -243,6 +301,7 @@ async function doLogin() {
       return;
     }
     storeTokens(data.access_token, data.refresh_token);
+    trackEvent('demo_session_started', {method: 'login'});
     await initAuthenticatedSession();
   } catch(e) {
     errEl.textContent = 'Network error';
@@ -270,6 +329,7 @@ async function doRegister() {
       return;
     }
     storeTokens(data.access_token, data.refresh_token);
+    trackEvent('demo_session_started', {method: 'register'});
     await initAuthenticatedSession();
   } catch(e) {
     errEl.textContent = 'Network error';
@@ -346,6 +406,7 @@ function renderAccountList(accounts) {
         <button class="btn btn-primary btn-sm" onclick="toggleCreateAccount()" style="margin-top:8px;">Create Account</button>
       </div>
     `;
+    trackEvent('empty_state_seen', {context: 'no_accounts'});
     return;
   }
   el.innerHTML = accounts.map(a => `
@@ -390,6 +451,7 @@ async function createAccount() {
   const data = await apiPost('/api/v1/accounts', body);
   if (data.id) {
     showStatus('Account created: ' + name, 'success');
+    trackEvent('account_created', {account_name: name, industry: industry});
     toggleCreateAccount();
     document.getElementById('ca-name').value = '';
     document.getElementById('ca-industry').value = '';
@@ -411,6 +473,8 @@ async function selectAccount(id, name) {
   currentPacket = null;
   document.getElementById('ws-account-name').textContent = name;
   document.getElementById('section-submission-packet').style.display = 'none';
+  document.getElementById('section-demo-feedback').style.display = 'none';
+  trackEvent('account_selected', {account_id: id, account_name: name});
   await generateWorkspace();
 }
 
@@ -424,12 +488,14 @@ async function generateWorkspace() {
 
   if (data.error) {
     showStatus('Error: ' + data.error, 'error');
+    trackEvent('error_shown', {context: 'workspace', error: data.error});
     return;
   }
   currentWorkspace = data;
   renderWorkspace(data);
   document.getElementById('workspace-output').style.display = 'block';
   showStatus('Workspace ready', 'success');
+  trackEvent('workspace_generated', {account_id: currentAccountId, elapsed_ms: Date.now() - sessionStartTime});
   window.scrollTo({top: document.getElementById('workspace-output').offsetTop - 20, behavior: 'smooth'});
 }
 
@@ -449,6 +515,7 @@ async function refreshIntel() {
     showStatus(result.error, 'error');
   } else {
     showStatus('Public intel refreshed', 'success');
+    trackEvent('public_intel_refreshed', {account_id: currentAccountId});
     await generateWorkspace();
   }
 }
@@ -473,6 +540,8 @@ async function generatePacket() {
   renderPacket(data);
   document.getElementById('section-submission-packet').style.display = '';
   showStatus('Submission packet ready', 'success');
+  trackEvent('submission_packet_generated', {account_id: currentAccountId, elapsed_ms: Date.now() - sessionStartTime});
+  document.getElementById('section-demo-feedback').style.display = '';
   window.scrollTo({top: document.getElementById('section-submission-packet').offsetTop - 20, behavior: 'smooth'});
 }
 
@@ -487,6 +556,7 @@ function copyNarrative() {
   }
   navigator.clipboard.writeText(text).then(() => {
     flashButton('btn-copy-email', 'Copied');
+    trackEvent('narrative_copied', {account_id: currentAccountId});
   });
 }
 
@@ -496,6 +566,7 @@ function copyPacket(format) {
   const btnId = format === 'markdown' ? 'btn-copy-md' : 'btn-copy-packet';
   navigator.clipboard.writeText(text).then(() => {
     flashButton(btnId, 'Copied');
+    trackEvent('packet_copied', {account_id: currentAccountId, format: format});
   });
 }
 
@@ -683,6 +754,44 @@ function renderPacket(packet) {
   }
   html += '</div>';
   el.innerHTML = html;
+}
+
+async function submitFeedback() {
+  const body = {
+    session_id: demoSessionId,
+    account_id: currentAccountId || null,
+    would_use_before_meeting: document.getElementById('fb-would-use').value || null,
+    most_useful_part: document.getElementById('fb-useful').value.trim() || null,
+    unclear_or_untrustworthy: document.getElementById('fb-unclear').value.trim() || null,
+    what_next: document.getElementById('fb-next').value.trim() || null,
+    overall_rating: parseInt(document.getElementById('fb-rating').value) || null,
+  };
+  const statusEl = document.getElementById('fb-status');
+  const btn = document.getElementById('btn-submit-feedback');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  try {
+    const resp = await apiPost('/api/v1/demo/feedback', body);
+    if (resp.id) {
+      statusEl.textContent = 'Thank you for your feedback.';
+      statusEl.className = 'text-sm' + ' ws-status-success';
+      statusEl.style.display = '';
+      btn.textContent = 'Submitted';
+      trackEvent('demo_feedback_submitted', {rating: body.overall_rating});
+    } else {
+      statusEl.textContent = 'Failed to submit feedback.';
+      statusEl.className = 'text-danger text-sm';
+      statusEl.style.display = '';
+      btn.disabled = false;
+      btn.textContent = 'Submit Feedback';
+    }
+  } catch(e) {
+    statusEl.textContent = 'Network error.';
+    statusEl.className = 'text-danger text-sm';
+    statusEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Submit Feedback';
+  }
 }
 
 function esc(s) {
