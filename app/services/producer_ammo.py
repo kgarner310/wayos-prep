@@ -623,6 +623,32 @@ def generate_producer_ammo(profile: dict) -> dict:
             if pattern not in coverage_traps:
                 coverage_traps.insert(0, pattern)
 
+    # --- Experience mod integration ---
+    experience_mod_data = profile.get("experience_mod_data")
+    if experience_mod_data and isinstance(experience_mod_data, dict):
+        mod_flags = experience_mod_data.get("flags", [])
+        mod_points = experience_mod_data.get("talking_points", [])
+        mod_trend = experience_mod_data.get("mod_trend")
+
+        # Inject mod-driven underwriting flags
+        for flag in mod_flags[:2]:
+            if flag not in underwriting_flags:
+                underwriting_flags.insert(0, flag)
+
+        # Inject mod talking points as top questions
+        for point in mod_points[:2]:
+            if point not in top_questions:
+                top_questions.append(point)
+
+        # Add operational question if mod is worsening
+        if mod_trend and isinstance(mod_trend, dict) and mod_trend.get("direction") == "worsening":
+            worsening_q = (
+                "Your experience mod is trending upward — what loss control changes "
+                "have been implemented since the largest claim?"
+            )
+            if worsening_q not in operational_questions:
+                operational_questions.insert(0, worsening_q)
+
     logger.info(
         "Producer ammo generated: top=%d traps=%d ops=%d flags=%d",
         len(top_questions), len(coverage_traps),

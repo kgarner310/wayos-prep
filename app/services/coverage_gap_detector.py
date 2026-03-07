@@ -499,6 +499,10 @@ RULE_LOSS_RUN_AUTO_CLAIMS = {
     "code": "loss_run_auto_claims",
     "description": "Loss run data confirms vehicle-related claim activity",
 }
+RULE_MOD_TREND_WORSENING = {
+    "code": "mod_trend_worsening",
+    "description": "Experience mod trending upward confirms elevated Workers Comp exposure",
+}
 
 
 def _make_rule(rule: dict, confidence_delta: float) -> dict:
@@ -712,6 +716,32 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
         for point in loss_run_data.get("producer_talking_points", [])[:2]:
             if point not in questions:
                 questions.append(point)
+
+    # 9b. Experience mod integration — boost WC confidence when mod is worsening
+    experience_mod_data = account_profile.get("experience_mod_data")
+    if experience_mod_data and isinstance(experience_mod_data, dict):
+        mod_trend = experience_mod_data.get("mod_trend")
+        mod_flags = experience_mod_data.get("flags", [])
+
+        should_boost = False
+        if mod_trend and isinstance(mod_trend, dict) and mod_trend.get("direction") == "worsening":
+            should_boost = True
+        elif any("above unity" in f.lower() for f in mod_flags):
+            should_boost = True
+
+        if should_boost:
+            delta = 0.05
+            for gap in coverage_gaps:
+                if "workers" in gap["coverage"].lower():
+                    already_applied = any(
+                        r.get("code") == "mod_trend_worsening"
+                        for r in gap.get("applied_rules", [])
+                    )
+                    if not already_applied:
+                        gap["confidence"] = min(gap.get("confidence", 0.6) + delta, 1.0)
+                        gap.setdefault("applied_rules", []).append(
+                            _make_rule(RULE_MOD_TREND_WORSENING, delta)
+                        )
 
     # Sort gaps: high > medium > low
     severity_order = {"high": 0, "medium": 1, "low": 2}

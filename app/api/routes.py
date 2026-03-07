@@ -40,6 +40,8 @@ from app.services.discovery_capture import save_discovery
 from app.services.instrumentation import log_event, get_product_signals
 from app.services.loss_run_analyzer import analyze_loss_run
 from app.schemas.loss_run import LossRunRequest, LossRunAnalysisResponse
+from app.services.experience_mod_analyzer import analyze_experience_mod
+from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -585,3 +587,22 @@ def loss_run_analysis(payload: LossRunRequest, db: Session = Depends(get_db)):
     log_event(db, "loss_run_analysis", payload={"industry": payload.industry, "claim_count": len(payload.claims)})
     result = analyze_loss_run(data)
     return LossRunAnalysisResponse(**result)
+
+
+# --- Experience Mod Analysis ---
+
+@router.post("/analysis/experience-mod", response_model=ExperienceModResponse, tags=["analysis"])
+def experience_mod_analysis(payload: ExperienceModRequest, db: Session = Depends(get_db)):
+    """Analyze experience mod worksheet data and return structured insights for producers."""
+    log_event(db, "experience_mod_analysis", payload={"current_mod": payload.current_mod})
+    result = analyze_experience_mod(
+        current_mod=payload.current_mod,
+        prior_mod=payload.prior_mod,
+        expected_losses=payload.expected_losses,
+        actual_primary_losses=payload.actual_primary_losses,
+        actual_excess_losses=payload.actual_excess_losses,
+        total_payroll=payload.total_payroll,
+        class_code_entries=[e.model_dump() for e in payload.class_code_entries],
+        mod_claims=[c.model_dump() for c in payload.mod_claims],
+    )
+    return ExperienceModResponse(**result)
