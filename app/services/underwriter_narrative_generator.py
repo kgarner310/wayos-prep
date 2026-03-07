@@ -22,7 +22,7 @@ _VALID_NARRATIVE_TYPES = {"renewal", "new_business"}
 _VALID_POSITIONING = {"standard", "favorable", "defensive"}
 
 
-def generate_underwriter_narrative(profile: dict) -> dict:
+def generate_underwriter_narrative(profile: dict, db=None) -> dict:
     """Generate underwriter-facing narrative from account data and intelligence.
 
     Args:
@@ -32,12 +32,17 @@ def generate_underwriter_narrative(profile: dict) -> dict:
             experience_mod, account_stage, claims_summary, notes,
             loss_run_data, experience_mod_data,
             narrative_type, intended_market_positioning,
-            renewal_brief, public_web_intel
+            renewal_brief, public_web_intel,
+            producer_id (for style preference lookup)
+        db: optional SQLAlchemy session for style preference lookup
 
     Returns:
         Structured narrative dict with email_version, memo_version,
-        supporting_points, fact_sources, cautions
+        supporting_points, fact_sources, cautions, style_applied
     """
+
+    # --- Load saved style preferences if available ---
+    style_applied = _resolve_style(profile, db)
 
     # --- Normalize inputs ---
     account_name = profile.get("account_name", "").strip() or "Unnamed Account"
@@ -46,7 +51,11 @@ def generate_underwriter_narrative(profile: dict) -> dict:
     narrative_type = profile.get("narrative_type", "renewal").strip().lower()
     if narrative_type not in _VALID_NARRATIVE_TYPES:
         narrative_type = "renewal"
-    positioning = profile.get("intended_market_positioning", "standard").strip().lower()
+    # Use style-resolved positioning
+    positioning = style_applied.get("posture", "standard")
+    explicit_positioning = profile.get("intended_market_positioning", "").strip().lower()
+    if explicit_positioning in _VALID_POSITIONING:
+        positioning = explicit_positioning
     if positioning not in _VALID_POSITIONING:
         positioning = "standard"
 
@@ -145,7 +154,42 @@ def generate_underwriter_narrative(profile: dict) -> dict:
         "supporting_points": supporting_points[:7],
         "fact_sources": fact_sources,
         "cautions": cautions,
+        "style_applied": style_applied,
     }
+
+
+def _resolve_style(profile: dict, db) -> dict:
+    """Resolve style preferences: explicit request > saved defaults > fallback."""
+    style = {
+        "audience": "underwriter",
+        "posture": "standard",
+    }
+
+    # Try to load saved preferences
+    producer_id = profile.get("producer_id")
+    if producer_id and db is not None:
+        try:
+            from app.services.producer_style_service import get_style
+            saved = get_style(db, producer_id)
+            if saved:
+                if saved.audience:
+                    style["audience"] = saved.audience
+                if saved.default_posture:
+                    style["posture"] = saved.default_posture
+                if saved.directness:
+                    style["directness"] = saved.directness
+                if saved.verbosity:
+                    style["verbosity"] = saved.verbosity
+                style["source"] = "saved"
+                return style
+        except Exception:
+            logger.debug("Could not load style preferences for producer_id=%s", producer_id)
+
+    # Check explicit request fields
+    if profile.get("intended_market_positioning"):
+        style["posture"] = profile["intended_market_positioning"]
+    style["source"] = "default"
+    return style
 
 
 # ============================================================

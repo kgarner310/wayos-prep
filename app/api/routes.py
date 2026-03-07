@@ -48,6 +48,22 @@ from app.services.public_web_intel import extract_public_web_intel
 from app.schemas.public_web_intel import PublicWebIntelRequest, PublicWebIntelResponse
 from app.services.underwriter_narrative_generator import generate_underwriter_narrative
 from app.schemas.underwriter_narrative import UnderwriterNarrativeRequest, UnderwriterNarrativeResponse
+from app.services.account_service import (
+    create_account, get_account, list_accounts, update_account, delete_account,
+)
+from app.schemas.account import (
+    AccountCreate, AccountUpdate, AccountResponse, AccountListResponse,
+)
+from app.services.artifact_service import (
+    save_artifact, get_artifact, list_artifacts_for_account,
+)
+from app.schemas.artifact import ArtifactCreate, ArtifactResponse, ArtifactListResponse
+from app.services.producer_style_service import (
+    save_style, get_style, update_style,
+)
+from app.schemas.producer_style import (
+    ProducerStyleCreate, ProducerStyleUpdate, ProducerStyleResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -666,5 +682,107 @@ def underwriter_narrative(payload: UnderwriterNarrativeRequest, db: Session = De
         },
     )
     profile = payload.model_dump()
-    result = generate_underwriter_narrative(profile)
+    result = generate_underwriter_narrative(profile, db=db)
     return UnderwriterNarrativeResponse(**result)
+
+
+# --- Accounts ---
+
+@router.post("/accounts", response_model=AccountResponse, tags=["accounts"])
+def create_account_endpoint(payload: AccountCreate, db: Session = Depends(get_db)):
+    """Create a new account."""
+    log_event(db, "account_created", payload={"account_name": payload.account_name, "industry": payload.industry})
+    account = create_account(db, payload.model_dump())
+    return account
+
+
+@router.get("/accounts", response_model=AccountListResponse, tags=["accounts"])
+def list_accounts_endpoint(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    """List accounts with pagination."""
+    accounts, total = list_accounts(db, limit=limit, offset=offset)
+    return AccountListResponse(accounts=accounts, total=total)
+
+
+@router.get("/accounts/{account_id}", response_model=AccountResponse, tags=["accounts"])
+def get_account_endpoint(account_id: UUID, db: Session = Depends(get_db)):
+    """Get an account by ID."""
+    account = get_account(db, account_id)
+    if not account:
+        raise HTTPException(404, "Account not found")
+    return account
+
+
+@router.put("/accounts/{account_id}", response_model=AccountResponse, tags=["accounts"])
+def update_account_endpoint(account_id: UUID, payload: AccountUpdate, db: Session = Depends(get_db)):
+    """Update an account."""
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    account = update_account(db, account_id, data)
+    if not account:
+        raise HTTPException(404, "Account not found")
+    log_event(db, "account_updated", payload={"account_id": str(account_id)})
+    return account
+
+
+@router.delete("/accounts/{account_id}", tags=["accounts"])
+def delete_account_endpoint(account_id: UUID, db: Session = Depends(get_db)):
+    """Delete an account."""
+    deleted = delete_account(db, account_id)
+    if not deleted:
+        raise HTTPException(404, "Account not found")
+    return {"status": "deleted", "account_id": str(account_id)}
+
+
+# --- Saved Artifacts ---
+
+@router.post("/artifacts", response_model=ArtifactResponse, tags=["artifacts"])
+def save_artifact_endpoint(payload: ArtifactCreate, db: Session = Depends(get_db)):
+    """Save a generated artifact."""
+    log_event(db, "artifact_saved", payload={"artifact_type": payload.artifact_type, "account_id": str(payload.account_id) if payload.account_id else None})
+    artifact = save_artifact(db, payload.model_dump())
+    return artifact
+
+
+@router.get("/artifacts/{artifact_id}", response_model=ArtifactResponse, tags=["artifacts"])
+def get_artifact_endpoint(artifact_id: UUID, db: Session = Depends(get_db)):
+    """Get an artifact by ID."""
+    artifact = get_artifact(db, artifact_id)
+    if not artifact:
+        raise HTTPException(404, "Artifact not found")
+    return artifact
+
+
+@router.get("/accounts/{account_id}/artifacts", response_model=ArtifactListResponse, tags=["artifacts"])
+def list_account_artifacts_endpoint(account_id: UUID, limit: int = 50, db: Session = Depends(get_db)):
+    """List artifacts for an account."""
+    artifacts = list_artifacts_for_account(db, account_id, limit=limit)
+    return ArtifactListResponse(artifacts=artifacts, total=len(artifacts))
+
+
+# --- Producer Style Preferences ---
+
+@router.post("/producer-style/preferences", response_model=ProducerStyleResponse, tags=["producer-style"])
+def save_style_endpoint(payload: ProducerStyleCreate, db: Session = Depends(get_db)):
+    """Create or update producer style preferences."""
+    log_event(db, "producer_style_saved", payload={"producer_id": payload.producer_id, "audience": payload.audience})
+    pref = save_style(db, payload.model_dump())
+    return pref
+
+
+@router.get("/producer-style/preferences/{producer_id}", response_model=ProducerStyleResponse, tags=["producer-style"])
+def get_style_endpoint(producer_id: str, db: Session = Depends(get_db)):
+    """Get producer style preferences."""
+    pref = get_style(db, producer_id)
+    if not pref:
+        raise HTTPException(404, "Producer style preferences not found")
+    return pref
+
+
+@router.put("/producer-style/preferences/{producer_id}", response_model=ProducerStyleResponse, tags=["producer-style"])
+def update_style_endpoint(producer_id: str, payload: ProducerStyleUpdate, db: Session = Depends(get_db)):
+    """Update producer style preferences."""
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    pref = update_style(db, producer_id, data)
+    if not pref:
+        raise HTTPException(404, "Producer style preferences not found")
+    log_event(db, "producer_style_saved", payload={"producer_id": producer_id})
+    return pref

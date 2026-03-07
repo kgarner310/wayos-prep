@@ -11,7 +11,7 @@ from app.services.underwriter_narrative_generator import generate_underwriter_na
 
 REQUIRED_KEYS = {
     "account_name", "narrative_type", "email_version", "memo_version",
-    "supporting_points", "fact_sources", "cautions",
+    "supporting_points", "fact_sources", "cautions", "style_applied",
 }
 
 

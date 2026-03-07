@@ -26,6 +26,7 @@ class UnderwriterNarrativeRequest(BaseModel):
     intended_market_positioning: str = "standard"
     renewal_brief: Optional[dict] = None
     public_web_intel: Optional[dict] = None
+    producer_id: Optional[str] = None
 
 
 # --- Response sub-models ---
@@ -52,3 +53,4 @@ class UnderwriterNarrativeResponse(BaseModel):
     supporting_points: list[str] = []
     fact_sources: FactSources
     cautions: list[str] = []
+    style_applied: Optional[dict] = None

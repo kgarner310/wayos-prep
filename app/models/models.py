@@ -426,3 +426,73 @@ class EventLog(Base):
         Index("ix_event_log_event_type", "event_type"),
         Index("ix_event_log_created_at", "created_at"),
     )
+
+
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_name = Column(Text, nullable=False)
+    industry = Column(Text)
+    state = Column(Text)
+    employee_count = Column(Integer)
+    annual_revenue = Column(Numeric(14, 2))
+    vehicle_count = Column(Integer)
+    uses_subcontractors = Column(Boolean, default=False)
+    current_coverages = Column(JSONB)
+    website_url = Column(Text)
+    social_urls = Column(JSONB)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    artifacts = relationship("SavedArtifact", back_populates="account", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_accounts_account_name", "account_name"),
+        Index("ix_accounts_industry", "industry"),
+        Index("ix_accounts_state", "state"),
+        Index("ix_accounts_created_at", "created_at"),
+    )
+
+
+class SavedArtifact(Base):
+    __tablename__ = "saved_artifacts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=True)
+    artifact_type = Column(Text, nullable=False)
+    artifact_subtype = Column(Text)
+    title = Column(Text)
+    content_json = Column(JSONB, nullable=False)
+    rendered_text = Column(Text)
+    created_by_user_id = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    account = relationship("Account", back_populates="artifacts")
+
+    __table_args__ = (
+        Index("ix_saved_artifacts_account_id", "account_id"),
+        Index("ix_saved_artifacts_artifact_type", "artifact_type"),
+        Index("ix_saved_artifacts_created_at", "created_at"),
+    )
+
+
+class ProducerStylePreference(Base):
+    __tablename__ = "producer_style_preferences"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    producer_id = Column(Text, nullable=False, unique=True)
+    audience = Column(Text, default="underwriter")
+    default_posture = Column(Text, default="balanced")
+    directness = Column(Text)
+    verbosity = Column(Text)
+    warmth = Column(Text)
+    confidence_style = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    __table_args__ = (
+        Index("ix_producer_style_preferences_producer_id", "producer_id"),
+    )
