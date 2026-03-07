@@ -27,6 +27,9 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("WAYOS PREP starting up")
+    # Load industry knowledge profiles at startup
+    from app.knowledge.industry_profiles import INDUSTRY_PROFILES
+    logger.info("Industry profiles loaded: %d industries", len(INDUSTRY_PROFILES))
     yield
     logger.info("WAYOS PREP shutting down")
 
