@@ -8,6 +8,8 @@ NOT carrier-accurate quoting logic. This is a producer preparation tool.
 
 import logging
 
+from app.services.industry_loader import resolve, get_enrichment
+
 logger = logging.getLogger(__name__)
 
 
@@ -655,15 +657,40 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
         if cq not in confirmation_questions:
             confirmation_questions.append(cq)
 
+    # 9. Tier profile enrichment — inject conversation prompts and GL exposures
+    tier_slug, tier_source = resolve(industry_raw or industry)
+    enrichment = get_enrichment(industry_raw or industry)
+    tier_prompts = enrichment.get("conversation_prompts", [])
+    gl_exposures = enrichment.get("gl_exposures", [])
+    regional_notes = enrichment.get("regional_notes", "")
+
+    # Add tier conversation prompts as additional suggested questions
+    for prompt in tier_prompts:
+        if prompt not in questions:
+            questions.append(prompt)
+
     logger.info(
-        "Coverage gap analysis complete: %d gaps, %d endorsements, %d questions",
-        len(coverage_gaps), len(endorsements), len(confirmation_questions),
+        "Coverage gap analysis complete: %d gaps, %d endorsements, %d questions (tier=%s)",
+        len(coverage_gaps), len(endorsements), len(confirmation_questions), tier_source,
     )
 
-    return {
+    result = {
         "industry": industry_raw or industry,
         "coverage_gaps": coverage_gaps,
         "missing_endorsements": endorsements[:5],
         "confirmation_questions": confirmation_questions[:6],
         "suggested_questions": questions,
     }
+
+    # Include tier enrichment when available
+    if enrichment:
+        result["tier_enrichment"] = {
+            "gl_exposures": gl_exposures[:5],
+            "wc_claims": enrichment.get("wc_claims", [])[:5],
+            "auto_claims": enrichment.get("auto_claims", [])[:3],
+            "regional_notes": regional_notes,
+            "tier": enrichment.get("tier"),
+            "display_name": enrichment.get("display_name", ""),
+        }
+
+    return result

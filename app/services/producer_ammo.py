@@ -20,6 +20,7 @@ from app.services.coverage_gap_detector import (
     INDUSTRY_GL_HEAVY,
     _normalize_industry,
 )
+from app.services.industry_loader import get_enrichment
 
 logger = logging.getLogger(__name__)
 
@@ -515,8 +516,20 @@ def generate_producer_ammo(profile: dict) -> dict:
         industry, state, account_stage, employee_count,
     )
 
+    # --- Tier profile enrichment ---
+    enrichment = get_enrichment(industry_raw or industry)
+    tier_prompts = enrichment.get("conversation_prompts", [])
+    tier_gl = enrichment.get("gl_exposures", [])
+    tier_wc = enrichment.get("wc_claims", [])
+
     # --- Top Questions ---
-    top_questions = list(_INDUSTRY_TOP_QUESTIONS.get(industry, _GENERIC_TOP_QUESTIONS))
+    # For core industries, use curated questions; for tier industries, use tier prompts
+    if industry in _INDUSTRY_TOP_QUESTIONS:
+        top_questions = list(_INDUSTRY_TOP_QUESTIONS[industry])
+    elif tier_prompts:
+        top_questions = list(tier_prompts[:5])
+    else:
+        top_questions = list(_GENERIC_TOP_QUESTIONS)
 
     # Add context-driven questions
     if uses_subcontractors and not any("subcontract" in q.lower() for q in top_questions):
@@ -533,7 +546,13 @@ def generate_producer_ammo(profile: dict) -> dict:
         top_questions.append("Do you have an employee handbook, and when was it last reviewed by employment counsel?")
 
     # --- Coverage Traps ---
-    coverage_traps = list(_INDUSTRY_COVERAGE_TRAPS.get(industry, _GENERIC_COVERAGE_TRAPS))
+    # For core industries, use curated traps; for tier industries, derive from GL exposures
+    if industry in _INDUSTRY_COVERAGE_TRAPS:
+        coverage_traps = list(_INDUSTRY_COVERAGE_TRAPS[industry])
+    elif tier_gl:
+        coverage_traps = [f"GL exposure: {exp}" for exp in tier_gl[:4]]
+    else:
+        coverage_traps = list(_GENERIC_COVERAGE_TRAPS)
 
     # Add coverage-specific traps based on missing coverages
     expected = INDUSTRY_EXPECTED_COVERAGES.get(industry, [])
@@ -588,7 +607,7 @@ def generate_producer_ammo(profile: dict) -> dict:
         len(operational_questions), len(underwriting_flags),
     )
 
-    return {
+    result = {
         "industry": industry_raw or industry,
         "account_stage": account_stage,
         "ammo_questions": {
@@ -598,3 +617,14 @@ def generate_producer_ammo(profile: dict) -> dict:
             "underwriting_flags": underwriting_flags[:5],
         },
     }
+
+    # Include tier enrichment when available
+    if enrichment:
+        result["tier_enrichment"] = {
+            "wc_claims": tier_wc[:5],
+            "gl_exposures": tier_gl[:5],
+            "regional_notes": enrichment.get("regional_notes", ""),
+            "display_name": enrichment.get("display_name", ""),
+        }
+
+    return result
