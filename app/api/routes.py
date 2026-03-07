@@ -51,6 +51,7 @@ from app.services.loss_run_analyzer import analyze_loss_run
 from app.schemas.loss_run import LossRunRequest, LossRunAnalysisResponse
 from app.services.experience_mod_analyzer import analyze_experience_mod
 from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
+from app.services.submission_readiness import evaluate_submission_readiness
 from app.services.renewal_brief_generator import generate_renewal_brief
 from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
 from app.services.public_web_intel import extract_public_web_intel, extract_public_web_intel_with_fetch
@@ -1179,3 +1180,122 @@ def seed_demo_learnings_endpoint():
     """Seed demo office learnings. Internal-only."""
     count = seed_demo_learnings()
     return {"status": "ok", "learnings_added": count}
+
+
+# ============================================================
+# SUBMISSION READINESS
+# ============================================================
+
+DEMO_SUBMISSIONS = {
+    "demo-roofing-nc-strong": {
+        "industry": "roofing contractor",
+        "jurisdiction": "NC",
+        "office_id": "demo-roofing-nc",
+        "submission_data": {
+            "legal_entity_name": "Summit Ridge Roofing LLC",
+            "operations_description": "Commercial and residential roof installation and repair, primarily shingle and flat roof systems across central North Carolina",
+            "years_in_business": 12,
+            "annual_revenue": 4200000,
+            "payroll": 1200000,
+            "employee_count": 38,
+            "subcontractor_usage": "yes, approximately 30 percent of labor on commercial jobs, certificates required and tracked",
+            "loss_runs": "provided, 5-year history, 3 WC claims totaling $85,000",
+            "current_coverages": "GL $1M/$2M, WC statutory, Commercial Auto $1M CSL, Umbrella $2M",
+            "requested_coverages": "GL, WC, Commercial Auto, Umbrella, Inland Marine",
+            "vehicle_count": 12,
+            "fall_protection_program": True,
+            "safety_program": True,
+            "roof_types": "residential shingle, commercial flat roof, TPO, modified bitumen",
+            "max_height": "4 stories",
+            "tool_equipment_values": 185000,
+        },
+    },
+    "demo-landscaping-tx-fair": {
+        "industry": "landscaping contractor",
+        "jurisdiction": "TX",
+        "office_id": "demo-landscaping-tx",
+        "submission_data": {
+            "legal_entity_name": "GreenScape Landscapes Inc.",
+            "operations_description": "Lawn care and landscaping",
+            "years_in_business": 5,
+            "annual_revenue": 850000,
+            "employee_count": 12,
+            "loss_runs": "unknown",
+            "current_coverages": "GL only",
+            "requested_coverages": "GL, WC, Auto",
+        },
+    },
+    "demo-restaurant-ca-poor": {
+        "industry": "restaurant",
+        "jurisdiction": "CA",
+        "office_id": "demo-restaurant-ca",
+        "submission_data": {
+            "legal_entity_name": "Bella Cucina",
+            "annual_revenue": 980000,
+            "employee_count": 18,
+        },
+    },
+}
+
+
+@router.post("/submission/readiness", tags=["submission"])
+def submission_readiness_endpoint(body: dict):
+    """Evaluate submission readiness against industry-specific requirements.
+
+    Does not evaluate carrier appetite or placement fit — submission quality only.
+    """
+    industry = body.get("industry")
+    if not industry:
+        raise HTTPException(status_code=422, detail="industry is required")
+
+    submission_data = body.get("submission_data", {})
+    jurisdiction = body.get("jurisdiction")
+    office_id = body.get("office_id")
+
+    result = evaluate_submission_readiness(
+        industry=industry,
+        submission_data=submission_data,
+        jurisdiction=jurisdiction,
+        office_id=office_id,
+    )
+    return result
+
+
+@router.get("/submission/demo-examples", tags=["submission"])
+def submission_demo_examples():
+    """List available demo submission examples."""
+    return {
+        "examples": {
+            key: {
+                "industry": val["industry"],
+                "jurisdiction": val["jurisdiction"],
+                "office_id": val.get("office_id"),
+                "field_count": len(val["submission_data"]),
+            }
+            for key, val in DEMO_SUBMISSIONS.items()
+        }
+    }
+
+
+@router.get("/submission/demo-examples/{example_id}", tags=["submission"])
+def submission_demo_example(example_id: str):
+    """Get a specific demo submission example with full payload."""
+    example = DEMO_SUBMISSIONS.get(example_id)
+    if not example:
+        raise HTTPException(status_code=404, detail=f"Demo example '{example_id}' not found")
+    return example
+
+
+@router.post("/submission/demo-evaluate/{example_id}", tags=["submission"])
+def submission_demo_evaluate(example_id: str):
+    """Evaluate a demo submission example — convenience endpoint for testing."""
+    example = DEMO_SUBMISSIONS.get(example_id)
+    if not example:
+        raise HTTPException(status_code=404, detail=f"Demo example '{example_id}' not found")
+
+    return evaluate_submission_readiness(
+        industry=example["industry"],
+        submission_data=example["submission_data"],
+        jurisdiction=example.get("jurisdiction"),
+        office_id=example.get("office_id"),
+    )
