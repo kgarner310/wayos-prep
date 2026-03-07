@@ -64,6 +64,10 @@ from app.services.account_memory_service import (
     summarize_account_memory,
     write_memory_safe,
 )
+from app.services.capture_service import process_capture
+from app.services.edge_score_service import calculate_edge_score
+from app.services.outcome_learning_service import get_market_signals
+from app.models.models import DealOutcome, AccountEvent
 from app.services.telemetry_store import (
     record_rendered_output_event,
     record_rendered_output_feedback,
@@ -613,6 +617,8 @@ def meeting_brief_endpoint(
     session_id: str | None = None,
     use_llm: bool = False,
     account_id: str | None = None,
+    include_edge_score: bool = False,
+    include_market_signals: bool = False,
     db: Session = Depends(get_db),
 ):
     """Generate a structured meeting preparation brief for an industry.
@@ -622,6 +628,8 @@ def meeting_brief_endpoint(
     office_id optionally includes office-specific learnings.
     render=true returns both structured output and rendered presentation.
     use_llm=true routes rendering through the AI model router.
+    include_edge_score=true adds competitive edge score section.
+    include_market_signals=true adds carrier win rate signals.
     """
     result = generate_meeting_brief(industry, office_id=office_id)
 
@@ -633,6 +641,20 @@ def meeting_brief_endpoint(
             industry=industry, session_id=session_id,
             payload_json={"mode": mode, "render": render},
         )
+
+    # Attach edge score if requested
+    if include_edge_score:
+        edge_input = {"risk_score": None, "carrier_appetite": "neutral"}
+        result["edge_score"] = calculate_edge_score(edge_input)
+
+    # Attach market signals if requested
+    if include_market_signals:
+        try:
+            signals = get_market_signals(db, industry=industry)
+            result["market_signals"] = signals
+        except Exception:
+            logger.exception("Failed to fetch market signals for brief")
+            result["market_signals"] = {"carrier_win_rates": {}, "total_outcomes": 0}
 
     if not render:
         return result
@@ -1530,3 +1552,156 @@ def get_account_memory(account_id: str, db: Session = Depends(get_db)):
 def get_account_memory_summary(account_id: str, db: Session = Depends(get_db)):
     """Get a compact summary of the account's memory ledger."""
     return summarize_account_memory(db, account_id)
+
+
+# ============================================================
+# QUICKCAPTURE INGESTION
+# ============================================================
+
+
+@router.post("/capture", tags=["capture"])
+async def capture_endpoint(
+    account_id: str | None = Form(None),
+    plain_text: str | None = Form(None),
+    file: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    """Ingest a screenshot, PDF, or plain text and extract insurance signals."""
+    file_bytes = None
+    filename = None
+    content_type = None
+
+    if file:
+        file_bytes = await file.read()
+        filename = file.filename
+        content_type = file.content_type
+
+    if not file_bytes and not plain_text:
+        raise HTTPException(422, "Provide either a file upload or plain_text")
+
+    result = process_capture(
+        file_bytes=file_bytes,
+        filename=filename,
+        content_type=content_type,
+        plain_text=plain_text,
+    )
+
+    # Store timeline event if account_id provided
+    if account_id:
+        try:
+            event = AccountEvent(
+                account_id=account_id,
+                event_type="CAPTURE_UPLOADED",
+                notes=f"Captured {result['source_type']} with {len(result['signals'])} signals",
+            )
+            db.add(event)
+            db.commit()
+        except Exception:
+            logger.exception("Failed to record capture timeline event")
+
+    return {
+        "status": "ok",
+        "source_type": result["source_type"],
+        "signals": result["signals"],
+        "account_id": account_id,
+    }
+
+
+# ============================================================
+# EDGE SCORE ENGINE
+# ============================================================
+
+
+@router.post("/edge-score", tags=["edge-score"])
+def edge_score_endpoint(body: dict):
+    """Calculate competitive edge score for an account."""
+    return calculate_edge_score(body)
+
+
+# ============================================================
+# DEAL OUTCOMES
+# ============================================================
+
+
+@router.post("/outcomes", tags=["outcomes"])
+def create_outcome(body: dict, db: Session = Depends(get_db)):
+    """Record a deal outcome for market intelligence."""
+    account_id = body.get("account_id")
+    outcome = body.get("outcome")
+    if not account_id or not outcome:
+        raise HTTPException(422, "account_id and outcome are required")
+
+    deal = DealOutcome(
+        account_id=account_id,
+        industry=(body.get("industry") or "").lower() or None,
+        state=(body.get("state") or "").upper() or None,
+        carrier=body.get("carrier"),
+        premium=body.get("premium"),
+        outcome=outcome.lower(),
+        outcome_reason=body.get("outcome_reason"),
+    )
+    db.add(deal)
+
+    # Record timeline event
+    try:
+        event = AccountEvent(
+            account_id=account_id,
+            event_type="OUTCOME_RECORDED",
+            notes=f"Deal outcome: {outcome} — {body.get('carrier', 'unknown carrier')}",
+        )
+        db.add(event)
+    except Exception:
+        logger.exception("Failed to add timeline event for outcome")
+
+    db.commit()
+
+    return {
+        "status": "ok",
+        "outcome_id": str(deal.id),
+        "account_id": account_id,
+        "outcome": deal.outcome,
+    }
+
+
+# ============================================================
+# MARKET SIGNALS (OUTCOME AGGREGATION)
+# ============================================================
+
+
+@router.get("/market-signals", tags=["outcomes"])
+def market_signals_endpoint(
+    industry: str | None = None,
+    state: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Get aggregated market signals from deal outcomes."""
+    return get_market_signals(db, industry=industry, state=state)
+
+
+# ============================================================
+# ACCOUNT TIMELINE
+# ============================================================
+
+
+@router.get("/accounts/{account_id}/timeline", tags=["timeline"])
+def account_timeline(account_id: str, db: Session = Depends(get_db)):
+    """Get timeline of events for an account."""
+    events = (
+        db.query(AccountEvent)
+        .filter(AccountEvent.account_id == account_id)
+        .order_by(AccountEvent.created_at.desc())
+        .all()
+    )
+    return {
+        "account_id": account_id,
+        "events": [
+            {
+                "id": str(e.id),
+                "event_type": e.event_type,
+                "notes": e.notes,
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+            for e in events
+        ],
+        "count": len(events),
+    }

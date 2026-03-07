@@ -616,3 +616,50 @@ class AccountMemoryEntry(Base):
         Index("ix_account_memory_agency_created", "agency_id", "created_at"),
         Index("ix_account_memory_industry_type", "industry", "entry_type"),
     )
+
+
+# ============================================================
+# DEAL OUTCOMES
+# ============================================================
+
+
+class DealOutcome(Base):
+    """Records the outcome of a deal for market intelligence."""
+
+    __tablename__ = "deal_outcomes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(Text, nullable=False, index=True)
+    industry = Column(Text, nullable=True, index=True)
+    state = Column(Text, nullable=True, index=True)
+    carrier = Column(Text, nullable=True, index=True)
+    premium = Column(Numeric(14, 2), nullable=True)
+    outcome = Column(Text, nullable=False, index=True)
+    outcome_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_deal_outcomes_industry_carrier", "industry", "carrier"),
+        Index("ix_deal_outcomes_industry_outcome", "industry", "outcome"),
+    )
+
+
+# ============================================================
+# ACCOUNT EVENTS (TIMELINE)
+# ============================================================
+
+
+class AccountEvent(Base):
+    """Timeline events for an account lifecycle."""
+
+    __tablename__ = "account_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(Text, nullable=False, index=True)
+    event_type = Column(Text, nullable=False, index=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_account_events_account_created", "account_id", "created_at"),
+    )
