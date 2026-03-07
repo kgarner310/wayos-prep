@@ -17,6 +17,9 @@ def test_gaps_have_confidence_field():
         assert "confidence" in gap
         assert isinstance(gap["confidence"], float)
         assert 0.0 < gap["confidence"] <= 1.0
+        assert "applied_rules" in gap
+        assert isinstance(gap["applied_rules"], list)
+        assert len(gap["applied_rules"]) >= 1
 
 
 def test_workers_comp_high_confidence():
@@ -175,3 +178,142 @@ def test_response_has_industry_field():
     })
     assert "industry" in result
     assert result["industry"] == "trucking"
+
+
+# --- Applied rules traceability ---
+
+def test_applied_rules_have_required_fields():
+    """Each applied rule should have code, description, and confidence_delta."""
+    result = detect_coverage_gaps({
+        "industry": "roofing",
+        "state": "NC",
+        "current_coverages": [],
+    })
+    for gap in result["coverage_gaps"]:
+        for rule in gap["applied_rules"]:
+            assert "code" in rule
+            assert "description" in rule
+            assert "confidence_delta" in rule
+            assert isinstance(rule["code"], str)
+            assert isinstance(rule["description"], str)
+            assert isinstance(rule["confidence_delta"], float)
+
+
+def test_industry_expected_rule_code():
+    """Industry-expected gaps should have the industry_expected rule."""
+    result = detect_coverage_gaps({
+        "industry": "roofing",
+        "state": "NC",
+        "current_coverages": [],
+    })
+    wc_gap = next(g for g in result["coverage_gaps"] if "Workers" in g["coverage"])
+    codes = [r["code"] for r in wc_gap["applied_rules"]]
+    assert "industry_expected" in codes
+
+
+def test_vehicle_exposure_rule_code():
+    """Vehicle-driven auto gap should have the vehicle_exposure rule."""
+    # Use an unknown industry so no industry_expected auto gap fires first
+    result = detect_coverage_gaps({
+        "industry": "consulting",
+        "state": "OH",
+        "vehicles": 3,
+        "current_coverages": [],
+    })
+    auto_gap = next(
+        (g for g in result["coverage_gaps"] if "Commercial Auto" in g["coverage"]),
+        None,
+    )
+    assert auto_gap is not None
+    codes = [r["code"] for r in auto_gap["applied_rules"]]
+    assert "vehicle_exposure" in codes
+
+
+def test_employee_count_rule_code():
+    """Employee-driven EPLI gap should have the employee_count rule."""
+    result = detect_coverage_gaps({
+        "industry": "landscaping",
+        "state": "OH",
+        "employees": 60,
+        "current_coverages": [],
+    })
+    epli_gap = next(
+        (g for g in result["coverage_gaps"] if "EPLI" in g["coverage"]),
+        None,
+    )
+    assert epli_gap is not None
+    codes = [r["code"] for r in epli_gap["applied_rules"]]
+    assert "employee_count" in codes
+
+
+def test_subcontractor_exposure_rule_code():
+    """Subcontractor-driven GL gap should have the subcontractor_exposure rule."""
+    result = detect_coverage_gaps({
+        "industry": "landscaping",
+        "state": "OH",
+        "uses_subcontractors": True,
+        "current_coverages": [],
+    })
+    # landscaping expects GL already via industry_expected, so check umbrella
+    umb_gap = next(
+        (g for g in result["coverage_gaps"] if "Umbrella" in g["coverage"]),
+        None,
+    )
+    assert umb_gap is not None
+    codes = [r["code"] for r in umb_gap["applied_rules"]]
+    # Could be industry_expected or subcontractor_exposure depending on order
+    assert any(c in codes for c in ["industry_expected", "subcontractor_exposure"])
+
+
+def test_loss_run_boost_adds_rule():
+    """Loss run WC boost should add loss_run_wc_frequency rule to the gap."""
+    result = detect_coverage_gaps({
+        "industry": "roofing",
+        "state": "NC",
+        "current_coverages": [],
+        "loss_run_data": {
+            "patterns": [],
+            "underwriting_flags": ["Workers Comp: high claim frequency (5 claims)"],
+            "producer_talking_points": [],
+        },
+    })
+    wc_gap = next(g for g in result["coverage_gaps"] if "Workers" in g["coverage"])
+    codes = [r["code"] for r in wc_gap["applied_rules"]]
+    assert "loss_run_wc_frequency" in codes
+    wc_rule = next(r for r in wc_gap["applied_rules"] if r["code"] == "loss_run_wc_frequency")
+    assert wc_rule["confidence_delta"] == 0.10
+
+
+def test_loss_run_auto_boost_adds_rule():
+    """Loss run auto boost should add loss_run_auto_claims rule."""
+    result = detect_coverage_gaps({
+        "industry": "roofing",
+        "state": "NC",
+        "current_coverages": [],
+        "loss_run_data": {
+            "patterns": ["2 vehicle-related claims detected"],
+            "underwriting_flags": [],
+            "producer_talking_points": [],
+        },
+    })
+    auto_gap = next(
+        (g for g in result["coverage_gaps"] if "Auto" in g["coverage"]),
+        None,
+    )
+    assert auto_gap is not None
+    codes = [r["code"] for r in auto_gap["applied_rules"]]
+    assert "loss_run_auto_claims" in codes
+
+
+def test_no_loss_data_no_boost_rules():
+    """Without loss data, gaps should only have their base rule."""
+    result = detect_coverage_gaps({
+        "industry": "roofing",
+        "state": "NC",
+        "current_coverages": [],
+    })
+    wc_gap = next(g for g in result["coverage_gaps"] if "Workers" in g["coverage"])
+    codes = [r["code"] for r in wc_gap["applied_rules"]]
+    assert "loss_run_wc_frequency" not in codes
+    assert "loss_run_auto_claims" not in codes
+    assert len(wc_gap["applied_rules"]) == 1

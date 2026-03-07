@@ -470,6 +470,46 @@ _GENERIC_ENDORSEMENTS = [
 ]
 
 
+# ============================================================
+# CONFIDENCE RULE DEFINITIONS
+# ============================================================
+# Each rule records why a confidence score was assigned or adjusted.
+
+RULE_INDUSTRY_EXPECTED = {
+    "code": "industry_expected",
+    "description": "Coverage expected for this industry class based on standard program benchmarks",
+}
+RULE_VEHICLE_EXPOSURE = {
+    "code": "vehicle_exposure",
+    "description": "Account operates vehicles; commercial auto or HNOA coverage expected",
+}
+RULE_EMPLOYEE_COUNT = {
+    "code": "employee_count",
+    "description": "Employee headcount triggers coverage expectation threshold",
+}
+RULE_SUBCONTRACTOR_EXPOSURE = {
+    "code": "subcontractor_exposure",
+    "description": "Subcontractor usage creates upstream liability and excess exposure",
+}
+RULE_LOSS_RUN_WC_FREQUENCY = {
+    "code": "loss_run_wc_frequency",
+    "description": "Loss run data confirms elevated Workers Comp claim frequency",
+}
+RULE_LOSS_RUN_AUTO_CLAIMS = {
+    "code": "loss_run_auto_claims",
+    "description": "Loss run data confirms vehicle-related claim activity",
+}
+
+
+def _make_rule(rule: dict, confidence_delta: float) -> dict:
+    """Create an applied_rules entry with a confidence delta."""
+    return {
+        "code": rule["code"],
+        "description": rule["description"],
+        "confidence_delta": confidence_delta,
+    }
+
+
 def detect_coverage_gaps(account_profile: dict) -> dict:
     """Coverage Gap Insight Engine.
 
@@ -515,11 +555,13 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
     expected = INDUSTRY_EXPECTED_COVERAGES.get(industry, [])
     for cov in expected:
         if cov not in current_coverages:
+            base_confidence = _COVERAGE_CONFIDENCE.get(cov, 0.60)
             coverage_gaps.append({
                 "coverage": _COVERAGE_DISPLAY.get(cov, cov.replace("_", " ").title()),
                 "reason": _COVERAGE_REASONS.get(cov, f"Standard coverage for {industry} operations is missing"),
                 "risk_level": _COVERAGE_RISK_LEVELS.get(cov, "medium"),
-                "confidence": _COVERAGE_CONFIDENCE.get(cov, 0.60),
+                "confidence": base_confidence,
+                "applied_rules": [_make_rule(RULE_INDUSTRY_EXPECTED, base_confidence)],
             })
             q = _SUGGESTED_QUESTIONS_BY_COVERAGE.get(cov)
             if q and q not in questions:
@@ -532,6 +574,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "reason": f"Account operates {vehicle_count} vehicles but has no commercial auto coverage",
             "risk_level": "high",
             "confidence": 0.92,
+            "applied_rules": [_make_rule(RULE_VEHICLE_EXPOSURE, 0.92)],
         }
         if not any(g["coverage"] == auto_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(auto_gap)
@@ -542,6 +585,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "reason": "Employees may use personal vehicles for job activities",
             "risk_level": "medium",
             "confidence": 0.75,
+            "applied_rules": [_make_rule(RULE_VEHICLE_EXPOSURE, 0.75)],
         }
         if not any(g["coverage"] == hnoa_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(hnoa_gap)
@@ -556,6 +600,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             "reason": f"With {employee_count} employees, employment practices claims become statistically likely",
             "risk_level": "medium",
             "confidence": 0.70,
+            "applied_rules": [_make_rule(RULE_EMPLOYEE_COUNT, 0.70)],
         }
         if not any(g["coverage"] == epli_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(epli_gap)
@@ -564,11 +609,13 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
             questions.append(q)
 
     if employee_count >= 25 and "cyber" not in current_coverages:
+        cyber_confidence = 0.55 if employee_count < 50 else 0.65
         cyber_gap = {
             "coverage": _COVERAGE_DISPLAY["cyber"],
             "reason": f"A {employee_count}-employee operation stores employee PII and likely processes data electronically",
             "risk_level": "low" if employee_count < 50 else "medium",
-            "confidence": 0.55 if employee_count < 50 else 0.65,
+            "confidence": cyber_confidence,
+            "applied_rules": [_make_rule(RULE_EMPLOYEE_COUNT, cyber_confidence)],
         }
         if not any(g["coverage"] == cyber_gap["coverage"] for g in coverage_gaps):
             coverage_gaps.append(cyber_gap)
@@ -581,6 +628,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
                 "reason": "Subcontractor usage without confirmed GL creates upstream liability risk",
                 "risk_level": "high",
                 "confidence": 0.90,
+                "applied_rules": [_make_rule(RULE_SUBCONTRACTOR_EXPOSURE, 0.90)],
             }
             if not any(g["coverage"] == gl_gap["coverage"] for g in coverage_gaps):
                 coverage_gaps.append(gl_gap)
@@ -591,6 +639,7 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
                 "reason": "Subcontractor operations amplify excess liability exposure beyond primary limits",
                 "risk_level": "medium",
                 "confidence": 0.78,
+                "applied_rules": [_make_rule(RULE_SUBCONTRACTOR_EXPOSURE, 0.78)],
             }
             if not any(g["coverage"] == umb_gap["coverage"] for g in coverage_gaps):
                 coverage_gaps.append(umb_gap)
@@ -641,15 +690,23 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
 
         # Boost confidence on WC gaps if loss data shows WC frequency
         if "workers comp" in loss_flags:
+            delta = 0.10
             for gap in coverage_gaps:
                 if "workers" in gap["coverage"].lower():
-                    gap["confidence"] = min(gap.get("confidence", 0.6) + 0.10, 1.0)
+                    gap["confidence"] = min(gap.get("confidence", 0.6) + delta, 1.0)
+                    gap.setdefault("applied_rules", []).append(
+                        _make_rule(RULE_LOSS_RUN_WC_FREQUENCY, delta)
+                    )
 
         # Boost auto gaps if vehicle claims present
         if "vehicle" in loss_patterns or "auto" in loss_flags:
+            delta = 0.10
             for gap in coverage_gaps:
                 if "auto" in gap["coverage"].lower():
-                    gap["confidence"] = min(gap.get("confidence", 0.6) + 0.10, 1.0)
+                    gap["confidence"] = min(gap.get("confidence", 0.6) + delta, 1.0)
+                    gap.setdefault("applied_rules", []).append(
+                        _make_rule(RULE_LOSS_RUN_AUTO_CLAIMS, delta)
+                    )
 
         # Add loss-derived questions
         for point in loss_run_data.get("producer_talking_points", [])[:2]:
