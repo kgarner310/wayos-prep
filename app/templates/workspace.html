@@ -66,11 +66,37 @@
 
 <!-- Account Selector -->
 <div class="card" id="account-selector">
-  <h2>Select Account</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="margin:0;">Select Account</h2>
+    <button class="btn btn-outline btn-sm" onclick="toggleCreateAccount()">Create Account</button>
+  </div>
+  <!-- Create Account Form (hidden) -->
+  <div id="create-account-form" style="display:none;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px;">
+    <div class="ws-form-row">
+      <div class="form-group"><label>Account Name</label><input type="text" id="ca-name" class="form-control" placeholder="Acme Roofing LLC"></div>
+      <div class="form-group"><label>Industry</label><input type="text" id="ca-industry" class="form-control" placeholder="roofing"></div>
+    </div>
+    <div class="ws-form-row">
+      <div class="form-group"><label>State</label><input type="text" id="ca-state" class="form-control" placeholder="TX" maxlength="2"></div>
+      <div class="form-group"><label>Employee Count</label><input type="number" id="ca-employees" class="form-control" placeholder="25"></div>
+    </div>
+    <div class="ws-form-row">
+      <div class="form-group"><label>Website URL</label><input type="url" id="ca-website" class="form-control" placeholder="https://example.com"></div>
+      <div class="form-group"><label>Annual Revenue</label><input type="number" id="ca-revenue" class="form-control" placeholder="2500000"></div>
+    </div>
+    <div id="create-account-error" class="text-danger text-sm" style="display:none;margin-bottom:8px;"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary btn-sm" onclick="createAccount()">Create Account</button>
+      <button class="btn btn-outline btn-sm" onclick="toggleCreateAccount()">Cancel</button>
+    </div>
+  </div>
   <div class="ws-account-list" id="account-list">
     <p class="text-muted text-sm">Loading accounts...</p>
   </div>
 </div>
+
+<!-- Status Banner -->
+<div id="status-banner" class="ws-status-banner" style="display:none;"></div>
 
 <!-- Workspace Output (hidden until generated) -->
 <div id="workspace-output" style="display:none;">
@@ -79,8 +105,9 @@
   <div class="ws-action-bar" id="action-bar">
     <div class="ws-account-name" id="ws-account-name"></div>
     <div class="btn-group">
-      <button class="btn btn-outline btn-sm" onclick="refreshIntel()">Refresh Public Intel</button>
-      <button class="btn btn-primary btn-sm" onclick="generateWorkspace()">Regenerate Workspace</button>
+      <button class="btn btn-outline btn-sm" id="btn-refresh-intel" onclick="refreshIntel()">Refresh Public Intel</button>
+      <button class="btn btn-outline btn-sm" id="btn-regen" onclick="generateWorkspace()">Regenerate Workspace</button>
+      <button class="btn btn-primary btn-sm" id="btn-packet" onclick="generatePacket()">Build Submission Packet</button>
     </div>
   </div>
 
@@ -129,7 +156,7 @@
   <div class="ws-section" id="section-underwriter-narrative">
     <div class="ws-section-header">
       <h2>Underwriter Narrative</h2>
-      <button class="btn btn-outline btn-sm" onclick="copyNarrative()">Copy Email</button>
+      <button class="btn btn-outline btn-sm" id="btn-copy-email" onclick="copyNarrative()">Copy Email</button>
     </div>
     <div class="ws-section-body" id="narrative-body"></div>
   </div>
@@ -142,6 +169,18 @@
     <div class="ws-section-body" id="recommended-actions-body"></div>
   </div>
 
+  <!-- Submission Packet (hidden until generated) -->
+  <div class="ws-section" id="section-submission-packet" style="display:none;">
+    <div class="ws-section-header">
+      <h2>Submission Packet</h2>
+      <div class="btn-group">
+        <button class="btn btn-outline btn-sm" id="btn-copy-packet" onclick="copyPacket('text')">Copy Text</button>
+        <button class="btn btn-outline btn-sm" id="btn-copy-md" onclick="copyPacket('markdown')">Copy Markdown</button>
+      </div>
+    </div>
+    <div class="ws-section-body" id="submission-packet-body"></div>
+  </div>
+
 </div> <!-- end #workspace-output -->
 </div> <!-- end #authenticated-content -->
 {% endblock %}
@@ -149,7 +188,9 @@
 {% block scripts %}
 <script>
 let currentAccountId = null;
+let currentAccountName = null;
 let currentWorkspace = null;
+let currentPacket = null;
 let authToken = null;
 
 // --- Session management ---
@@ -270,6 +311,21 @@ async function initAuthenticatedSession() {
   }
 })();
 
+// --- Status Banner ---
+function showStatus(msg, type) {
+  const el = document.getElementById('status-banner');
+  el.textContent = msg;
+  el.className = 'ws-status-banner ws-status-' + (type || 'info');
+  el.style.display = '';
+  if (type !== 'loading') {
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+}
+function hideStatus() {
+  document.getElementById('status-banner').style.display = 'none';
+}
+
+// --- Accounts ---
 async function loadAccounts() {
   try {
     const resp = await fetch('/api/v1/accounts?limit=50', {headers: authHeaders()});
@@ -283,11 +339,17 @@ async function loadAccounts() {
 function renderAccountList(accounts) {
   const el = document.getElementById('account-list');
   if (!accounts.length) {
-    el.innerHTML = '<p class="text-muted">No accounts yet. Create one via the API.</p>';
+    el.innerHTML = `
+      <div class="ws-empty-state">
+        <p><strong>No accounts yet</strong></p>
+        <p class="text-muted text-sm">Create your first account to get started with renewal preparation.</p>
+        <button class="btn btn-primary btn-sm" onclick="toggleCreateAccount()" style="margin-top:8px;">Create Account</button>
+      </div>
+    `;
     return;
   }
   el.innerHTML = accounts.map(a => `
-    <div class="ws-account-row" onclick="selectAccount('${a.id}', '${esc(a.account_name)}')">
+    <div class="ws-account-row${currentAccountId === a.id ? ' ws-account-active' : ''}" onclick="selectAccount('${a.id}', '${esc(a.account_name)}')">
       <div class="ws-account-info">
         <strong>${esc(a.account_name)}</strong>
         <span class="text-muted text-sm">${esc(a.industry || '')} ${a.state ? '· ' + esc(a.state) : ''}</span>
@@ -297,34 +359,121 @@ function renderAccountList(accounts) {
   `).join('');
 }
 
+function toggleCreateAccount() {
+  const form = document.getElementById('create-account-form');
+  form.style.display = form.style.display === 'none' ? '' : 'none';
+}
+
+async function createAccount() {
+  const name = document.getElementById('ca-name').value.trim();
+  const industry = document.getElementById('ca-industry').value.trim();
+  const state = document.getElementById('ca-state').value.trim().toUpperCase();
+  const employees = parseInt(document.getElementById('ca-employees').value) || null;
+  const website = document.getElementById('ca-website').value.trim() || null;
+  const revenue = parseFloat(document.getElementById('ca-revenue').value) || null;
+  const errEl = document.getElementById('create-account-error');
+  errEl.style.display = 'none';
+
+  if (!name) {
+    errEl.textContent = 'Account name is required';
+    errEl.style.display = '';
+    return;
+  }
+
+  const body = {account_name: name};
+  if (industry) body.industry = industry;
+  if (state) body.state = state;
+  if (employees) body.employee_count = employees;
+  if (website) body.website_url = website;
+  if (revenue) body.annual_revenue = revenue;
+
+  const data = await apiPost('/api/v1/accounts', body);
+  if (data.id) {
+    showStatus('Account created: ' + name, 'success');
+    toggleCreateAccount();
+    document.getElementById('ca-name').value = '';
+    document.getElementById('ca-industry').value = '';
+    document.getElementById('ca-state').value = '';
+    document.getElementById('ca-employees').value = '';
+    document.getElementById('ca-website').value = '';
+    document.getElementById('ca-revenue').value = '';
+    await loadAccounts();
+    selectAccount(data.id, name);
+  } else {
+    errEl.textContent = data.detail || 'Failed to create account';
+    errEl.style.display = '';
+  }
+}
+
 async function selectAccount(id, name) {
   currentAccountId = id;
+  currentAccountName = name;
+  currentPacket = null;
   document.getElementById('ws-account-name').textContent = name;
+  document.getElementById('section-submission-packet').style.display = 'none';
   await generateWorkspace();
 }
 
 async function generateWorkspace() {
   if (!currentAccountId) return;
+  showStatus('Generating workspace...', 'loading');
   document.getElementById('workspace-output').style.display = 'none';
+
   const data = await apiPost(`/api/v1/workspace/renewal/${currentAccountId}`, {});
+  hideStatus();
+
   if (data.error) {
-    alert('Error: ' + data.error);
+    showStatus('Error: ' + data.error, 'error');
     return;
   }
   currentWorkspace = data;
   renderWorkspace(data);
   document.getElementById('workspace-output').style.display = 'block';
+  showStatus('Workspace ready', 'success');
   window.scrollTo({top: document.getElementById('workspace-output').offsetTop - 20, behavior: 'smooth'});
 }
 
 async function refreshIntel() {
   if (!currentAccountId) return;
+  const btn = document.getElementById('btn-refresh-intel');
+  btn.textContent = 'Refreshing...';
+  btn.disabled = true;
+  showStatus('Fetching public web intelligence...', 'loading');
+
   const result = await apiPost(`/api/v1/accounts/${currentAccountId}/refresh-public-intel`, {});
+  hideStatus();
+  btn.textContent = 'Refresh Public Intel';
+  btn.disabled = false;
+
   if (result.error) {
-    alert(result.error);
+    showStatus(result.error, 'error');
   } else {
+    showStatus('Public intel refreshed', 'success');
     await generateWorkspace();
   }
+}
+
+async function generatePacket() {
+  if (!currentAccountId) return;
+  const btn = document.getElementById('btn-packet');
+  btn.textContent = 'Building...';
+  btn.disabled = true;
+  showStatus('Building submission packet...', 'loading');
+
+  const data = await apiPost(`/api/v1/packet/submission/${currentAccountId}`, {});
+  hideStatus();
+  btn.textContent = 'Build Submission Packet';
+  btn.disabled = false;
+
+  if (data.error) {
+    showStatus('Error: ' + data.error, 'error');
+    return;
+  }
+  currentPacket = data;
+  renderPacket(data);
+  document.getElementById('section-submission-packet').style.display = '';
+  showStatus('Submission packet ready', 'success');
+  window.scrollTo({top: document.getElementById('section-submission-packet').offsetTop - 20, behavior: 'smooth'});
 }
 
 function copyNarrative() {
@@ -337,11 +486,25 @@ function copyNarrative() {
     text = email;
   }
   navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('#section-underwriter-narrative .btn');
-    const orig = btn.textContent;
-    btn.textContent = 'Copied';
-    setTimeout(() => btn.textContent = orig, 1500);
+    flashButton('btn-copy-email', 'Copied');
   });
+}
+
+function copyPacket(format) {
+  if (!currentPacket) return;
+  const text = format === 'markdown' ? currentPacket.rendered_markdown : currentPacket.rendered_text;
+  const btnId = format === 'markdown' ? 'btn-copy-md' : 'btn-copy-packet';
+  navigator.clipboard.writeText(text).then(() => {
+    flashButton(btnId, 'Copied');
+  });
+}
+
+function flashButton(id, msg) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => btn.textContent = orig, 1500);
 }
 
 // --- RENDER FUNCTIONS ---
@@ -410,7 +573,7 @@ function renderOperationsSignals(signals, available) {
         cat.items.map(s => `<li>${esc(s)}</li>`).join('') + '</ul></div>';
     }
   }
-  el.innerHTML = html || '<p class="text-muted">No signals available.</p>';
+  el.innerHTML = html || '<p class="text-muted">No signals available. Try refreshing public intel.</p>';
 }
 
 function renderCoverageGaps(gaps) {
@@ -497,6 +660,29 @@ function renderRecommendedActions(actions) {
   }
   el.innerHTML = '<ul class="ws-actions">' +
     actions.map(a => `<li>${esc(a)}</li>`).join('') + '</ul>';
+}
+
+function renderPacket(packet) {
+  const el = document.getElementById('submission-packet-body');
+  if (!packet || !packet.sections || !packet.sections.length) {
+    el.innerHTML = '<p class="text-muted">No packet data.</p>';
+    return;
+  }
+  let html = `<div class="ws-packet-title">${esc(packet.packet_title)}</div>`;
+  html += '<div class="ws-packet-sections">';
+  for (const section of packet.sections) {
+    html += `<div class="ws-packet-section">`;
+    html += `<h4>${esc(section.title)}</h4>`;
+    if (section.body) {
+      html += `<div class="ws-packet-body">${esc(section.body).replace(/\n/g, '<br>')}</div>`;
+    }
+    if (section.items && section.items.length) {
+      html += '<ul>' + section.items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function esc(s) {

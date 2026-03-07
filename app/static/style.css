@@ -482,3 +482,52 @@ tr:hover { background: #f1f3f5; }
   display: flex; justify-content: flex-end; align-items: center;
   gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px;
 }
+
+/* --- Status Banner --- */
+.ws-status-banner {
+  padding: 10px 16px; border-radius: 6px; font-size: 0.85rem;
+  margin-bottom: 16px; text-align: center;
+}
+.ws-status-info { background: #e7f1ff; color: #084298; border: 1px solid #b6d4fe; }
+.ws-status-success { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+.ws-status-error { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+.ws-status-loading { background: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+
+/* --- Form Rows --- */
+.ws-form-row {
+  display: flex; gap: 12px; margin-bottom: 0;
+}
+.ws-form-row .form-group { flex: 1; }
+@media (max-width: 767px) {
+  .ws-form-row { flex-direction: column; gap: 0; }
+}
+
+/* --- Empty State --- */
+.ws-empty-state {
+  text-align: center; padding: 24px 16px;
+}
+
+/* --- Active Account --- */
+.ws-account-active {
+  border-color: var(--info) !important;
+  background: #f0f7ff;
+}
+
+/* --- Packet --- */
+.ws-packet-title {
+  font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--primary);
+}
+.ws-packet-sections { }
+.ws-packet-section {
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ws-packet-section:last-child { border-bottom: none; }
+.ws-packet-section h4 { margin-bottom: 6px; font-size: 0.95rem; }
+.ws-packet-body {
+  white-space: pre-wrap; font-size: 0.88rem; line-height: 1.5;
+  color: var(--text); margin-bottom: 8px;
+}
+.ws-packet-section ul { margin: 4px 0 0 16px; font-size: 0.88rem; }
+.ws-packet-section li { margin-bottom: 4px; }

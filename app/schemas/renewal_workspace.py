@@ -1,6 +1,6 @@
 """Pydantic schemas for the Renewal Workspace."""
 
-from typing import Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
@@ -60,8 +60,8 @@ class CoverageGap(BaseModel):
 
 
 class NarrativeSection(BaseModel):
-    email_version: str = ""
-    memo_version: str = ""
+    email_version: Union[str, dict] = ""
+    memo_version: Union[str, dict] = ""
     style_applied: dict = {}
     fact_sources: dict = {}
     source_signals: list[str] = []

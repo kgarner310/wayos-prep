@@ -58,6 +58,8 @@ from app.services.underwriter_narrative_generator import generate_underwriter_na
 from app.schemas.underwriter_narrative import UnderwriterNarrativeRequest, UnderwriterNarrativeResponse
 from app.services.renewal_workspace_service import build_renewal_workspace
 from app.schemas.renewal_workspace import RenewalWorkspaceRequest, RenewalWorkspaceResponse
+from app.services.submission_packet_service import build_submission_packet
+from app.schemas.submission_packet import SubmissionPacketRequest, SubmissionPacketResponse
 from app.services.account_service import (
     create_account, get_account, list_accounts, update_account, delete_account,
 )
@@ -887,3 +889,20 @@ def renewal_workspace_endpoint(
         raise HTTPException(404, result["error"])
 
     return RenewalWorkspaceResponse(**result)
+
+
+# --- Submission Packet ---
+
+@router.post("/packet/submission/{account_id}", response_model=SubmissionPacketResponse, tags=["packet"])
+def submission_packet_endpoint(
+    account_id: UUID,
+    payload: SubmissionPacketRequest,
+    db: Session = Depends(get_db),
+):
+    """Build a submission packet combining workspace data into a copyable format."""
+    result = build_submission_packet(db, account_id, payload.model_dump())
+
+    if result.get("error") == "Account not found":
+        raise HTTPException(404, result["error"])
+
+    return SubmissionPacketResponse(**result)
