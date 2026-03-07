@@ -48,6 +48,7 @@ class AccountResponse(BaseModel):
     website_url: Optional[str] = None
     social_urls: Optional[list] = None
     notes: Optional[str] = None
+    last_public_intel_refresh_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 

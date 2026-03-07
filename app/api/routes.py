@@ -44,8 +44,16 @@ from app.services.experience_mod_analyzer import analyze_experience_mod
 from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
 from app.services.renewal_brief_generator import generate_renewal_brief
 from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
-from app.services.public_web_intel import extract_public_web_intel
-from app.schemas.public_web_intel import PublicWebIntelRequest, PublicWebIntelResponse
+from app.services.public_web_intel import extract_public_web_intel, extract_public_web_intel_with_fetch
+from app.schemas.public_web_intel import (
+    PublicWebIntelRequest, PublicWebIntelResponse,
+    PublicWebIntelFetchRequest, PublicWebIntelFetchResponse,
+    AccountRefreshRequest, AccountRefreshResponse,
+    LatestPublicIntelResponse, FetchSummary,
+)
+from app.services.account_refresh_service import (
+    refresh_account_public_intel, get_latest_public_intel,
+)
 from app.services.underwriter_narrative_generator import generate_underwriter_narrative
 from app.schemas.underwriter_narrative import UnderwriterNarrativeRequest, UnderwriterNarrativeResponse
 from app.services.account_service import (
@@ -663,6 +671,76 @@ def public_web_intel(payload: PublicWebIntelRequest, db: Session = Depends(get_d
     input_data = payload.model_dump()
     result = extract_public_web_intel(input_data)
     return PublicWebIntelResponse(**result)
+
+
+@router.post("/intel/public-web-intel/fetch", response_model=PublicWebIntelFetchResponse, tags=["intel"])
+def public_web_intel_fetch(payload: PublicWebIntelFetchRequest, db: Session = Depends(get_db)):
+    """Fetch public website content live and extract underwriting-relevant signals."""
+    log_event(
+        db,
+        "public_web_fetch_requested",
+        payload={
+            "website_url": payload.website_url,
+            "company_name": payload.company_name,
+        },
+    )
+    input_data = payload.model_dump()
+    result = extract_public_web_intel_with_fetch(input_data)
+
+    log_event(
+        db,
+        "public_web_fetch_completed",
+        payload={
+            "website_url": payload.website_url,
+            "fetch_success": result["fetch_summary"]["success"],
+            "fetched_url_count": len(result["fetch_summary"]["fetched_urls"]),
+        },
+    )
+
+    return PublicWebIntelFetchResponse(
+        public_web_intel=PublicWebIntelResponse(**result["public_web_intel"]),
+        fetch_summary=FetchSummary(**result["fetch_summary"]),
+    )
+
+
+@router.post("/accounts/{account_id}/refresh-public-intel", response_model=AccountRefreshResponse, tags=["accounts"])
+def refresh_public_intel_endpoint(
+    account_id: UUID,
+    payload: AccountRefreshRequest,
+    db: Session = Depends(get_db),
+):
+    """Refresh public web intelligence for an account by fetching its website."""
+    result = refresh_account_public_intel(db, account_id, payload.model_dump())
+
+    if result.get("error"):
+        if result["error"] == "Account not found":
+            raise HTTPException(404, result["error"])
+
+    intel_response = None
+    if result.get("public_web_intel"):
+        intel_response = PublicWebIntelResponse(**result["public_web_intel"])
+
+    fetch_response = None
+    if result.get("fetch_summary"):
+        fetch_response = FetchSummary(**result["fetch_summary"])
+
+    return AccountRefreshResponse(
+        account_id=result["account_id"],
+        artifact_saved=result["artifact_saved"],
+        error=result.get("error"),
+        public_web_intel=intel_response,
+        fetch_summary=fetch_response,
+        account_updates=result.get("account_updates", []),
+    )
+
+
+@router.get("/accounts/{account_id}/public-intel/latest", response_model=LatestPublicIntelResponse, tags=["accounts"])
+def get_latest_public_intel_endpoint(account_id: UUID, db: Session = Depends(get_db)):
+    """Get the most recent public web intel artifact for an account."""
+    result = get_latest_public_intel(db, account_id)
+    if not result:
+        raise HTTPException(404, "No public web intel found for this account")
+    return LatestPublicIntelResponse(**result)
 
 
 # --- Underwriter Narrative ---

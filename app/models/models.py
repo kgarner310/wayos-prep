@@ -443,6 +443,7 @@ class Account(Base):
     website_url = Column(Text)
     social_urls = Column(JSONB)
     notes = Column(Text)
+    last_public_intel_refresh_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
 

@@ -3,9 +3,11 @@
 Extracts structured underwriting-relevant signals from public-facing
 company content (website text, social text).
 
-Does NOT perform live scraping in this phase. Accepts raw text input
-and extracts structured signals. URL fields are accepted for future
-expansion when live fetching infrastructure is added.
+Supports two input paths:
+1. Manual: raw_website_text / raw_social_text provided directly
+2. Live fetch: website_url provided, text fetched via web_fetcher
+
+Both paths feed into the same signal extraction pipeline.
 """
 
 from __future__ import annotations
@@ -236,3 +238,82 @@ def _build_cautions(raw_website: str, raw_social: str) -> list[str]:
         )
 
     return cautions
+
+
+# ============================================================
+# LIVE-FETCH VARIANT
+# ============================================================
+
+
+def extract_public_web_intel_with_fetch(input_data: dict) -> dict:
+    """Fetch website content live, then extract public web intel.
+
+    Combines web_fetcher.fetch_public_page_text with extract_public_web_intel.
+    If raw_website_text is also provided, it is appended to fetched content.
+
+    Args:
+        input_data: dict with keys:
+            - website_url (str): URL to fetch
+            - company_name, industry, state: context
+            - raw_website_text (str, optional): additional manual text
+            - raw_social_text (str, optional): social text
+            - fetch_timeout_seconds, max_pages, max_chars: fetch options
+
+    Returns:
+        dict with:
+            - public_web_intel: the standard extraction result
+            - fetch_summary: fetch metadata (source_url, fetched_urls, warnings, success)
+    """
+    from app.services.web_fetcher import fetch_public_page_text
+
+    website_url = (input_data.get("website_url") or "").strip()
+
+    # --- Attempt live fetch if URL provided ---
+    fetch_result = {"source_url": "", "fetched_urls": [], "raw_text": "",
+                    "fetch_warnings": [], "success": False}
+    if website_url:
+        fetch_result = fetch_public_page_text(input_data)
+
+    # --- Combine fetched text with any manual text ---
+    fetched_text = fetch_result.get("raw_text", "")
+    manual_text = (input_data.get("raw_website_text") or "").strip()
+    combined_website_text = "\n\n".join(
+        part for part in [fetched_text, manual_text] if part
+    )
+
+    # --- Run standard extraction ---
+    extraction_input = {
+        "company_name": input_data.get("company_name", ""),
+        "website_url": website_url,
+        "raw_website_text": combined_website_text,
+        "raw_social_text": input_data.get("raw_social_text", ""),
+        "industry": input_data.get("industry", ""),
+        "state": input_data.get("state", ""),
+    }
+    intel = extract_public_web_intel(extraction_input)
+
+    # Add fetch-sourced caution if live content was used
+    if fetch_result.get("success"):
+        intel["cautions"].append(
+            "Content was fetched from a live public website and may have "
+            "changed since the time of retrieval"
+        )
+
+    fetch_summary = {
+        "source_url": fetch_result.get("source_url", ""),
+        "fetched_urls": fetch_result.get("fetched_urls", []),
+        "fetch_warnings": fetch_result.get("fetch_warnings", []),
+        "success": fetch_result.get("success", False),
+        "fetched_char_count": len(fetched_text),
+    }
+
+    logger.info(
+        "Public web intel with fetch: url=%s fetch_success=%s signals_extracted=%s",
+        website_url, fetch_summary["success"],
+        len(intel.get("operations_signals", [])) > 0,
+    )
+
+    return {
+        "public_web_intel": intel,
+        "fetch_summary": fetch_summary,
+    }
