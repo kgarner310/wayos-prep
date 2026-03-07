@@ -132,6 +132,8 @@ def build_renewal_workspace(
             "email_version": underwriter_narrative.get("email_version", ""),
             "memo_version": underwriter_narrative.get("memo_version", ""),
             "style_applied": underwriter_narrative.get("style_applied", {}),
+            "fact_sources": underwriter_narrative.get("fact_sources", {}),
+            "source_signals": underwriter_narrative.get("source_signals", []),
         },
         "recommended_actions": recommended_actions,
         "sections_available": _list_available_sections(

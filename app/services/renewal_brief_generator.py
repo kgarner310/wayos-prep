@@ -509,4 +509,6 @@ def _compute_risk_overview(
         "risk_level": risk_level,
         "confidence": round(confidence, 2),
         "headline": headline,
+        "contributing_factors": reasons[:5],
+        "signal_count": signal_count,
     }

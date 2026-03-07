@@ -40,6 +40,14 @@ class RiskOverview(BaseModel):
     risk_level: str = "low"
     confidence: float = 0.4
     headline: str = ""
+    contributing_factors: list[str] = []
+    signal_count: int = 0
+
+
+class AppliedRule(BaseModel):
+    code: str = ""
+    description: str = ""
+    confidence_delta: float = 0.0
 
 
 class CoverageGap(BaseModel):
@@ -47,13 +55,16 @@ class CoverageGap(BaseModel):
     reason: str = ""
     risk_level: str = "medium"
     confidence: float = 0.5
-    applied_rules: list[str] = []
+    applied_rules: list[AppliedRule] = []
+    why_this_is_here: list[str] = []
 
 
 class NarrativeSection(BaseModel):
     email_version: str = ""
     memo_version: str = ""
     style_applied: dict = {}
+    fact_sources: dict = {}
+    source_signals: list[str] = []
 
 
 class RenewalWorkspaceResponse(BaseModel):

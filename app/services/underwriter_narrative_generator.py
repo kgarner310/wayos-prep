@@ -77,6 +77,18 @@ def generate_underwriter_narrative(profile: dict, db=None) -> dict:
         "public_web_intel_used": intel_used,
     }
 
+    # --- Build source_signals for trust layer ---
+    source_signals = []
+    if intel_used:
+        for sig in (public_intel.get("operations_signals") or [])[:2]:
+            source_signals.append(f"Website references: {sig}")
+        for sig in (public_intel.get("safety_signals") or [])[:1]:
+            source_signals.append(f"Public materials indicate: {sig}")
+    if brief_used:
+        source_signals.append("Renewal brief contributed risk and coverage analysis")
+    if not source_signals:
+        source_signals.append("Narrative based on account profile data only")
+
     # --- Extract data from brief ---
     account_summary = renewal_brief.get("account_summary", {})
     risk_overview = renewal_brief.get("risk_overview", {})
@@ -153,6 +165,7 @@ def generate_underwriter_narrative(profile: dict, db=None) -> dict:
         "memo_version": memo_version,
         "supporting_points": supporting_points[:7],
         "fact_sources": fact_sources,
+        "source_signals": source_signals[:5],
         "cautions": cautions,
         "style_applied": style_applied,
     }

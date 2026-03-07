@@ -747,6 +747,14 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
     severity_order = {"high": 0, "medium": 1, "low": 2}
     coverage_gaps.sort(key=lambda g: severity_order.get(g["risk_level"], 3))
 
+    # Build why_this_is_here for each gap from applied_rules
+    for gap in coverage_gaps:
+        gap["why_this_is_here"] = [
+            rule["description"] for rule in gap.get("applied_rules", [])
+        ]
+        if not gap["why_this_is_here"]:
+            gap["why_this_is_here"] = [gap.get("reason", "Coverage gap detected")]
+
     # Missing endorsements
     endorsements = list(_INDUSTRY_ENDORSEMENTS.get(industry, _GENERIC_ENDORSEMENTS))
     if uses_subcontractors and not any(e["endorsement"] == "Waiver of Subrogation" for e in endorsements):

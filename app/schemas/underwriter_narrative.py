@@ -52,5 +52,6 @@ class UnderwriterNarrativeResponse(BaseModel):
     memo_version: NarrativeVersion
     supporting_points: list[str] = []
     fact_sources: FactSources
+    source_signals: list[str] = []
     cautions: list[str] = []
     style_applied: Optional[dict] = None

@@ -74,6 +74,12 @@ def admin_source_detail(source_id: UUID, request: Request, db: Session = Depends
     })
 
 
+@router.get("/workspace", response_class=HTMLResponse)
+def admin_workspace(request: Request):
+    """Renewal Workspace — unified producer renewal preparation UI."""
+    return templates.TemplateResponse("workspace.html", {"request": request})
+
+
 @router.get("/prep", response_class=HTMLResponse)
 def admin_prep_form(request: Request):
     return templates.TemplateResponse("prep.html", {"request": request})

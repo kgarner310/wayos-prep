@@ -282,3 +282,188 @@ tr:hover { background: #f1f3f5; }
   z-index: 1000;
   font-size: 14px;
 }
+
+/* ============================================================
+   RENEWAL WORKSPACE — Mobile-first responsive UI
+   ============================================================ */
+
+.ws-header { margin-bottom: 24px; }
+.ws-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+
+/* Account selector */
+.ws-account-list { display: flex; flex-direction: column; gap: 8px; }
+.ws-account-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ws-account-row:hover { border-color: var(--accent); background: #f8f9ff; }
+.ws-account-info { display: flex; flex-direction: column; gap: 2px; }
+.ws-account-info strong { font-size: 14px; }
+
+/* Action bar */
+.ws-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ws-account-name { font-size: 18px; font-weight: 700; }
+
+/* Section cards */
+.ws-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.ws-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ws-section-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.ws-section-body { padding: 16px 20px; }
+
+/* Key-value rows */
+.ws-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.ws-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Key facts */
+.ws-facts {
+  list-style: none;
+  padding: 8px 0 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ws-facts li {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+/* Risk badge */
+.ws-risk-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.ws-risk-high { background: #ffebee; color: #c62828; }
+.ws-risk-moderate { background: #fff3e0; color: #e65100; }
+.ws-risk-low { background: #e8f5e9; color: #2e7d32; }
+.ws-risk-headline { font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+
+/* Why this is here / expandable trust sections */
+.ws-why {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.ws-why summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 500;
+  padding: 4px 0;
+  user-select: none;
+}
+.ws-why summary:hover { text-decoration: underline; }
+.ws-why ul {
+  padding: 6px 0 2px 18px;
+  margin: 0;
+  color: var(--text-muted);
+}
+.ws-why li { margin-bottom: 3px; line-height: 1.4; }
+
+/* Signal groups */
+.ws-signal-group { margin-bottom: 12px; }
+.ws-signal-group h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); margin-bottom: 4px; }
+.ws-signal-group ul { list-style: disc; padding-left: 18px; margin: 0; }
+.ws-signal-group li { font-size: 13px; margin-bottom: 3px; }
+
+/* Questions */
+.ws-questions { padding-left: 20px; margin: 0; }
+.ws-questions li { font-size: 13px; margin-bottom: 8px; line-height: 1.5; }
+
+/* Narrative blocks */
+.ws-narrative-block { margin-bottom: 16px; }
+.ws-narrative-block h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+.ws-narrative-text {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* Actions list */
+.ws-actions { list-style: none; padding: 0; margin: 0; }
+.ws-actions li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ws-actions li:last-child { border-bottom: none; }
+.ws-actions li::before {
+  content: '\2192';
+  margin-right: 8px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ============================================================
+   RESPONSIVE — Desktop enhancement
+   ============================================================ */
+
+@media (min-width: 768px) {
+  .ws-header h1 { font-size: 26px; }
+  .ws-section-body { padding: 20px 24px; }
+  .ws-section-header { padding: 16px 24px 12px; }
+  .ws-narrative-text { font-size: 14px; }
+
+  .ws-account-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container { max-width: 960px; }
+}

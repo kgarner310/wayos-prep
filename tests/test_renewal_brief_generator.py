@@ -24,7 +24,7 @@ REQUIRED_KEYS = {
 }
 
 ACCOUNT_SUMMARY_KEYS = {"account_name", "industry", "state", "account_stage", "key_facts"}
-RISK_OVERVIEW_KEYS = {"risk_level", "confidence", "headline"}
+RISK_OVERVIEW_KEYS = {"risk_level", "confidence", "headline", "contributing_factors", "signal_count"}
 
 
 # ============================================================

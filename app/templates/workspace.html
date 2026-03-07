@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block title %}WAYOS PREP - Renewal Workspace{% endblock %}
+{% block content %}
+<div class="ws-header">
+  <h1>Renewal Workspace</h1>
+  <p class="text-muted">Select an account to build a unified renewal preparation workspace.</p>
+</div>
+
+<!-- Account Selector -->
+<div class="card" id="account-selector">
+  <h2>Select Account</h2>
+  <div class="ws-account-list" id="account-list">
+    <p class="text-muted text-sm">Loading accounts...</p>
+  </div>
+</div>
+
+<!-- Workspace Output (hidden until generated) -->
+<div id="workspace-output" style="display:none;">
+
+  <!-- Action Bar -->
+  <div class="ws-action-bar" id="action-bar">
+    <div class="ws-account-name" id="ws-account-name"></div>
+    <div class="btn-group">
+      <button class="btn btn-outline btn-sm" onclick="refreshIntel()">Refresh Public Intel</button>
+      <button class="btn btn-primary btn-sm" onclick="generateWorkspace()">Regenerate Workspace</button>
+    </div>
+  </div>
+
+  <!-- Account Summary -->
+  <div class="ws-section" id="section-account-summary">
+    <div class="ws-section-header">
+      <h2>Account Summary</h2>
+    </div>
+    <div class="ws-section-body" id="account-summary-body"></div>
+  </div>
+
+  <!-- Risk Overview -->
+  <div class="ws-section" id="section-risk-overview">
+    <div class="ws-section-header">
+      <h2>Risk Overview</h2>
+    </div>
+    <div class="ws-section-body" id="risk-overview-body"></div>
+  </div>
+
+  <!-- Operations Signals -->
+  <div class="ws-section" id="section-operations-signals" style="display:none;">
+    <div class="ws-section-header">
+      <h2>Operations Signals</h2>
+      <span class="text-muted text-sm">From public web intelligence</span>
+    </div>
+    <div class="ws-section-body" id="operations-signals-body"></div>
+  </div>
+
+  <!-- Coverage Gaps -->
+  <div class="ws-section" id="section-coverage-gaps">
+    <div class="ws-section-header">
+      <h2>Coverage Gaps</h2>
+    </div>
+    <div class="ws-section-body" id="coverage-gaps-body"></div>
+  </div>
+
+  <!-- Producer Questions -->
+  <div class="ws-section" id="section-producer-questions">
+    <div class="ws-section-header">
+      <h2>Producer Questions</h2>
+    </div>
+    <div class="ws-section-body" id="producer-questions-body"></div>
+  </div>
+
+  <!-- Underwriter Narrative -->
+  <div class="ws-section" id="section-underwriter-narrative">
+    <div class="ws-section-header">
+      <h2>Underwriter Narrative</h2>
+      <button class="btn btn-outline btn-sm" onclick="copyNarrative()">Copy Email</button>
+    </div>
+    <div class="ws-section-body" id="narrative-body"></div>
+  </div>
+
+  <!-- Recommended Actions -->
+  <div class="ws-section" id="section-recommended-actions">
+    <div class="ws-section-header">
+      <h2>Recommended Actions</h2>
+    </div>
+    <div class="ws-section-body" id="recommended-actions-body"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentAccountId = null;
+let currentWorkspace = null;
+
+// --- Load accounts on page load ---
+(async function() {
+  try {
+    const resp = await fetch('/api/v1/accounts?limit=50');
+    const data = await resp.json();
+    renderAccountList(data.accounts || []);
+  } catch(e) {
+    document.getElementById('account-list').innerHTML = '<p class="text-muted">Failed to load accounts.</p>';
+  }
+})();
+
+function renderAccountList(accounts) {
+  const el = document.getElementById('account-list');
+  if (!accounts.length) {
+    el.innerHTML = '<p class="text-muted">No accounts yet. Create one via the API.</p>';
+    return;
+  }
+  el.innerHTML = accounts.map(a => `
+    <div class="ws-account-row" onclick="selectAccount('${a.id}', '${esc(a.account_name)}')">
+      <div class="ws-account-info">
+        <strong>${esc(a.account_name)}</strong>
+        <span class="text-muted text-sm">${esc(a.industry || '')} ${a.state ? '· ' + esc(a.state) : ''}</span>
+      </div>
+      <span class="btn btn-outline btn-sm">Select</span>
+    </div>
+  `).join('');
+}
+
+async function selectAccount(id, name) {
+  currentAccountId = id;
+  document.getElementById('ws-account-name').textContent = name;
+  await generateWorkspace();
+}
+
+async function generateWorkspace() {
+  if (!currentAccountId) return;
+  document.getElementById('workspace-output').style.display = 'none';
+  const data = await apiPost(`/api/v1/workspace/renewal/${currentAccountId}`, {});
+  if (data.error) {
+    alert('Error: ' + data.error);
+    return;
+  }
+  currentWorkspace = data;
+  renderWorkspace(data);
+  document.getElementById('workspace-output').style.display = 'block';
+  window.scrollTo({top: document.getElementById('workspace-output').offsetTop - 20, behavior: 'smooth'});
+}
+
+async function refreshIntel() {
+  if (!currentAccountId) return;
+  const result = await apiPost(`/api/v1/accounts/${currentAccountId}/refresh-public-intel`, {});
+  if (result.error) {
+    alert(result.error);
+  } else {
+    await generateWorkspace();
+  }
+}
+
+function copyNarrative() {
+  if (!currentWorkspace) return;
+  const email = currentWorkspace.underwriter_narrative?.email_version || '';
+  let text = '';
+  if (typeof email === 'object') {
+    text = [email.subject || '', '', email.body || ''].join('\n');
+  } else {
+    text = email;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('#section-underwriter-narrative .btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// --- RENDER FUNCTIONS ---
+
+function renderWorkspace(ws) {
+  renderAccountSummary(ws.account_summary);
+  renderRiskOverview(ws.risk_overview);
+  renderOperationsSignals(ws.operations_signals, ws.sections_available);
+  renderCoverageGaps(ws.coverage_gaps);
+  renderProducerQuestions(ws.producer_questions);
+  renderNarrative(ws.underwriter_narrative);
+  renderRecommendedActions(ws.recommended_actions);
+}
+
+function renderAccountSummary(summary) {
+  const el = document.getElementById('account-summary-body');
+  if (!summary || !summary.account_name) {
+    el.innerHTML = '<p class="text-muted">No account data.</p>';
+    return;
+  }
+  const facts = (summary.key_facts || []).map(f => `<li>${esc(f)}</li>`).join('');
+  el.innerHTML = `
+    <div class="ws-kv"><span class="ws-label">Industry</span> <span>${esc(summary.industry || '—')}</span></div>
+    <div class="ws-kv"><span class="ws-label">State</span> <span>${esc(summary.state || '—')}</span></div>
+    <div class="ws-kv"><span class="ws-label">Stage</span> <span>${esc(summary.account_stage || 'renewal')}</span></div>
+    ${facts ? '<ul class="ws-facts">' + facts + '</ul>' : ''}
+  `;
+}
+
+function renderRiskOverview(ro) {
+  const el = document.getElementById('risk-overview-body');
+  if (!ro || !ro.risk_level) {
+    el.innerHTML = '<p class="text-muted">No risk data available.</p>';
+    return;
+  }
+  const factors = (ro.contributing_factors || []).map(f => `<li>${esc(f)}</li>`).join('');
+  el.innerHTML = `
+    <div class="ws-risk-badge ws-risk-${ro.risk_level}">${esc(ro.risk_level)}</div>
+    <p class="ws-risk-headline">${esc(ro.headline)}</p>
+    <div class="ws-kv"><span class="ws-label">Confidence</span> <span>${(ro.confidence * 100).toFixed(0)}%</span></div>
+    ${factors ? '<details class="ws-why"><summary>Why this assessment</summary><ul>' + factors + '</ul></details>' : ''}
+  `;
+}
+
+function renderOperationsSignals(signals, available) {
+  const section = document.getElementById('section-operations-signals');
+  const el = document.getElementById('operations-signals-body');
+
+  if (!signals || !available.includes('operations_signals')) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  const categories = [
+    {label: 'Operations', items: signals.operations_signals || []},
+    {label: 'Safety', items: signals.safety_signals || []},
+    {label: 'Scale', items: signals.scale_signals || []},
+    {label: 'Carrier-Relevant', items: signals.carrier_relevant_signals || []},
+  ];
+
+  let html = '';
+  for (const cat of categories) {
+    if (cat.items.length) {
+      html += `<div class="ws-signal-group"><h4>${cat.label}</h4><ul>` +
+        cat.items.map(s => `<li>${esc(s)}</li>`).join('') + '</ul></div>';
+    }
+  }
+  el.innerHTML = html || '<p class="text-muted">No signals available.</p>';
+}
+
+function renderCoverageGaps(gaps) {
+  const el = document.getElementById('coverage-gaps-body');
+  if (!gaps || !gaps.length) {
+    el.innerHTML = '<p class="text-muted">No coverage gaps identified.</p>';
+    return;
+  }
+  el.innerHTML = gaps.map(g => {
+    const why = (g.why_this_is_here || []).map(w => `<li>${esc(w)}</li>`).join('');
+    return `
+      <div class="gap-card gap-card-${g.risk_level}">
+        <div class="gap-header">
+          <h4>${esc(g.coverage)}</h4>
+          <span class="badge badge-${g.risk_level}">${g.risk_level}</span>
+        </div>
+        <p class="gap-reason">${esc(g.reason)}</p>
+        <div class="gap-detail"><strong>Confidence:</strong> ${(g.confidence * 100).toFixed(0)}%</div>
+        ${why ? '<details class="ws-why"><summary>Why this is here</summary><ul>' + why + '</ul></details>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderProducerQuestions(questions) {
+  const el = document.getElementById('producer-questions-body');
+  if (!questions || !questions.length) {
+    el.innerHTML = '<p class="text-muted">No questions generated.</p>';
+    return;
+  }
+  el.innerHTML = '<ol class="ws-questions">' +
+    questions.map(q => `<li>${esc(q)}</li>`).join('') + '</ol>';
+}
+
+function renderNarrative(narrative) {
+  const el = document.getElementById('narrative-body');
+  if (!narrative || (!narrative.email_version && !narrative.memo_version)) {
+    el.innerHTML = '<p class="text-muted">No narrative generated.</p>';
+    return;
+  }
+
+  const signals = (narrative.source_signals || []).map(s => `<li>${esc(s)}</li>`).join('');
+
+  let emailHtml = '';
+  if (narrative.email_version) {
+    const ev = narrative.email_version;
+    if (typeof ev === 'object') {
+      emailHtml = `
+        <div class="ws-narrative-block">
+          <h4>Email Version</h4>
+          ${ev.subject ? '<div class="ws-kv"><span class="ws-label">Subject</span> <span>' + esc(ev.subject) + '</span></div>' : ''}
+          <div class="ws-narrative-text">${esc(ev.body || '')}</div>
+        </div>
+      `;
+    } else {
+      emailHtml = `<div class="ws-narrative-block"><h4>Email Version</h4><div class="ws-narrative-text">${esc(ev)}</div></div>`;
+    }
+  }
+
+  let memoHtml = '';
+  if (narrative.memo_version) {
+    const mv = narrative.memo_version;
+    if (typeof mv === 'object') {
+      memoHtml = `
+        <div class="ws-narrative-block">
+          <h4>Memo Version</h4>
+          <div class="ws-narrative-text">${esc(mv.body || '')}</div>
+        </div>
+      `;
+    } else {
+      memoHtml = `<div class="ws-narrative-block"><h4>Memo Version</h4><div class="ws-narrative-text">${esc(mv)}</div></div>`;
+    }
+  }
+
+  el.innerHTML = emailHtml + memoHtml +
+    (signals ? '<details class="ws-why"><summary>Data sources</summary><ul>' + signals + '</ul></details>' : '');
+}
+
+function renderRecommendedActions(actions) {
+  const el = document.getElementById('recommended-actions-body');
+  if (!actions || !actions.length) {
+    el.innerHTML = '<p class="text-muted">No actions recommended.</p>';
+    return;
+  }
+  el.innerHTML = '<ul class="ws-actions">' +
+    actions.map(a => `<li>${esc(a)}</li>`).join('') + '</ul>';
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+{% endblock %}
