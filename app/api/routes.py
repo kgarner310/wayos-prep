@@ -34,6 +34,7 @@ from app.services.retrieval import run_retrieval
 from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
 from app.services.coverage_gap_detector import detect_coverage_gaps, detect_knowledge_gaps
+from app.services.meeting_brief import generate_meeting_brief
 from app.services.producer_ammo import generate_producer_ammo
 from app.services.agency_ammo_feed import build_agency_ammo_feed
 from app.services.discovery_capture import save_discovery
@@ -557,6 +558,19 @@ def knowledge_gap_detection(
     """
     policies = [p.strip() for p in current_policies.split(",") if p.strip()]
     result = detect_knowledge_gaps(industry, policies)
+    return result
+
+
+# --- Meeting Brief ---
+
+@router.get("/meeting/brief", tags=["meeting"])
+def meeting_brief_endpoint(industry: str = ""):
+    """Generate a structured meeting preparation brief for an industry.
+
+    Uses Industry Knowledge Objects to assemble exposures, claims,
+    talking points, discovery questions, and coverage watchouts.
+    """
+    result = generate_meeting_brief(industry)
     return result
 
 
