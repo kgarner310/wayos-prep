@@ -58,6 +58,12 @@ from app.services.response_rewriter import (
     rewrite_submission_readiness,
 )
 from app.presentation.presentation_models import RewriteOptions
+from app.services.account_memory_service import (
+    create_account_memory_entry,
+    list_account_memory,
+    summarize_account_memory,
+    write_memory_safe,
+)
 from app.services.telemetry_store import (
     record_rendered_output_event,
     record_rendered_output_feedback,
@@ -606,6 +612,8 @@ def meeting_brief_endpoint(
     tone: str = "neutral",
     session_id: str | None = None,
     use_llm: bool = False,
+    account_id: str | None = None,
+    db: Session = Depends(get_db),
 ):
     """Generate a structured meeting preparation brief for an industry.
 
@@ -616,6 +624,16 @@ def meeting_brief_endpoint(
     use_llm=true routes rendering through the AI model router.
     """
     result = generate_meeting_brief(industry, office_id=office_id)
+
+    # Auto-write memory entry
+    if account_id:
+        write_memory_safe(
+            db, account_id=account_id, entry_type="brief_generated",
+            summary=f"Meeting brief generated for {industry}",
+            industry=industry, session_id=session_id,
+            payload_json={"mode": mode, "render": render},
+        )
+
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
@@ -995,6 +1013,14 @@ def submission_packet_endpoint(
     if result.get("error") == "Account not found":
         raise HTTPException(404, result["error"])
 
+    # Auto-write memory entry
+    write_memory_safe(
+        db, account_id=str(account_id),
+        entry_type="submission_packet_generated",
+        summary=f"Submission packet generated for account {account_id}",
+        payload_json={"sections": list(payload.model_dump().get("sections", {}).keys()) if hasattr(payload, "sections") else []},
+    )
+
     return SubmissionPacketResponse(**result)
 
 
@@ -1069,6 +1095,18 @@ def seed_demo_data_endpoint(db: Session = Depends(get_db)):
     """Seed demo accounts with realistic data. Internal-only."""
     results = seed_demo_accounts(db)
     created = sum(1 for r in results if r["status"] == "created")
+
+    # Auto-write memory entries for created accounts
+    for r in results:
+        if r["status"] == "created" and r.get("account_id"):
+            write_memory_safe(
+                db, account_id=str(r["account_id"]),
+                entry_type="account_created",
+                summary=f"Demo account created: {r.get('account_name', 'unknown')}",
+                industry=r.get("industry"),
+                payload_json={"demo_seed": True},
+            )
+
     return {"accounts": results, "created": created, "total": len(results)}
 
 
@@ -1377,7 +1415,7 @@ def telemetry_record_event(body: dict):
 
 
 @router.post("/telemetry/rendered-output/feedback", tags=["telemetry"])
-def telemetry_record_feedback(body: dict):
+def telemetry_record_feedback(body: dict, db: Session = Depends(get_db)):
     """Record producer feedback on a rendered output."""
     output_id = body.get("output_id", "")
     feedback_type = body.get("feedback_type", "")
@@ -1395,6 +1433,18 @@ def telemetry_record_feedback(body: dict):
         feedback_note=body.get("feedback_note"),
         edited_text=body.get("edited_text"),
     )
+
+    # Auto-write memory entry if account_id provided
+    account_id = body.get("account_id")
+    if account_id:
+        entry_type = "producer_edited" if feedback_type == "edited" else "producer_feedback"
+        write_memory_safe(
+            db, account_id=account_id, entry_type=entry_type,
+            summary=f"Producer {feedback_type} on {body.get('response_type', 'output')}",
+            industry=body.get("industry"), session_id=body.get("session_id"),
+            payload_json={"output_id": output_id, "feedback_type": feedback_type, "mode": body.get("mode")},
+        )
+
     return {"status": "ok", "feedback": result}
 
 
@@ -1437,3 +1487,46 @@ def telemetry_summary(
     return summarize_rendered_output_telemetry(
         office_id=office_id, industry=industry,
     )
+
+
+# ============================================================
+# ACCOUNT MEMORY LEDGER
+# ============================================================
+
+
+@router.post("/account-memory", tags=["account-memory"])
+def create_memory_entry(body: dict, db: Session = Depends(get_db)):
+    """Create a new account memory entry."""
+    account_id = body.get("account_id")
+    entry_type = body.get("entry_type")
+    summary = body.get("summary")
+    if not account_id or not entry_type or not summary:
+        raise HTTPException(422, "account_id, entry_type, and summary are required")
+    try:
+        entry = create_account_memory_entry(
+            db=db,
+            account_id=account_id,
+            entry_type=entry_type,
+            summary=summary,
+            agency_id=body.get("agency_id"),
+            session_id=body.get("session_id"),
+            industry=body.get("industry"),
+            payload_json=body.get("payload_json"),
+            created_by=body.get("created_by"),
+        )
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {"status": "ok", "entry": entry}
+
+
+@router.get("/account-memory/{account_id}", tags=["account-memory"])
+def get_account_memory(account_id: str, db: Session = Depends(get_db)):
+    """List all memory entries for an account."""
+    entries = list_account_memory(db, account_id)
+    return {"account_id": account_id, "entries": entries, "count": len(entries)}
+
+
+@router.get("/account-memory/{account_id}/summary", tags=["account-memory"])
+def get_account_memory_summary(account_id: str, db: Session = Depends(get_db)):
+    """Get a compact summary of the account's memory ledger."""
+    return summarize_account_memory(db, account_id)

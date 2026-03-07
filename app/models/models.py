@@ -588,3 +588,31 @@ class DemoFeedback(Base):
         Index("ix_demo_feedback_user_id", "user_id"),
         Index("ix_demo_feedback_created_at", "created_at"),
     )
+
+
+# ============================================================
+# ACCOUNT MEMORY LEDGER
+# ============================================================
+
+
+class AccountMemoryEntry(Base):
+    """Persistent ledger of what was known, recommended, changed, and what happened next."""
+
+    __tablename__ = "account_memory_entries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(Text, nullable=False, index=True)
+    agency_id = Column(Text, nullable=True, index=True)
+    session_id = Column(Text, nullable=True)
+    industry = Column(Text, nullable=True, index=True)
+    entry_type = Column(Text, nullable=False, index=True)
+    summary = Column(Text, nullable=False)
+    payload_json = Column(JSONB, nullable=True)
+    created_by = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_account_memory_account_created", "account_id", "created_at"),
+        Index("ix_account_memory_agency_created", "agency_id", "created_at"),
+        Index("ix_account_memory_industry_type", "industry", "entry_type"),
+    )

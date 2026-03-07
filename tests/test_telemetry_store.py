@@ -14,6 +14,7 @@ Tests cover:
 """
 
 import pytest
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 from app.telemetry.telemetry_models import (
@@ -42,8 +43,16 @@ from app.services.response_rewriter import (
 )
 from app.presentation.presentation_models import RewriteOptions
 from app.main import app
+from app.db.session import get_db
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _override_db():
+    app.dependency_overrides[get_db] = lambda: MagicMock()
+    yield
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture(autouse=True)
