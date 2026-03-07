@@ -35,6 +35,14 @@ from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
 from app.services.coverage_gap_detector import detect_coverage_gaps, detect_knowledge_gaps
 from app.services.meeting_brief import generate_meeting_brief
+from app.services.learning_store import (
+    add_office_learning as store_office_learning,
+    list_office_learnings,
+    add_producer_feedback as store_producer_feedback,
+    list_producer_feedback,
+    get_office_context,
+    seed_demo_learnings,
+)
 from app.services.producer_ammo import generate_producer_ammo
 from app.services.agency_ammo_feed import build_agency_ammo_feed
 from app.services.discovery_capture import save_discovery
@@ -548,6 +556,7 @@ def coverage_gap_insights(payload: CoverageGapInsightRequest):
 def knowledge_gap_detection(
     industry: str = "",
     current_policies: str = "",
+    office_id: str | None = None,
 ):
     """Detect coverage gaps using Industry Knowledge Objects.
 
@@ -555,22 +564,24 @@ def knowledge_gap_detection(
     policy lines to identify missing coverages and risk level.
 
     current_policies is a comma-separated list of policy names.
+    office_id optionally includes office-specific learnings.
     """
     policies = [p.strip() for p in current_policies.split(",") if p.strip()]
-    result = detect_knowledge_gaps(industry, policies)
+    result = detect_knowledge_gaps(industry, policies, office_id=office_id)
     return result
 
 
 # --- Meeting Brief ---
 
 @router.get("/meeting/brief", tags=["meeting"])
-def meeting_brief_endpoint(industry: str = ""):
+def meeting_brief_endpoint(industry: str = "", office_id: str | None = None):
     """Generate a structured meeting preparation brief for an industry.
 
     Uses Industry Knowledge Objects to assemble exposures, claims,
     talking points, discovery questions, and coverage watchouts.
+    office_id optionally includes office-specific learnings.
     """
-    result = generate_meeting_brief(industry)
+    result = generate_meeting_brief(industry, office_id=office_id)
     return result
 
 
@@ -1090,3 +1101,81 @@ def demo_account_gaps(account_id: UUID, db: Session = Depends(get_db)):
     result["account_id"] = str(account_id)
     result["account_name"] = account.account_name
     return result
+
+
+# --- Learning System ---
+
+@router.post("/learning/office", tags=["learning"])
+def add_learning_endpoint(payload: dict):
+    """Add an office-specific learning note."""
+    office_id = payload.get("office_id", "")
+    industry = payload.get("industry", "")
+    note = payload.get("note", "")
+    if not office_id or not industry or not note:
+        raise HTTPException(400, "office_id, industry, and note are required")
+    result = store_office_learning(
+        office_id=office_id,
+        industry=industry,
+        note=note,
+        created_by=payload.get("created_by"),
+        confidence=payload.get("confidence", 0.5),
+        tags=payload.get("tags"),
+    )
+    return {"status": "ok", "learning": result}
+
+
+@router.get("/learning/office", tags=["learning"])
+def list_learnings_endpoint(
+    office_id: str | None = None,
+    industry: str | None = None,
+):
+    """List office learnings, optionally filtered."""
+    learnings = list_office_learnings(office_id=office_id, industry=industry)
+    return {"learnings": learnings, "count": len(learnings)}
+
+
+@router.post("/learning/feedback", tags=["learning"])
+def add_feedback_endpoint(payload: dict):
+    """Record producer feedback on WAYOS output."""
+    office_id = payload.get("office_id", "")
+    industry = payload.get("industry", "")
+    endpoint = payload.get("endpoint", "")
+    feedback_type = payload.get("feedback_type", "")
+    if not office_id or not industry or not endpoint or not feedback_type:
+        raise HTTPException(400, "office_id, industry, endpoint, and feedback_type are required")
+    result = store_producer_feedback(
+        office_id=office_id,
+        industry=industry,
+        endpoint=endpoint,
+        input_payload=payload.get("input_payload", {}),
+        output_payload=payload.get("output_payload", {}),
+        feedback_type=feedback_type,
+        feedback_note=payload.get("feedback_note"),
+    )
+    return {"status": "ok", "feedback": result}
+
+
+@router.get("/learning/feedback", tags=["learning"])
+def list_feedback_endpoint(
+    office_id: str | None = None,
+    industry: str | None = None,
+):
+    """List producer feedback, optionally filtered."""
+    feedback = list_producer_feedback(office_id=office_id, industry=industry)
+    return {"feedback": feedback, "count": len(feedback)}
+
+
+@router.get("/learning/context", tags=["learning"])
+def learning_context_endpoint(office_id: str = "", industry: str = ""):
+    """Get aggregated office context for an industry."""
+    if not office_id or not industry:
+        raise HTTPException(400, "office_id and industry are required")
+    result = get_office_context(office_id, industry)
+    return result
+
+
+@router.post("/learning/seed-demo", tags=["learning"])
+def seed_demo_learnings_endpoint():
+    """Seed demo office learnings. Internal-only."""
+    count = seed_demo_learnings()
+    return {"status": "ok", "learnings_added": count}

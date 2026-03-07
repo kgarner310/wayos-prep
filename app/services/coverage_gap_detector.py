@@ -833,7 +833,11 @@ def _normalize_policy(policy: str) -> str:
     return policy.strip().lower().replace("_", " ").replace("-", " ")
 
 
-def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
+def detect_knowledge_gaps(
+    industry: str,
+    current_policies: list[str],
+    office_id: str | None = None,
+) -> dict:
     """Detect coverage gaps using Industry Knowledge Objects.
 
     Compares current_policies against IndustryProfile.policy_lines to find
@@ -842,6 +846,7 @@ def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
     Args:
         industry: Industry name (e.g. "roofing", "restaurant")
         current_policies: List of policy names the account currently holds
+        office_id: Optional office ID to include office-specific learnings
 
     Returns:
         {
@@ -850,6 +855,7 @@ def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
             "risk_level": "low" | "medium" | "high",
             "recommended_questions": list[str],
             "top_exposures": list[str],
+            "office_learnings": list[str],
         }
     """
     from app.knowledge.industry_profiles import get_industry_profile
@@ -862,6 +868,7 @@ def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
             "risk_level": "low",
             "recommended_questions": [],
             "top_exposures": [],
+            "office_learnings": [],
             "error": f"No industry profile found for '{industry}'",
         }
 
@@ -888,9 +895,19 @@ def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
     # Select recommended questions from profile
     recommended_questions = list(profile.discovery_questions)
 
+    # Gather office learnings
+    office_learnings: list[str] = []
+    if office_id:
+        from app.services.learning_store import get_office_context
+        ctx = get_office_context(office_id, profile.industry)
+        for learning in ctx.get("learnings", []):
+            note = learning.get("note", "")
+            if note:
+                office_learnings.append(note)
+
     logger.info(
-        "Knowledge gap detection: industry=%s missing=%d risk=%s",
-        industry, len(missing), risk_level,
+        "Knowledge gap detection: industry=%s missing=%d risk=%s office_id=%s",
+        industry, len(missing), risk_level, office_id or "none",
     )
 
     return {
@@ -899,4 +916,5 @@ def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
         "risk_level": risk_level,
         "recommended_questions": recommended_questions,
         "top_exposures": list(profile.top_exposures),
+        "office_learnings": office_learnings,
     }

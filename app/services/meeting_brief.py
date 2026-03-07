@@ -13,11 +13,12 @@ from app.knowledge.industry_profiles import get_industry_profile
 logger = logging.getLogger(__name__)
 
 
-def generate_meeting_brief(industry: str) -> dict:
+def generate_meeting_brief(industry: str, office_id: Optional[str] = None) -> dict:
     """Generate a structured meeting preparation brief for an industry.
 
     Args:
         industry: Industry name (e.g. "roofing", "restaurant", "trucking company")
+        office_id: Optional office ID to include office-specific learnings
 
     Returns:
         {
@@ -52,6 +53,18 @@ def generate_meeting_brief(industry: str) -> dict:
             "error": f"No industry profile found for '{industry}'",
         }
 
+    # Start with canonical profile learnings
+    office_learnings = list(profile.office_learnings)
+
+    # Append office-specific learnings if office_id provided
+    if office_id:
+        from app.services.learning_store import get_office_context
+        ctx = get_office_context(office_id, profile.industry)
+        for learning in ctx.get("learnings", []):
+            note = learning.get("note", "")
+            if note and note not in office_learnings:
+                office_learnings.append(note)
+
     brief = {
         "industry": profile.industry,
         "top_exposures": list(profile.top_exposures),
@@ -63,13 +76,14 @@ def generate_meeting_brief(industry: str) -> dict:
         "risk_score_factors": dict(profile.risk_score_factors),
         "data_sources": list(profile.data_sources),
         "confidence": profile.confidence,
-        "office_learnings": list(profile.office_learnings),
+        "office_learnings": office_learnings,
     }
 
     logger.info(
-        "Meeting brief generated: industry=%s exposures=%d questions=%d confidence=%.2f",
+        "Meeting brief generated: industry=%s exposures=%d questions=%d confidence=%.2f office_id=%s",
         profile.industry, len(brief["top_exposures"]),
         len(brief["discovery_questions"]), brief["confidence"],
+        office_id or "none",
     )
 
     return brief
