@@ -15,6 +15,7 @@ implementation is purely deterministic template rendering.
 """
 
 import logging
+import uuid
 from typing import Optional
 
 from app.presentation.presentation_models import (
@@ -650,9 +651,43 @@ def render_with_templates(
 # ============================================================
 
 
+def _record_shown_event(
+    rendered: RenderedResponse,
+    output_id: str,
+    endpoint: str,
+    industry: Optional[str] = None,
+    office_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+):
+    """Auto-record a 'shown' telemetry event. Non-blocking."""
+    try:
+        from app.services.telemetry_store import record_rendered_output_event
+        record_rendered_output_event(
+            event_type="rendered_output_shown",
+            endpoint=endpoint,
+            response_type=rendered.response_type,
+            mode=rendered.mode,
+            tone=rendered.tone,
+            office_id=office_id,
+            industry=industry,
+            session_id=session_id,
+            output_id=output_id,
+            metadata={
+                "bullet_count": len(rendered.rendered_bullets),
+                "text_length": len(rendered.rendered_text),
+                "source_summary": rendered.source_summary,
+            },
+        )
+    except Exception:
+        logger.debug("Failed to record rendered output shown event", exc_info=True)
+
+
 def rewrite_meeting_brief(
     brief_data: dict,
     options: Optional[RewriteOptions] = None,
+    endpoint: str = "/meeting/brief",
+    office_id: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> dict:
     """Rewrite a meeting brief into producer-facing language.
 
@@ -660,8 +695,15 @@ def rewrite_meeting_brief(
     """
     opts = _resolve_options(options)
     rendered = render_with_templates(brief_data, "meeting_brief", opts)
+    output_id = f"out_{uuid.uuid4().hex[:12]}"
+    rendered_dict = rendered.to_dict()
+    rendered_dict["output_id"] = output_id
+
+    industry = brief_data.get("industry")
+    _record_shown_event(rendered, output_id, endpoint, industry, office_id, session_id)
+
     return {
-        "rendered": rendered.to_dict(),
+        "rendered": rendered_dict,
         "original": brief_data,
     }
 
@@ -669,6 +711,9 @@ def rewrite_meeting_brief(
 def rewrite_coverage_gaps(
     gap_data: dict,
     options: Optional[RewriteOptions] = None,
+    endpoint: str = "/risk/gaps",
+    office_id: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> dict:
     """Rewrite coverage gap analysis into producer-facing language.
 
@@ -676,8 +721,15 @@ def rewrite_coverage_gaps(
     """
     opts = _resolve_options(options)
     rendered = render_with_templates(gap_data, "coverage_gaps", opts)
+    output_id = f"out_{uuid.uuid4().hex[:12]}"
+    rendered_dict = rendered.to_dict()
+    rendered_dict["output_id"] = output_id
+
+    industry = gap_data.get("industry")
+    _record_shown_event(rendered, output_id, endpoint, industry, office_id, session_id)
+
     return {
-        "rendered": rendered.to_dict(),
+        "rendered": rendered_dict,
         "original": gap_data,
     }
 
@@ -685,6 +737,9 @@ def rewrite_coverage_gaps(
 def rewrite_submission_readiness(
     readiness_data: dict,
     options: Optional[RewriteOptions] = None,
+    endpoint: str = "/submission/readiness",
+    office_id: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> dict:
     """Rewrite submission readiness into producer-facing language.
 
@@ -692,7 +747,14 @@ def rewrite_submission_readiness(
     """
     opts = _resolve_options(options)
     rendered = render_with_templates(readiness_data, "submission_readiness", opts)
+    output_id = f"out_{uuid.uuid4().hex[:12]}"
+    rendered_dict = rendered.to_dict()
+    rendered_dict["output_id"] = output_id
+
+    industry = readiness_data.get("industry")
+    _record_shown_event(rendered, output_id, endpoint, industry, office_id, session_id)
+
     return {
-        "rendered": rendered.to_dict(),
+        "rendered": rendered_dict,
         "original": readiness_data,
     }

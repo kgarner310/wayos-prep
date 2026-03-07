@@ -58,6 +58,13 @@ from app.services.response_rewriter import (
     rewrite_submission_readiness,
 )
 from app.presentation.presentation_models import RewriteOptions
+from app.services.telemetry_store import (
+    record_rendered_output_event,
+    record_rendered_output_feedback,
+    list_rendered_output_events,
+    list_rendered_output_feedback,
+    summarize_rendered_output_telemetry,
+)
 from app.services.renewal_brief_generator import generate_renewal_brief
 from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
 from app.services.public_web_intel import extract_public_web_intel, extract_public_web_intel_with_fetch
@@ -567,6 +574,7 @@ def knowledge_gap_detection(
     render: bool = False,
     mode: str = "concise",
     tone: str = "neutral",
+    session_id: str | None = None,
 ):
     """Detect coverage gaps using Industry Knowledge Objects.
 
@@ -582,7 +590,7 @@ def knowledge_gap_detection(
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_coverage_gaps(result, options=opts)
+    return rewrite_coverage_gaps(result, options=opts, office_id=office_id, session_id=session_id)
 
 
 # --- Meeting Brief ---
@@ -594,6 +602,7 @@ def meeting_brief_endpoint(
     render: bool = False,
     mode: str = "concise",
     tone: str = "neutral",
+    session_id: str | None = None,
 ):
     """Generate a structured meeting preparation brief for an industry.
 
@@ -606,7 +615,7 @@ def meeting_brief_endpoint(
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_meeting_brief(result, options=opts)
+    return rewrite_meeting_brief(result, options=opts, office_id=office_id, session_id=session_id)
 
 
 # --- Producer Ammo Questions Engine ---
@@ -1267,6 +1276,7 @@ def submission_readiness_endpoint(
     render: bool = False,
     mode: str = "concise",
     tone: str = "neutral",
+    session_id: str | None = None,
 ):
     """Evaluate submission readiness against industry-specific requirements.
 
@@ -1290,7 +1300,7 @@ def submission_readiness_endpoint(
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_submission_readiness(result, options=opts)
+    return rewrite_submission_readiness(result, options=opts, office_id=office_id, session_id=session_id)
 
 
 @router.get("/submission/demo-examples", tags=["submission"])
@@ -1330,4 +1340,94 @@ def submission_demo_evaluate(example_id: str):
         submission_data=example["submission_data"],
         jurisdiction=example.get("jurisdiction"),
         office_id=example.get("office_id"),
+    )
+
+
+# ============================================================
+# TELEMETRY — Rendered Output Tracking
+# ============================================================
+
+
+@router.post("/telemetry/rendered-output/event", tags=["telemetry"])
+def telemetry_record_event(body: dict):
+    """Record a rendered output telemetry event (shown, copied, etc.)."""
+    event_type = body.get("event_type", "")
+    endpoint = body.get("endpoint", "")
+    if not event_type or not endpoint:
+        raise HTTPException(400, "event_type and endpoint are required")
+    result = record_rendered_output_event(
+        event_type=event_type,
+        endpoint=endpoint,
+        response_type=body.get("response_type", ""),
+        mode=body.get("mode", ""),
+        tone=body.get("tone", ""),
+        office_id=body.get("office_id"),
+        industry=body.get("industry"),
+        session_id=body.get("session_id"),
+        output_id=body.get("output_id"),
+        metadata=body.get("metadata"),
+    )
+    return {"status": "ok", "event": result}
+
+
+@router.post("/telemetry/rendered-output/feedback", tags=["telemetry"])
+def telemetry_record_feedback(body: dict):
+    """Record producer feedback on a rendered output."""
+    output_id = body.get("output_id", "")
+    feedback_type = body.get("feedback_type", "")
+    if not output_id or not feedback_type:
+        raise HTTPException(400, "output_id and feedback_type are required")
+    result = record_rendered_output_feedback(
+        output_id=output_id,
+        endpoint=body.get("endpoint", ""),
+        response_type=body.get("response_type", ""),
+        mode=body.get("mode", ""),
+        tone=body.get("tone", ""),
+        feedback_type=feedback_type,
+        office_id=body.get("office_id"),
+        industry=body.get("industry"),
+        feedback_note=body.get("feedback_note"),
+        edited_text=body.get("edited_text"),
+    )
+    return {"status": "ok", "feedback": result}
+
+
+@router.get("/telemetry/rendered-output/events", tags=["telemetry"])
+def telemetry_list_events(
+    office_id: str | None = None,
+    industry: str | None = None,
+    endpoint: str | None = None,
+    event_type: str | None = None,
+):
+    """List rendered output telemetry events with optional filters."""
+    events = list_rendered_output_events(
+        office_id=office_id, industry=industry,
+        endpoint=endpoint, event_type=event_type,
+    )
+    return {"events": events, "count": len(events)}
+
+
+@router.get("/telemetry/rendered-output/feedback", tags=["telemetry"])
+def telemetry_list_feedback(
+    office_id: str | None = None,
+    industry: str | None = None,
+    endpoint: str | None = None,
+    feedback_type: str | None = None,
+):
+    """List rendered output feedback with optional filters."""
+    feedback = list_rendered_output_feedback(
+        office_id=office_id, industry=industry,
+        endpoint=endpoint, feedback_type=feedback_type,
+    )
+    return {"feedback": feedback, "count": len(feedback)}
+
+
+@router.get("/telemetry/rendered-output/summary", tags=["telemetry"])
+def telemetry_summary(
+    office_id: str | None = None,
+    industry: str | None = None,
+):
+    """Aggregated telemetry summary for rendered outputs."""
+    return summarize_rendered_output_telemetry(
+        office_id=office_id, industry=industry,
     )
