@@ -52,6 +52,12 @@ from app.schemas.loss_run import LossRunRequest, LossRunAnalysisResponse
 from app.services.experience_mod_analyzer import analyze_experience_mod
 from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
 from app.services.submission_readiness import evaluate_submission_readiness
+from app.services.response_rewriter import (
+    rewrite_meeting_brief,
+    rewrite_coverage_gaps,
+    rewrite_submission_readiness,
+)
+from app.presentation.presentation_models import RewriteOptions
 from app.services.renewal_brief_generator import generate_renewal_brief
 from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
 from app.services.public_web_intel import extract_public_web_intel, extract_public_web_intel_with_fetch
@@ -558,6 +564,9 @@ def knowledge_gap_detection(
     industry: str = "",
     current_policies: str = "",
     office_id: str | None = None,
+    render: bool = False,
+    mode: str = "concise",
+    tone: str = "neutral",
 ):
     """Detect coverage gaps using Industry Knowledge Objects.
 
@@ -566,24 +575,38 @@ def knowledge_gap_detection(
 
     current_policies is a comma-separated list of policy names.
     office_id optionally includes office-specific learnings.
+    render=true returns both structured output and rendered presentation.
     """
     policies = [p.strip() for p in current_policies.split(",") if p.strip()]
     result = detect_knowledge_gaps(industry, policies, office_id=office_id)
-    return result
+    if not render:
+        return result
+    opts = RewriteOptions(mode=mode, tone=tone)
+    return rewrite_coverage_gaps(result, options=opts)
 
 
 # --- Meeting Brief ---
 
 @router.get("/meeting/brief", tags=["meeting"])
-def meeting_brief_endpoint(industry: str = "", office_id: str | None = None):
+def meeting_brief_endpoint(
+    industry: str = "",
+    office_id: str | None = None,
+    render: bool = False,
+    mode: str = "concise",
+    tone: str = "neutral",
+):
     """Generate a structured meeting preparation brief for an industry.
 
     Uses Industry Knowledge Objects to assemble exposures, claims,
     talking points, discovery questions, and coverage watchouts.
     office_id optionally includes office-specific learnings.
+    render=true returns both structured output and rendered presentation.
     """
     result = generate_meeting_brief(industry, office_id=office_id)
-    return result
+    if not render:
+        return result
+    opts = RewriteOptions(mode=mode, tone=tone)
+    return rewrite_meeting_brief(result, options=opts)
 
 
 # --- Producer Ammo Questions Engine ---
@@ -1239,10 +1262,16 @@ DEMO_SUBMISSIONS = {
 
 
 @router.post("/submission/readiness", tags=["submission"])
-def submission_readiness_endpoint(body: dict):
+def submission_readiness_endpoint(
+    body: dict,
+    render: bool = False,
+    mode: str = "concise",
+    tone: str = "neutral",
+):
     """Evaluate submission readiness against industry-specific requirements.
 
     Does not evaluate carrier appetite or placement fit — submission quality only.
+    render=true returns both structured output and rendered presentation.
     """
     industry = body.get("industry")
     if not industry:
@@ -1258,7 +1287,10 @@ def submission_readiness_endpoint(body: dict):
         jurisdiction=jurisdiction,
         office_id=office_id,
     )
-    return result
+    if not render:
+        return result
+    opts = RewriteOptions(mode=mode, tone=tone)
+    return rewrite_submission_readiness(result, options=opts)
 
 
 @router.get("/submission/demo-examples", tags=["submission"])
