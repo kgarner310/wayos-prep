@@ -68,7 +68,10 @@
 <div class="card" id="account-selector">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <h2 style="margin:0;">Select Account</h2>
-    <button class="btn btn-outline btn-sm" onclick="toggleCreateAccount()">Create Account</button>
+    <div class="btn-group">
+      <button class="btn btn-outline btn-sm" id="btn-load-demo" onclick="loadDemoData()">Load Demo Accounts</button>
+      <button class="btn btn-outline btn-sm" onclick="toggleCreateAccount()">Create Account</button>
+    </div>
   </div>
   <!-- Create Account Form (hidden) -->
   <div id="create-account-form" style="display:none;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px;">
@@ -100,6 +103,9 @@
 
 <!-- Workspace Output (hidden until generated) -->
 <div id="workspace-output" style="display:none;">
+
+  <!-- Workflow Hint -->
+  <div id="workflow-hint" class="ws-workflow-hint" style="display:none;"></div>
 
   <!-- Action Bar -->
   <div class="ws-action-bar" id="action-bar">
@@ -496,6 +502,7 @@ async function generateWorkspace() {
   document.getElementById('workspace-output').style.display = 'block';
   showStatus('Workspace ready', 'success');
   trackEvent('workspace_generated', {account_id: currentAccountId, elapsed_ms: Date.now() - sessionStartTime});
+  checkWorkflowHints(data);
   window.scrollTo({top: document.getElementById('workspace-output').offsetTop - 20, behavior: 'smooth'});
 }
 
@@ -541,6 +548,7 @@ async function generatePacket() {
   document.getElementById('section-submission-packet').style.display = '';
   showStatus('Submission packet ready', 'success');
   trackEvent('submission_packet_generated', {account_id: currentAccountId, elapsed_ms: Date.now() - sessionStartTime});
+  hideWorkflowHint();
   document.getElementById('section-demo-feedback').style.display = '';
   window.scrollTo({top: document.getElementById('section-submission-packet').offsetTop - 20, behavior: 'smooth'});
 }
@@ -794,9 +802,75 @@ async function submitFeedback() {
   }
 }
 
+// --- Demo Data Loading ---
+
+async function loadDemoData() {
+  const btn = document.getElementById('btn-load-demo');
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+  showStatus('Seeding demo accounts...', 'loading');
+
+  try {
+    const data = await apiPost('/api/v1/demo/seed', {});
+    hideStatus();
+    if (data.total > 0) {
+      showStatus(`Demo accounts loaded: ${data.created} new, ${data.total} total`, 'success');
+      trackEvent('demo_accounts_loaded', {created: data.created, total: data.total});
+      await loadAccounts();
+    } else {
+      showStatus('No demo accounts available', 'info');
+    }
+  } catch(e) {
+    hideStatus();
+    showStatus('Failed to load demo data', 'error');
+  }
+  btn.textContent = 'Load Demo Accounts';
+  btn.disabled = false;
+}
+
+// --- Workflow Hints ---
+
+function showWorkflowHint(msg, actionLabel, actionFn) {
+  const el = document.getElementById('workflow-hint');
+  if (!el) return;
+  el.innerHTML = '<span>' + esc(msg) + '</span>' +
+    (actionLabel ? '<span class="hint-action"><button class="btn btn-primary btn-sm" onclick="' + actionFn + '">' + esc(actionLabel) + '</button></span>' : '');
+  el.style.display = '';
+}
+
+function hideWorkflowHint() {
+  const el = document.getElementById('workflow-hint');
+  if (el) el.style.display = 'none';
+}
+
+function checkWorkflowHints(ws) {
+  hideWorkflowHint();
+  if (!ws) return;
+
+  // If website_url exists but no operations signals, suggest refreshing intel
+  var hasOpsSignals = ws.sections_available && ws.sections_available.includes('operations_signals');
+  var hasWebsite = ws.account_summary && ws.account_summary.website_url;
+  if (hasWebsite && !hasOpsSignals) {
+    showWorkflowHint(
+      'This account has a website. Refresh public intel to discover operations signals and strengthen your workspace.',
+      'Refresh Intel', 'refreshIntel()'
+    );
+    return;
+  }
+
+  // If workspace ready but no packet yet, suggest building packet
+  if (!currentPacket && ws.sections_available && ws.sections_available.length > 0) {
+    showWorkflowHint(
+      'Workspace ready. Build a submission packet to compile everything into a copyable format.',
+      'Build Packet', 'generatePacket()'
+    );
+    return;
+  }
+}
+
 function esc(s) {
   if (!s) return '';
-  const d = document.createElement('div');
+  var d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }

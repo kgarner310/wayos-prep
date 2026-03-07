@@ -61,6 +61,10 @@ from app.schemas.renewal_workspace import RenewalWorkspaceRequest, RenewalWorksp
 from app.services.submission_packet_service import build_submission_packet
 from app.schemas.submission_packet import SubmissionPacketRequest, SubmissionPacketResponse
 from app.services.demo_session_service import build_demo_session_summary, list_recent_sessions
+from app.services.demo_seed_service import (
+    seed_demo_accounts, reset_demo_data, list_demo_scenarios,
+    get_demo_accounts,
+)
 from app.schemas.demo import (
     DemoFeedbackRequest, DemoFeedbackResponse,
     DemoSessionSummaryResponse, InstrumentEventRequest,
@@ -975,3 +979,67 @@ def get_recent_sessions(hours: int = 24, limit: int = 20, db: Session = Depends(
     """List recent demo sessions with basic stats."""
     sessions = list_recent_sessions(db, hours=hours, limit=limit)
     return {"sessions": sessions, "count": len(sessions)}
+
+
+# --- Demo Admin (Internal-Only) ---
+
+@router.post("/demo/seed", tags=["demo-admin"])
+def seed_demo_data_endpoint(db: Session = Depends(get_db)):
+    """Seed demo accounts with realistic data. Internal-only."""
+    results = seed_demo_accounts(db)
+    created = sum(1 for r in results if r["status"] == "created")
+    return {"accounts": results, "created": created, "total": len(results)}
+
+
+@router.post("/demo/reset", tags=["demo-admin"])
+def reset_demo_data_endpoint(db: Session = Depends(get_db)):
+    """Reset all demo data (accounts, artifacts, feedback, events). Internal-only."""
+    summary = reset_demo_data(db)
+    return {"status": "reset_complete", **summary}
+
+
+@router.get("/demo/scenarios", tags=["demo-admin"])
+def list_demo_scenarios_endpoint():
+    """List available demo scenarios with descriptions."""
+    scenarios = list_demo_scenarios()
+    return {"scenarios": scenarios, "count": len(scenarios)}
+
+
+@router.get("/demo/accounts", tags=["demo-admin"])
+def list_demo_accounts_endpoint(db: Session = Depends(get_db)):
+    """List demo-seeded accounts currently in the database."""
+    accounts = get_demo_accounts(db)
+    return {"accounts": accounts, "count": len(accounts)}
+
+
+@router.get("/demo/feedback-list", tags=["demo-admin"])
+def list_demo_feedback_endpoint(
+    hours: int = 168,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    """List recent demo feedback entries. Defaults to last 7 days."""
+    from datetime import datetime, timedelta, timezone
+    from app.models.models import DemoFeedback
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    feedbacks = (
+        db.query(DemoFeedback)
+        .filter(DemoFeedback.created_at >= cutoff)
+        .order_by(DemoFeedback.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    items = []
+    for fb in feedbacks:
+        items.append({
+            "id": str(fb.id),
+            "session_id": fb.session_id,
+            "overall_rating": fb.overall_rating,
+            "would_use_before_meeting": fb.would_use_before_meeting,
+            "most_useful_part": fb.most_useful_part,
+            "unclear_or_untrustworthy": fb.unclear_or_untrustworthy,
+            "what_next": fb.what_next,
+            "notes": fb.notes,
+            "created_at": fb.created_at.isoformat() if fb.created_at else None,
+        })
+    return {"feedback": items, "count": len(items)}

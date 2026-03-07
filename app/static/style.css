@@ -531,3 +531,16 @@ tr:hover { background: #f1f3f5; }
 }
 .ws-packet-section ul { margin: 4px 0 0 16px; font-size: 0.88rem; }
 .ws-packet-section li { margin-bottom: 4px; }
+
+/* Workflow hints */
+.ws-workflow-hint {
+  background: #e8f4fd; border: 1px solid #b6d4fe; border-radius: 6px;
+  padding: 10px 14px; margin-bottom: 12px; font-size: 0.88rem;
+  color: var(--accent); display: flex; align-items: center; gap: 8px;
+}
+.ws-workflow-hint .hint-action {
+  margin-left: auto; white-space: nowrap;
+}
+.ws-workflow-hint .hint-action .btn {
+  font-size: 0.8rem; padding: 4px 10px;
+}
