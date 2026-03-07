@@ -1,6 +1,64 @@
 {% extends "base.html" %}
 {% block title %}WAYOS PREP - Renewal Workspace{% endblock %}
 {% block content %}
+
+<!-- Login Screen -->
+<div id="login-screen" style="display:none;">
+  <div class="ws-header">
+    <h1>WAYOS PREP</h1>
+    <p class="text-muted">Sign in to your account</p>
+  </div>
+  <div class="card" style="max-width:400px;margin:0 auto;">
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" class="form-control" placeholder="you@agency.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" class="form-control" placeholder="Password">
+      </div>
+      <div id="login-error" class="text-danger text-sm" style="display:none;margin-bottom:8px;"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Sign In</button>
+      <p class="text-muted text-sm" style="margin-top:12px;text-align:center;">
+        No account? <a href="#" onclick="showRegister(); return false;">Register</a>
+      </p>
+    </div>
+    <div id="register-form" style="display:none;">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" class="form-control" placeholder="Jane Smith">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="reg-email" class="form-control" placeholder="you@agency.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" class="form-control" placeholder="Password">
+      </div>
+      <div class="form-group">
+        <label>Agency Name</label>
+        <input type="text" id="reg-agency" class="form-control" placeholder="Your Agency Name">
+      </div>
+      <div id="register-error" class="text-danger text-sm" style="display:none;margin-bottom:8px;"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Create Account</button>
+      <p class="text-muted text-sm" style="margin-top:12px;text-align:center;">
+        Already have an account? <a href="#" onclick="showLogin(); return false;">Sign In</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Authenticated Content -->
+<div id="authenticated-content" style="display:none;">
+
+<!-- User Bar -->
+<div class="ws-user-bar" id="user-bar">
+  <span id="user-display" class="text-muted text-sm"></span>
+  <button class="btn btn-outline btn-sm" onclick="doLogout()">Sign Out</button>
+</div>
+
 <div class="ws-header">
   <h1>Renewal Workspace</h1>
   <p class="text-muted">Select an account to build a unified renewal preparation workspace.</p>
@@ -84,24 +142,143 @@
     <div class="ws-section-body" id="recommended-actions-body"></div>
   </div>
 
-</div>
+</div> <!-- end #workspace-output -->
+</div> <!-- end #authenticated-content -->
 {% endblock %}
 
 {% block scripts %}
 <script>
 let currentAccountId = null;
 let currentWorkspace = null;
+let authToken = null;
 
-// --- Load accounts on page load ---
-(async function() {
+// --- Session management ---
+
+function getStoredToken() {
+  return sessionStorage.getItem('wayos_access_token');
+}
+function getStoredRefresh() {
+  return sessionStorage.getItem('wayos_refresh_token');
+}
+function storeTokens(access, refresh) {
+  sessionStorage.setItem('wayos_access_token', access);
+  sessionStorage.setItem('wayos_refresh_token', refresh);
+  authToken = access;
+}
+function clearTokens() {
+  sessionStorage.removeItem('wayos_access_token');
+  sessionStorage.removeItem('wayos_refresh_token');
+  authToken = null;
+}
+
+function authHeaders() {
+  return authToken ? {'Authorization': 'Bearer ' + authToken} : {};
+}
+
+function showLogin() {
+  document.getElementById('login-form').style.display = '';
+  document.getElementById('register-form').style.display = 'none';
+}
+function showRegister() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = '';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
   try {
-    const resp = await fetch('/api/v1/accounts?limit=50');
+    const resp = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errEl.textContent = data.detail || 'Login failed';
+      errEl.style.display = '';
+      return;
+    }
+    storeTokens(data.access_token, data.refresh_token);
+    await initAuthenticatedSession();
+  } catch(e) {
+    errEl.textContent = 'Network error';
+    errEl.style.display = '';
+  }
+}
+
+async function doRegister() {
+  const full_name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const agency_name = document.getElementById('reg-agency').value.trim();
+  const errEl = document.getElementById('register-error');
+  errEl.style.display = 'none';
+  try {
+    const resp = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password, full_name, agency_name}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errEl.textContent = data.detail || 'Registration failed';
+      errEl.style.display = '';
+      return;
+    }
+    storeTokens(data.access_token, data.refresh_token);
+    await initAuthenticatedSession();
+  } catch(e) {
+    errEl.textContent = 'Network error';
+    errEl.style.display = '';
+  }
+}
+
+function doLogout() {
+  clearTokens();
+  document.getElementById('authenticated-content').style.display = 'none';
+  document.getElementById('login-screen').style.display = '';
+}
+
+async function initAuthenticatedSession() {
+  try {
+    const resp = await fetch('/api/v1/auth/me', {headers: authHeaders()});
+    if (!resp.ok) {
+      doLogout();
+      return;
+    }
+    const user = await resp.json();
+    document.getElementById('user-display').textContent = user.full_name + ' · ' + user.agency_name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('authenticated-content').style.display = '';
+    await loadAccounts();
+  } catch(e) {
+    doLogout();
+  }
+}
+
+// --- Boot ---
+(async function() {
+  const token = getStoredToken();
+  if (token) {
+    authToken = token;
+    await initAuthenticatedSession();
+  } else {
+    document.getElementById('login-screen').style.display = '';
+  }
+})();
+
+async function loadAccounts() {
+  try {
+    const resp = await fetch('/api/v1/accounts?limit=50', {headers: authHeaders()});
     const data = await resp.json();
     renderAccountList(data.accounts || []);
   } catch(e) {
     document.getElementById('account-list').innerHTML = '<p class="text-muted">Failed to load accounts.</p>';
   }
-})();
+}
 
 function renderAccountList(accounts) {
   const el = document.getElementById('account-list');

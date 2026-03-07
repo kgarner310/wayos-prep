@@ -14,5 +14,11 @@ class Settings:
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
+    # Auth / JWT
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "wayos-dev-secret-change-in-production")
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
 
 settings = Settings()

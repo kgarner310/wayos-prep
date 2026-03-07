@@ -25,6 +25,13 @@ lxml>=5.0,<6.0
 # Templating
 jinja2>=3.1,<4.0
 
+# Auth
+PyJWT>=2.7,<3.0
+passlib[bcrypt]>=1.7,<2.0
+
+# Rate limiting
+slowapi>=0.1.9,<1.0
+
 # Utils
 python-dotenv>=1.0,<2.0
 

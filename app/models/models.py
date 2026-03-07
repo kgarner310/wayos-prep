@@ -428,6 +428,45 @@ class EventLog(Base):
     )
 
 
+class Agency(Base):
+    __tablename__ = "agencies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    agency_name = Column(Text, nullable=False)
+    slug = Column(Text, nullable=False, unique=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    users = relationship("User", back_populates="agency", cascade="all, delete-orphan")
+    accounts = relationship("Account", back_populates="agency", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_agencies_slug", "slug"),
+    )
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    email = Column(Text, nullable=False, unique=True)
+    hashed_password = Column(Text, nullable=False)
+    full_name = Column(Text, nullable=False)
+    role = Column(Text, nullable=False, default="producer")
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    agency = relationship("Agency", back_populates="users")
+
+    __table_args__ = (
+        Index("ix_users_email", "email"),
+        Index("ix_users_agency_id", "agency_id"),
+    )
+
+
 class Account(Base):
     __tablename__ = "accounts"
 
@@ -443,10 +482,12 @@ class Account(Base):
     website_url = Column(Text)
     social_urls = Column(JSONB)
     notes = Column(Text)
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
     last_public_intel_refresh_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
 
+    agency = relationship("Agency", back_populates="accounts")
     artifacts = relationship("SavedArtifact", back_populates="account", cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -454,6 +495,7 @@ class Account(Base):
         Index("ix_accounts_industry", "industry"),
         Index("ix_accounts_state", "state"),
         Index("ix_accounts_created_at", "created_at"),
+        Index("ix_accounts_agency_id", "agency_id"),
     )
 
 
@@ -468,6 +510,7 @@ class SavedArtifact(Base):
     content_json = Column(JSONB, nullable=False)
     rendered_text = Column(Text)
     created_by_user_id = Column(Text)
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
 
@@ -477,6 +520,7 @@ class SavedArtifact(Base):
         Index("ix_saved_artifacts_account_id", "account_id"),
         Index("ix_saved_artifacts_artifact_type", "artifact_type"),
         Index("ix_saved_artifacts_created_at", "created_at"),
+        Index("ix_saved_artifacts_agency_id", "agency_id"),
     )
 
 
@@ -491,9 +535,32 @@ class ProducerStylePreference(Base):
     verbosity = Column(Text)
     warmth = Column(Text)
     confidence_style = Column(Text)
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
 
     __table_args__ = (
         Index("ix_producer_style_preferences_producer_id", "producer_id"),
+        Index("ix_producer_style_preferences_agency_id", "agency_id"),
+    )
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    event_type = Column(Text, nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=True)
+    agency_id = Column(UUID(as_uuid=True), nullable=True)
+    resource_type = Column(Text)
+    resource_id = Column(Text)
+    detail = Column(JSONB)
+    ip_address = Column(Text)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_audit_events_event_type", "event_type"),
+        Index("ix_audit_events_user_id", "user_id"),
+        Index("ix_audit_events_agency_id", "agency_id"),
+        Index("ix_audit_events_created_at", "created_at"),
     )
