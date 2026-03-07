@@ -33,7 +33,7 @@ from app.services.embeddings import embed_chunks
 from app.services.retrieval import run_retrieval
 from app.services.brief_generator import generate_brief
 from app.services.risk_scoring import score_account
-from app.services.coverage_gap_detector import detect_coverage_gaps
+from app.services.coverage_gap_detector import detect_coverage_gaps, detect_knowledge_gaps
 from app.services.producer_ammo import generate_producer_ammo
 from app.services.agency_ammo_feed import build_agency_ammo_feed
 from app.services.discovery_capture import save_discovery
@@ -541,6 +541,25 @@ def coverage_gap_insights(payload: CoverageGapInsightRequest):
     return CoverageGapInsightResponse(**result)
 
 
+# --- Knowledge-Based Gap Detection ---
+
+@router.get("/risk/gaps", tags=["risk-scoring"])
+def knowledge_gap_detection(
+    industry: str = "",
+    current_policies: str = "",
+):
+    """Detect coverage gaps using Industry Knowledge Objects.
+
+    Compares current policies against the industry profile's expected
+    policy lines to identify missing coverages and risk level.
+
+    current_policies is a comma-separated list of policy names.
+    """
+    policies = [p.strip() for p in current_policies.split(",") if p.strip()]
+    result = detect_knowledge_gaps(industry, policies)
+    return result
+
+
 # --- Producer Ammo Questions Engine ---
 
 @router.post("/risk/producer-ammo", response_model=ProducerAmmoResponse, tags=["risk-scoring"])
@@ -1043,3 +1062,17 @@ def list_demo_feedback_endpoint(
             "created_at": fb.created_at.isoformat() if fb.created_at else None,
         })
     return {"feedback": items, "count": len(items)}
+
+
+@router.get("/demo/account-gaps/{account_id}", tags=["demo-admin"])
+def demo_account_gaps(account_id: UUID, db: Session = Depends(get_db)):
+    """Run knowledge-based gap detection against a demo account."""
+    account = get_account(db, account_id)
+    if not account:
+        raise HTTPException(404, "Account not found")
+    current_policies = account.current_coverages or []
+    industry = account.industry or ""
+    result = detect_knowledge_gaps(industry, current_policies)
+    result["account_id"] = str(account_id)
+    result["account_name"] = account.account_name
+    return result

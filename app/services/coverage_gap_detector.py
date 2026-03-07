@@ -812,3 +812,91 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
         }
 
     return result
+
+
+# ============================================================
+# KNOWLEDGE-PROFILE-BASED GAP DETECTION
+# ============================================================
+# Uses IndustryProfile objects from the knowledge system to compare
+# current policies against expected policy lines for an industry.
+
+
+# Critical coverages — missing any of these = high risk
+_HIGH_RISK_COVERAGES = {"workers compensation", "commercial auto", "general liability"}
+
+# Important coverages — missing these = medium risk
+_MEDIUM_RISK_COVERAGES = {"inland marine", "umbrella", "umbrella / excess"}
+
+
+def _normalize_policy(policy: str) -> str:
+    """Normalize a policy name for comparison."""
+    return policy.strip().lower().replace("_", " ").replace("-", " ")
+
+
+def detect_knowledge_gaps(industry: str, current_policies: list[str]) -> dict:
+    """Detect coverage gaps using Industry Knowledge Objects.
+
+    Compares current_policies against IndustryProfile.policy_lines to find
+    missing coverages, then assigns risk level based on what's missing.
+
+    Args:
+        industry: Industry name (e.g. "roofing", "restaurant")
+        current_policies: List of policy names the account currently holds
+
+    Returns:
+        {
+            "industry": str,
+            "missing_coverages": list[str],
+            "risk_level": "low" | "medium" | "high",
+            "recommended_questions": list[str],
+            "top_exposures": list[str],
+        }
+    """
+    from app.knowledge.industry_profiles import get_industry_profile
+
+    profile = get_industry_profile(industry)
+    if profile is None:
+        return {
+            "industry": industry,
+            "missing_coverages": [],
+            "risk_level": "low",
+            "recommended_questions": [],
+            "top_exposures": [],
+            "error": f"No industry profile found for '{industry}'",
+        }
+
+    # Normalize current policies for comparison
+    current_normalized = {_normalize_policy(p) for p in current_policies}
+
+    # Find missing coverages
+    missing = []
+    for policy_line in profile.policy_lines:
+        normalized = _normalize_policy(policy_line)
+        if normalized not in current_normalized:
+            missing.append(policy_line)
+
+    # Determine risk level based on what's missing
+    missing_normalized = {_normalize_policy(m) for m in missing}
+
+    if missing_normalized & _HIGH_RISK_COVERAGES:
+        risk_level = "high"
+    elif missing_normalized & _MEDIUM_RISK_COVERAGES:
+        risk_level = "medium"
+    else:
+        risk_level = "low"
+
+    # Select recommended questions from profile
+    recommended_questions = list(profile.discovery_questions)
+
+    logger.info(
+        "Knowledge gap detection: industry=%s missing=%d risk=%s",
+        industry, len(missing), risk_level,
+    )
+
+    return {
+        "industry": profile.industry,
+        "missing_coverages": missing,
+        "risk_level": risk_level,
+        "recommended_questions": recommended_questions,
+        "top_exposures": list(profile.top_exposures),
+    }
