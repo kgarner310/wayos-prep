@@ -38,6 +38,8 @@ from app.services.producer_ammo import generate_producer_ammo
 from app.services.agency_ammo_feed import build_agency_ammo_feed
 from app.services.discovery_capture import save_discovery
 from app.services.instrumentation import log_event, get_product_signals
+from app.services.loss_run_analyzer import analyze_loss_run
+from app.schemas.loss_run import LossRunRequest, LossRunAnalysisResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -567,3 +569,19 @@ def product_signals(days: int = 7, db: Session = Depends(get_db)):
         days = 7
     result = get_product_signals(db, days=days)
     return ProductSignalsResponse(**result)
+
+
+# --- Loss Run Analysis ---
+
+@router.post("/analysis/loss-run", response_model=LossRunAnalysisResponse, tags=["analysis"])
+def loss_run_analysis(payload: LossRunRequest, db: Session = Depends(get_db)):
+    """Analyze loss run data and return structured insights for producers."""
+    data = {
+        "policy_period": payload.policy_period,
+        "industry": payload.industry,
+        "state": payload.state,
+        "claims": [c.model_dump() for c in payload.claims],
+    }
+    log_event(db, "loss_run_analysis", payload={"industry": payload.industry, "claim_count": len(payload.claims)})
+    result = analyze_loss_run(data)
+    return LossRunAnalysisResponse(**result)

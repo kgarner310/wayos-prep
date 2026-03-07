@@ -633,6 +633,29 @@ def detect_coverage_gaps(account_profile: dict) -> dict:
         if q and q not in questions:
             questions.append(q)
 
+    # 9. Loss run integration — boost confidence on gaps confirmed by loss patterns
+    loss_run_data = account_profile.get("loss_run_data")
+    if loss_run_data and isinstance(loss_run_data, dict):
+        loss_patterns = " ".join(loss_run_data.get("patterns", [])).lower()
+        loss_flags = " ".join(loss_run_data.get("underwriting_flags", [])).lower()
+
+        # Boost confidence on WC gaps if loss data shows WC frequency
+        if "workers comp" in loss_flags:
+            for gap in coverage_gaps:
+                if "workers" in gap["coverage"].lower():
+                    gap["confidence"] = min(gap.get("confidence", 0.6) + 0.10, 1.0)
+
+        # Boost auto gaps if vehicle claims present
+        if "vehicle" in loss_patterns or "auto" in loss_flags:
+            for gap in coverage_gaps:
+                if "auto" in gap["coverage"].lower():
+                    gap["confidence"] = min(gap.get("confidence", 0.6) + 0.10, 1.0)
+
+        # Add loss-derived questions
+        for point in loss_run_data.get("producer_talking_points", [])[:2]:
+            if point not in questions:
+                questions.append(point)
+
     # Sort gaps: high > medium > low
     severity_order = {"high": 0, "medium": 1, "low": 2}
     coverage_gaps.sort(key=lambda g: severity_order.get(g["risk_level"], 3))

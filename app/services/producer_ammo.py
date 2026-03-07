@@ -601,6 +601,28 @@ def generate_producer_ammo(profile: dict) -> dict:
         if not any("subcontract" in f.lower() for f in underwriting_flags):
             underwriting_flags.append("Subcontractor usage in a GL-heavy class triggers certificate compliance and risk transfer review.")
 
+    # --- Loss run integration ---
+    loss_run_data = profile.get("loss_run_data")
+    if loss_run_data and isinstance(loss_run_data, dict):
+        loss_patterns = loss_run_data.get("patterns", [])
+        loss_flags = loss_run_data.get("underwriting_flags", [])
+        loss_points = loss_run_data.get("producer_talking_points", [])
+
+        # Inject loss-driven underwriting flags
+        for flag in loss_flags[:2]:
+            if flag not in underwriting_flags:
+                underwriting_flags.insert(0, flag)
+
+        # Inject loss-driven talking points as top questions
+        for point in loss_points[:2]:
+            if point not in top_questions:
+                top_questions.append(point)
+
+        # Inject loss pattern observations as coverage traps (near top for visibility)
+        for pattern in reversed(loss_patterns[:2]):
+            if pattern not in coverage_traps:
+                coverage_traps.insert(0, pattern)
+
     logger.info(
         "Producer ammo generated: top=%d traps=%d ops=%d flags=%d",
         len(top_questions), len(coverage_traps),
