@@ -42,6 +42,8 @@ from app.services.loss_run_analyzer import analyze_loss_run
 from app.schemas.loss_run import LossRunRequest, LossRunAnalysisResponse
 from app.services.experience_mod_analyzer import analyze_experience_mod
 from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
+from app.services.renewal_brief_generator import generate_renewal_brief
+from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -606,3 +608,23 @@ def experience_mod_analysis(payload: ExperienceModRequest, db: Session = Depends
         mod_claims=[c.model_dump() for c in payload.mod_claims],
     )
     return ExperienceModResponse(**result)
+
+
+# --- Renewal Brief ---
+
+@router.post("/brief/renewal", response_model=RenewalBriefResponse, tags=["brief"])
+def renewal_brief(payload: RenewalBriefRequest, db: Session = Depends(get_db)):
+    """Generate a structured renewal risk brief from account profile data."""
+    log_event(
+        db,
+        "renewal_brief_generated",
+        payload={
+            "industry": payload.industry,
+            "state": payload.state,
+            "has_loss_run": payload.loss_run_data is not None,
+            "has_mod_data": payload.experience_mod_data is not None,
+        },
+    )
+    profile = payload.model_dump()
+    result = generate_renewal_brief(profile)
+    return RenewalBriefResponse(**result)
