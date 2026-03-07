@@ -44,6 +44,10 @@ from app.services.experience_mod_analyzer import analyze_experience_mod
 from app.schemas.experience_mod import ExperienceModRequest, ExperienceModResponse
 from app.services.renewal_brief_generator import generate_renewal_brief
 from app.schemas.renewal_brief import RenewalBriefRequest, RenewalBriefResponse
+from app.services.public_web_intel import extract_public_web_intel
+from app.schemas.public_web_intel import PublicWebIntelRequest, PublicWebIntelResponse
+from app.services.underwriter_narrative_generator import generate_underwriter_narrative
+from app.schemas.underwriter_narrative import UnderwriterNarrativeRequest, UnderwriterNarrativeResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -628,3 +632,39 @@ def renewal_brief(payload: RenewalBriefRequest, db: Session = Depends(get_db)):
     profile = payload.model_dump()
     result = generate_renewal_brief(profile)
     return RenewalBriefResponse(**result)
+
+
+# --- Public Web Intelligence ---
+
+@router.post("/intel/public-web-intel", response_model=PublicWebIntelResponse, tags=["intel"])
+def public_web_intel(payload: PublicWebIntelRequest, db: Session = Depends(get_db)):
+    """Extract structured underwriting-relevant signals from public web content."""
+    log_event(
+        db,
+        "public_web_intel_generated",
+        payload={"company_name": payload.company_name, "industry": payload.industry},
+    )
+    input_data = payload.model_dump()
+    result = extract_public_web_intel(input_data)
+    return PublicWebIntelResponse(**result)
+
+
+# --- Underwriter Narrative ---
+
+@router.post("/narrative/underwriter", response_model=UnderwriterNarrativeResponse, tags=["narrative"])
+def underwriter_narrative(payload: UnderwriterNarrativeRequest, db: Session = Depends(get_db)):
+    """Generate underwriter-facing renewal or new business narrative."""
+    log_event(
+        db,
+        "underwriter_narrative_generated",
+        payload={
+            "industry": payload.industry,
+            "state": payload.state,
+            "narrative_type": payload.narrative_type,
+            "has_renewal_brief": payload.renewal_brief is not None,
+            "has_public_intel": payload.public_web_intel is not None,
+        },
+    )
+    profile = payload.model_dump()
+    result = generate_underwriter_narrative(profile)
+    return UnderwriterNarrativeResponse(**result)
