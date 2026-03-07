@@ -575,6 +575,7 @@ def knowledge_gap_detection(
     mode: str = "concise",
     tone: str = "neutral",
     session_id: str | None = None,
+    use_llm: bool = False,
 ):
     """Detect coverage gaps using Industry Knowledge Objects.
 
@@ -584,13 +585,14 @@ def knowledge_gap_detection(
     current_policies is a comma-separated list of policy names.
     office_id optionally includes office-specific learnings.
     render=true returns both structured output and rendered presentation.
+    use_llm=true routes rendering through the AI model router.
     """
     policies = [p.strip() for p in current_policies.split(",") if p.strip()]
     result = detect_knowledge_gaps(industry, policies, office_id=office_id)
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_coverage_gaps(result, options=opts, office_id=office_id, session_id=session_id)
+    return rewrite_coverage_gaps(result, options=opts, office_id=office_id, session_id=session_id, use_llm=use_llm)
 
 
 # --- Meeting Brief ---
@@ -603,6 +605,7 @@ def meeting_brief_endpoint(
     mode: str = "concise",
     tone: str = "neutral",
     session_id: str | None = None,
+    use_llm: bool = False,
 ):
     """Generate a structured meeting preparation brief for an industry.
 
@@ -610,12 +613,13 @@ def meeting_brief_endpoint(
     talking points, discovery questions, and coverage watchouts.
     office_id optionally includes office-specific learnings.
     render=true returns both structured output and rendered presentation.
+    use_llm=true routes rendering through the AI model router.
     """
     result = generate_meeting_brief(industry, office_id=office_id)
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_meeting_brief(result, options=opts, office_id=office_id, session_id=session_id)
+    return rewrite_meeting_brief(result, options=opts, office_id=office_id, session_id=session_id, use_llm=use_llm)
 
 
 # --- Producer Ammo Questions Engine ---
@@ -1277,11 +1281,13 @@ def submission_readiness_endpoint(
     mode: str = "concise",
     tone: str = "neutral",
     session_id: str | None = None,
+    use_llm: bool = False,
 ):
     """Evaluate submission readiness against industry-specific requirements.
 
     Does not evaluate carrier appetite or placement fit — submission quality only.
     render=true returns both structured output and rendered presentation.
+    use_llm=true routes rendering through the AI model router.
     """
     industry = body.get("industry")
     if not industry:
@@ -1300,7 +1306,7 @@ def submission_readiness_endpoint(
     if not render:
         return result
     opts = RewriteOptions(mode=mode, tone=tone)
-    return rewrite_submission_readiness(result, options=opts, office_id=office_id, session_id=session_id)
+    return rewrite_submission_readiness(result, options=opts, office_id=office_id, session_id=session_id, use_llm=use_llm)
 
 
 @router.get("/submission/demo-examples", tags=["submission"])

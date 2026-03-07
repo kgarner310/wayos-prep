@@ -640,10 +640,85 @@ def render_with_templates(
     return renderer(data, options)
 
 
-# Placeholder for future LLM-based rendering.
-# def render_with_llm(data: dict, response_type: str, options: RewriteOptions) -> RenderedResponse:
-#     """Optional LLM-powered rendering. Not yet implemented."""
-#     raise NotImplementedError("LLM rendering is not yet available")
+def render_with_llm(
+    data: dict,
+    response_type: str,
+    options: RewriteOptions,
+    office_id: Optional[str] = None,
+    endpoint: Optional[str] = None,
+) -> RenderedResponse:
+    """LLM-powered rendering via model router.
+
+    Builds a prompt from the structured data and sends it to the
+    configured AI provider. Falls back to template rendering on failure.
+    """
+    from app.ai.model_router import get_model_router
+
+    mode_desc = {
+        "concise": "a concise 1-2 sentence summary with top 3 bullet points",
+        "consultative": "a consultative briefing for a client-facing meeting",
+        "technical": "a technical analysis emphasizing exposures and coverage gaps",
+        "meeting_brief": "a meeting preparation flow with discussion points",
+    }
+    tone_desc = {
+        "neutral": "clear and plain language",
+        "confident": "direct and assertive without overclaiming",
+        "practical": "action-oriented and useful",
+    }
+
+    system_prompt = (
+        "You are a commercial insurance intelligence assistant. "
+        "Rewrite the following structured data into polished producer-facing language. "
+        "Do not invent facts. Do not add information not present in the data. "
+        "Do not mention carriers or make placement recommendations."
+    )
+
+    import json
+    prompt = (
+        f"Rewrite this {response_type} data as {mode_desc.get(options.mode, 'a concise summary')}.\n"
+        f"Use {tone_desc.get(options.tone, 'clear and plain language')} tone.\n\n"
+        f"Data:\n{json.dumps(data, indent=2, default=str)}\n\n"
+        f"Respond with a short paragraph followed by bullet points. "
+        f"Keep it under 200 words."
+    )
+
+    router = get_model_router()
+    result = router.generate_text(
+        task_type="rewrite_response",
+        prompt=prompt,
+        system_prompt=system_prompt,
+        temperature=0.2,
+        max_tokens=500,
+        office_id=office_id,
+        endpoint=endpoint,
+    )
+
+    text = result.get("text", "")
+    if not text or "error" in result:
+        logger.info("LLM rendering failed, falling back to templates")
+        return render_with_templates(data, response_type, options)
+
+    # Parse bullets from LLM response (lines starting with - or *)
+    lines = text.strip().split("\n")
+    rendered_text_parts = []
+    bullets = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(("- ", "* ", "• ")):
+            bullets.append(stripped.lstrip("-*• ").strip())
+        elif stripped:
+            rendered_text_parts.append(stripped)
+
+    rendered_text = " ".join(rendered_text_parts) if rendered_text_parts else text
+
+    return RenderedResponse(
+        response_type=response_type,
+        mode=options.mode,
+        tone=options.tone,
+        rendered_text=rendered_text,
+        rendered_bullets=bullets,
+        source_summary=build_source_summary(data, response_type),
+    )
 
 
 # ============================================================
@@ -682,19 +757,35 @@ def _record_shown_event(
         logger.debug("Failed to record rendered output shown event", exc_info=True)
 
 
+def _render(
+    data: dict,
+    response_type: str,
+    opts: RewriteOptions,
+    use_llm: bool = False,
+    office_id: Optional[str] = None,
+    endpoint: Optional[str] = None,
+) -> RenderedResponse:
+    """Choose between template and LLM rendering."""
+    if use_llm:
+        return render_with_llm(data, response_type, opts, office_id=office_id, endpoint=endpoint)
+    return render_with_templates(data, response_type, opts)
+
+
 def rewrite_meeting_brief(
     brief_data: dict,
     options: Optional[RewriteOptions] = None,
     endpoint: str = "/meeting/brief",
     office_id: Optional[str] = None,
     session_id: Optional[str] = None,
+    use_llm: bool = False,
 ) -> dict:
     """Rewrite a meeting brief into producer-facing language.
 
     Returns both the rendered presentation and the original unchanged data.
+    use_llm=True routes through the model router instead of templates.
     """
     opts = _resolve_options(options)
-    rendered = render_with_templates(brief_data, "meeting_brief", opts)
+    rendered = _render(brief_data, "meeting_brief", opts, use_llm, office_id, endpoint)
     output_id = f"out_{uuid.uuid4().hex[:12]}"
     rendered_dict = rendered.to_dict()
     rendered_dict["output_id"] = output_id
@@ -714,13 +805,15 @@ def rewrite_coverage_gaps(
     endpoint: str = "/risk/gaps",
     office_id: Optional[str] = None,
     session_id: Optional[str] = None,
+    use_llm: bool = False,
 ) -> dict:
     """Rewrite coverage gap analysis into producer-facing language.
 
     Returns both the rendered presentation and the original unchanged data.
+    use_llm=True routes through the model router instead of templates.
     """
     opts = _resolve_options(options)
-    rendered = render_with_templates(gap_data, "coverage_gaps", opts)
+    rendered = _render(gap_data, "coverage_gaps", opts, use_llm, office_id, endpoint)
     output_id = f"out_{uuid.uuid4().hex[:12]}"
     rendered_dict = rendered.to_dict()
     rendered_dict["output_id"] = output_id
@@ -740,13 +833,15 @@ def rewrite_submission_readiness(
     endpoint: str = "/submission/readiness",
     office_id: Optional[str] = None,
     session_id: Optional[str] = None,
+    use_llm: bool = False,
 ) -> dict:
     """Rewrite submission readiness into producer-facing language.
 
     Returns both the rendered presentation and the original unchanged data.
+    use_llm=True routes through the model router instead of templates.
     """
     opts = _resolve_options(options)
-    rendered = render_with_templates(readiness_data, "submission_readiness", opts)
+    rendered = _render(readiness_data, "submission_readiness", opts, use_llm, office_id, endpoint)
     output_id = f"out_{uuid.uuid4().hex[:12]}"
     rendered_dict = rendered.to_dict()
     rendered_dict["output_id"] = output_id
