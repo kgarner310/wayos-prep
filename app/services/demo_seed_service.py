@@ -11,8 +11,10 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.models import Account, EventLog, DemoFeedback, SavedArtifact
+from app.models.models import Account, EventLog, DemoFeedback, SavedArtifact, DealOutcome, AccountHealth
 from app.services.instrumentation import log_event
+from app.services.health_service import compute_account_health
+from app.services.artifact_engine import generate_all_artifacts
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,7 @@ DEMO_NOTES_TAG = "[DEMO-SEED]"
 DEMO_ACCOUNTS = [
     {
         "account_name": "Summit Ridge Roofing LLC",
+        "named_insured": "Summit Ridge Roofing LLC",
         "industry": "roofing",
         "state": "NC",
         "employee_count": 38,
@@ -29,6 +32,10 @@ DEMO_ACCOUNTS = [
         "vehicle_count": 12,
         "uses_subcontractors": True,
         "current_coverages": ["general_liability", "workers_comp", "commercial_auto"],
+        "workers_comp_mod": 1.12,
+        "payroll_estimate": 1900000,
+        "current_carriers": ["Travelers", "Builders Mutual"],
+        "claims_summary": {"open_claims": 1, "total_claims_3yr": 2, "details": "Fall from scaffold ($45k), knee injury ($12k)"},
         "website_url": "https://www.summitridgeroofing.com",
         "notes": f"{DEMO_NOTES_TAG} Full-service residential and commercial roofing. "
                  "Crews work at heights daily. Uses 1099 subs for large commercial jobs. "
@@ -37,6 +44,7 @@ DEMO_ACCOUNTS = [
     },
     {
         "account_name": "GreenScape Landscapes Inc",
+        "named_insured": "GreenScape Landscapes Inc",
         "industry": "landscaping",
         "state": "TX",
         "employee_count": 22,
@@ -44,6 +52,10 @@ DEMO_ACCOUNTS = [
         "vehicle_count": 8,
         "uses_subcontractors": False,
         "current_coverages": ["general_liability", "workers_comp", "commercial_auto"],
+        "workers_comp_mod": 0.92,
+        "payroll_estimate": 880000,
+        "current_carriers": ["Cincinnati", "Guard Insurance"],
+        "claims_summary": {"open_claims": 0, "total_claims_3yr": 0},
         "website_url": "https://www.greenscapetx.com",
         "notes": f"{DEMO_NOTES_TAG} Commercial and residential landscaping, hardscaping, irrigation. "
                  "Seasonal workforce doubles in spring/summer. Operates mowers, skid steers. "
@@ -52,6 +64,7 @@ DEMO_ACCOUNTS = [
     },
     {
         "account_name": "Precision Air HVAC Services",
+        "named_insured": "Precision Air HVAC Services LLC",
         "industry": "hvac",
         "state": "FL",
         "employee_count": 45,
@@ -62,6 +75,10 @@ DEMO_ACCOUNTS = [
             "general_liability", "workers_comp", "commercial_auto",
             "inland_marine", "professional_liability",
         ],
+        "workers_comp_mod": 1.04,
+        "payroll_estimate": 2400000,
+        "current_carriers": ["Hartford", "Zurich", "Employers"],
+        "claims_summary": {"open_claims": 0, "total_claims_3yr": 1, "details": "Auto rear-end accident ($22k)"},
         "website_url": "https://www.precisionairhvac.com",
         "notes": f"{DEMO_NOTES_TAG} Commercial HVAC installation, maintenance, and repair. "
                  "Technicians handle refrigerants (EPA certified). Roof-mounted unit installs. "
@@ -70,6 +87,7 @@ DEMO_ACCOUNTS = [
     },
     {
         "account_name": "Bella Cucina Restaurant Group",
+        "named_insured": "Bella Cucina Restaurant Group Inc",
         "industry": "restaurant",
         "state": "CA",
         "employee_count": 65,
@@ -80,6 +98,10 @@ DEMO_ACCOUNTS = [
             "general_liability", "workers_comp", "commercial_property",
             "liquor_liability",
         ],
+        "workers_comp_mod": 1.08,
+        "payroll_estimate": 1600000,
+        "current_carriers": ["State Fund", "Zenith"],
+        "claims_summary": {"open_claims": 1, "total_claims_3yr": 2, "details": "Slip-and-fall ($15k), kitchen burn ($8k)"},
         "website_url": "https://www.bellacucinagroup.com",
         "notes": f"{DEMO_NOTES_TAG} Three-location Italian restaurant group. Full bar service. "
                  "Catering operations with delivery. High employee turnover. "
@@ -115,6 +137,7 @@ def seed_demo_accounts(db: Session) -> list[dict]:
 
         account = Account(
             account_name=acct_data["account_name"],
+            named_insured=acct_data.get("named_insured"),
             industry=acct_data["industry"],
             state=acct_data["state"],
             employee_count=acct_data["employee_count"],
@@ -122,6 +145,10 @@ def seed_demo_accounts(db: Session) -> list[dict]:
             vehicle_count=acct_data["vehicle_count"],
             uses_subcontractors=acct_data["uses_subcontractors"],
             current_coverages=acct_data["current_coverages"],
+            workers_comp_mod=acct_data.get("workers_comp_mod"),
+            payroll_estimate=acct_data.get("payroll_estimate"),
+            current_carriers=acct_data.get("current_carriers"),
+            claims_summary=acct_data.get("claims_summary"),
             website_url=acct_data["website_url"],
             notes=acct_data["notes"],
         )
@@ -136,16 +163,165 @@ def seed_demo_accounts(db: Session) -> list[dict]:
 
     db.commit()
 
+    # Generate health cards, artifacts, and outcomes for demo accounts
+    created_count = sum(1 for r in results if r["status"] == "created")
+    if created_count > 0:
+        try:
+            seed_demo_artifacts(db)
+        except Exception:
+            logger.exception("Failed to seed demo artifacts")
+
+        try:
+            seed_demo_outcomes(db)
+        except Exception:
+            logger.exception("Failed to seed demo outcomes")
+
     log_event(db, "demo_accounts_seeded", payload={
         "count": len(results),
-        "created": sum(1 for r in results if r["status"] == "created"),
+        "created": created_count,
     })
 
     logger.info(
         "Demo accounts seeded: %d total, %d new",
         len(results),
-        sum(1 for r in results if r["status"] == "created"),
+        created_count,
     )
+    return results
+
+
+def seed_demo_artifacts(db: Session) -> list[dict]:
+    """Generate health cards and artifacts for all demo accounts.
+
+    For each demo account:
+    1. Computes health card via compute_account_health
+    2. Generates all artifacts via generate_all_artifacts (deterministic, no LLM)
+
+    Returns summary of what was created.
+    """
+    demo_accounts = (
+        db.query(Account)
+        .filter(Account.notes.contains(DEMO_NOTES_TAG))
+        .all()
+    )
+
+    results = []
+    for account in demo_accounts:
+        try:
+            # Compute health card
+            health = compute_account_health(account, db)
+
+            # Generate all artifacts (deterministic only)
+            artifacts = generate_all_artifacts(account.id, db, use_llm=False)
+
+            results.append({
+                "account_id": str(account.id),
+                "account_name": account.account_name,
+                "health_score": health.overall_score,
+                "artifacts_created": len(artifacts),
+                "artifact_types": [a.artifact_type for a in artifacts],
+            })
+        except Exception:
+            logger.exception("Failed to seed artifacts for %s", account.account_name)
+            results.append({
+                "account_id": str(account.id),
+                "account_name": account.account_name,
+                "status": "failed",
+            })
+
+    db.commit()
+
+    logger.info(
+        "Demo artifacts seeded: %d accounts processed",
+        len(results),
+    )
+    return results
+
+
+def seed_demo_outcomes(db: Session) -> list[dict]:
+    """Create demo DealOutcome records for market intelligence.
+
+    Creates 5 demo outcomes across different industries, carriers, and results
+    to populate market signals and win rate data.
+
+    Returns summary of created outcomes.
+    """
+    demo_outcomes = [
+        {
+            "account_id": "demo-roofing-001",
+            "industry": "roofing",
+            "state": "NC",
+            "carrier": "Travelers",
+            "premium": 68000,
+            "outcome": "won",
+            "outcome_reason": "COVERAGE",
+            "competitor": "Builders Mutual",
+            "notes": "Won with broader sub coverage and competitive mod credit.",
+        },
+        {
+            "account_id": "demo-roofing-002",
+            "industry": "roofing",
+            "state": "NC",
+            "carrier": "Builders Mutual",
+            "premium": 55000,
+            "outcome": "lost",
+            "outcome_reason": "PRICE",
+            "competitor": "Employers",
+            "notes": "Lost by 12% on price. Incumbent relationship strong.",
+        },
+        {
+            "account_id": "demo-landscaping-001",
+            "industry": "landscaping",
+            "state": "TX",
+            "carrier": "Cincinnati",
+            "premium": 32000,
+            "outcome": "won",
+            "outcome_reason": "RELATIONSHIP",
+            "competitor": None,
+            "notes": "Clean account. Won on service and relationship.",
+        },
+        {
+            "account_id": "demo-hvac-001",
+            "industry": "hvac",
+            "state": "FL",
+            "carrier": "Hartford",
+            "premium": 95000,
+            "outcome": "won",
+            "outcome_reason": "COVERAGE",
+            "competitor": "Zurich",
+            "notes": "Won with pollution coverage inclusion that competitor excluded.",
+        },
+        {
+            "account_id": "demo-restaurant-001",
+            "industry": "restaurant",
+            "state": "CA",
+            "carrier": "State Fund",
+            "premium": 42000,
+            "outcome": "lost",
+            "outcome_reason": "APPETITE",
+            "competitor": "EMPLOYERS",
+            "notes": "Carrier declined due to claims frequency concerns.",
+        },
+    ]
+
+    results = []
+    for outcome_data in demo_outcomes:
+        try:
+            outcome = DealOutcome(**outcome_data)
+            db.add(outcome)
+            db.flush()
+            results.append({
+                "outcome_id": str(outcome.id),
+                "industry": outcome.industry,
+                "carrier": outcome.carrier,
+                "outcome": outcome.outcome,
+                "status": "created",
+            })
+        except Exception:
+            logger.exception("Failed to seed demo outcome: %s", outcome_data)
+
+    db.commit()
+
+    logger.info("Demo outcomes seeded: %d created", len(results))
     return results
 
 
@@ -165,12 +341,25 @@ def reset_demo_data(db: Session) -> dict:
 
     # Delete artifacts for demo accounts
     artifacts_deleted = 0
+    health_deleted = 0
     if demo_account_ids:
         artifacts_deleted = (
             db.query(SavedArtifact)
             .filter(SavedArtifact.account_id.in_(demo_account_ids))
             .delete(synchronize_session="fetch")
         )
+        health_deleted = (
+            db.query(AccountHealth)
+            .filter(AccountHealth.account_id.in_(demo_account_ids))
+            .delete(synchronize_session="fetch")
+        )
+
+    # Delete demo deal outcomes
+    demo_outcomes_deleted = (
+        db.query(DealOutcome)
+        .filter(DealOutcome.account_id.like("demo-%"))
+        .delete(synchronize_session="fetch")
+    )
 
     # Delete demo accounts
     accounts_deleted = 0
@@ -196,6 +385,8 @@ def reset_demo_data(db: Session) -> dict:
     log_event(db, "demo_data_reset", payload={
         "accounts_deleted": accounts_deleted,
         "artifacts_deleted": artifacts_deleted,
+        "health_deleted": health_deleted,
+        "outcomes_deleted": demo_outcomes_deleted,
         "feedback_deleted": feedback_deleted,
         "events_deleted": demo_events_deleted,
     })
@@ -203,6 +394,8 @@ def reset_demo_data(db: Session) -> dict:
     summary = {
         "accounts_deleted": accounts_deleted,
         "artifacts_deleted": artifacts_deleted,
+        "health_deleted": health_deleted,
+        "outcomes_deleted": demo_outcomes_deleted,
         "feedback_deleted": feedback_deleted,
         "events_deleted": demo_events_deleted,
     }

@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "WAYOS",
+    "slug": "wayos-mobile",
+    "version": "0.2.0",
+    "scheme": "wayos",
+    "platforms": ["ios", "android", "web"],
+    "plugins": ["expo-router"]
+  }
+}

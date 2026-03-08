@@ -30,14 +30,19 @@ async def lifespan(app: FastAPI):
     # Load industry knowledge profiles at startup
     from app.knowledge.industry_profiles import INDUSTRY_PROFILES
     logger.info("Industry profiles loaded: %d industries", len(INDUSTRY_PROFILES))
+    # Initialize Redis cache (non-blocking — app works without Redis)
+    from app.core.cache import get_redis
+    get_redis()
     yield
     logger.info("WAYOS PREP shutting down")
+    from app.core.cache import reset_redis
+    reset_redis()
 
 
 app = FastAPI(
     title="WAYOS PREP",
-    description="Insurance meeting-brief engine for commercial producers",
-    version="0.1.0",
+    description="Account-centric insurance intelligence for commercial P&C producers",
+    version="0.2.0",
     lifespan=lifespan,
 )
 

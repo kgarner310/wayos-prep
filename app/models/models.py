@@ -474,6 +474,7 @@ class Account(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
     account_name = Column(Text, nullable=False)
+    named_insured = Column(Text, nullable=True)
     industry = Column(Text)
     state = Column(Text)
     employee_count = Column(Integer)
@@ -481,6 +482,11 @@ class Account(Base):
     vehicle_count = Column(Integer)
     uses_subcontractors = Column(Boolean, default=False)
     current_coverages = Column(JSONB)
+    payroll_estimate = Column(Numeric(14, 2), nullable=True)
+    workers_comp_mod = Column(Numeric(5, 3), nullable=True)
+    current_carriers = Column(JSONB, nullable=True)
+    claims_summary = Column(JSONB, nullable=True)
+    extracted_text = Column(Text, nullable=True)
     website_url = Column(Text)
     social_urls = Column(JSONB)
     notes = Column(Text)
@@ -491,9 +497,11 @@ class Account(Base):
 
     agency = relationship("Agency", back_populates="accounts")
     artifacts = relationship("SavedArtifact", back_populates="account", cascade="all, delete-orphan")
+    health = relationship("AccountHealth", back_populates="account", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_accounts_account_name", "account_name"),
+        Index("ix_accounts_named_insured", "named_insured"),
         Index("ix_accounts_industry", "industry"),
         Index("ix_accounts_state", "state"),
         Index("ix_accounts_created_at", "created_at"),
@@ -511,6 +519,9 @@ class SavedArtifact(Base):
     title = Column(Text)
     content_json = Column(JSONB, nullable=False)
     rendered_text = Column(Text)
+    status = Column(Text, nullable=False, default="ready", server_default="ready")
+    confidence = Column(Numeric(4, 3), nullable=True)
+    model_name = Column(Text, nullable=True)
     created_by_user_id = Column(Text)
     agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
@@ -521,6 +532,7 @@ class SavedArtifact(Base):
     __table_args__ = (
         Index("ix_saved_artifacts_account_id", "account_id"),
         Index("ix_saved_artifacts_artifact_type", "artifact_type"),
+        Index("ix_saved_artifacts_status", "status"),
         Index("ix_saved_artifacts_created_at", "created_at"),
         Index("ix_saved_artifacts_agency_id", "agency_id"),
     )
@@ -636,6 +648,8 @@ class DealOutcome(Base):
     premium = Column(Numeric(14, 2), nullable=True)
     outcome = Column(Text, nullable=False, index=True)
     outcome_reason = Column(Text, nullable=True)
+    competitor = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
 
     __table_args__ = (
@@ -662,4 +676,56 @@ class AccountEvent(Base):
 
     __table_args__ = (
         Index("ix_account_events_account_created", "account_id", "created_at"),
+    )
+
+
+# ============================================================
+# ACCOUNT HEALTH
+# ============================================================
+
+
+class AccountHealth(Base):
+    """Fast deterministic health card for an account."""
+
+    __tablename__ = "account_health"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, unique=True)
+    overall_score = Column(Integer, nullable=False, default=0, server_default="0")
+    coverage_score = Column(Integer, nullable=False, default=0, server_default="0")
+    workers_comp_score = Column(Integer, nullable=False, default=0, server_default="0")
+    carrier_fit_score = Column(Integer, nullable=False, default=0, server_default="0")
+    confidence = Column(Numeric(4, 3), nullable=False, default=0.0, server_default="0.0")
+    top_issues_json = Column(JSONB, nullable=True)
+    duty_to_advise_alert_count = Column(Integer, nullable=False, default=0, server_default="0")
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    account = relationship("Account", back_populates="health")
+
+    __table_args__ = (
+        Index("ix_account_health_account_id", "account_id"),
+    )
+
+
+# ============================================================
+# INGESTION EVENTS
+# ============================================================
+
+
+class IngestionEvent(Base):
+    """Tracks file/text ingestion into the system."""
+
+    __tablename__ = "ingestion_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
+    source_type = Column(Text, nullable=False)
+    filename = Column(Text, nullable=True)
+    raw_text = Column(Text, nullable=True)
+    extraction_json = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_ingestion_events_account_id", "account_id"),
+        Index("ix_ingestion_events_source_type", "source_type"),
     )

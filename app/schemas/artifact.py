@@ -14,6 +14,9 @@ class ArtifactCreate(BaseModel):
     title: str = ""
     content_json: dict
     rendered_text: Optional[str] = None
+    status: str = "ready"
+    confidence: Optional[float] = None
+    model_name: Optional[str] = None
     created_by_user_id: Optional[str] = None
 
 
@@ -25,6 +28,9 @@ class ArtifactResponse(BaseModel):
     title: Optional[str] = None
     content_json: dict
     rendered_text: Optional[str] = None
+    status: str = "ready"
+    confidence: Optional[float] = None
+    model_name: Optional[str] = None
     created_by_user_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime

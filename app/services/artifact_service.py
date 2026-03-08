@@ -19,6 +19,9 @@ def save_artifact(db: Session, data: dict) -> SavedArtifact:
         title=data.get("title", ""),
         content_json=data["content_json"],
         rendered_text=data.get("rendered_text"),
+        status=data.get("status", "ready"),
+        confidence=data.get("confidence"),
+        model_name=data.get("model_name"),
         created_by_user_id=data.get("created_by_user_id"),
     )
     db.add(artifact)

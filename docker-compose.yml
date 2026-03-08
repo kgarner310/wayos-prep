@@ -17,6 +17,16 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
@@ -25,7 +35,9 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://wayos:wayos_dev_password@db:5432/wayos_prep
+      REDIS_URL: redis://redis:6379/0
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -37,11 +49,38 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     command: >
       bash -c "
         alembic upgrade head &&
         python seed_data.py &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://wayos:wayos_dev_password@db:5432/wayos_prep
+      REDIS_URL: redis://redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./app:/code/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      python -c "
+        from app.workers.settings import WorkerSettings;
+        WorkerSettings.configure();
+        import arq;
+        arq.run_worker(WorkerSettings)
       "
 
 volumes:

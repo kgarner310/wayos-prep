@@ -14,6 +14,7 @@ def create_account(db: Session, data: dict) -> Account:
     """Create a new account."""
     account = Account(
         account_name=data["account_name"],
+        named_insured=data.get("named_insured"),
         industry=data.get("industry"),
         state=data.get("state"),
         employee_count=data.get("employee_count"),
@@ -21,6 +22,11 @@ def create_account(db: Session, data: dict) -> Account:
         vehicle_count=data.get("vehicle_count"),
         uses_subcontractors=data.get("uses_subcontractors", False),
         current_coverages=data.get("current_coverages"),
+        payroll_estimate=data.get("payroll_estimate"),
+        workers_comp_mod=data.get("workers_comp_mod"),
+        current_carriers=data.get("current_carriers"),
+        claims_summary=data.get("claims_summary"),
+        extracted_text=data.get("extracted_text"),
         website_url=data.get("website_url"),
         social_urls=data.get("social_urls"),
         notes=data.get("notes"),

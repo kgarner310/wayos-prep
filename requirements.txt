@@ -32,6 +32,10 @@ passlib[bcrypt]>=1.7,<2.0
 # Rate limiting
 slowapi>=0.1.9,<1.0
 
+# Cache / Queue
+redis>=5.0,<6.0
+arq>=0.26,<1.0
+
 # Utils
 python-dotenv>=1.0,<2.0
 

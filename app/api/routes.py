@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.enums import SourceStatus
 from app.models.models import (
-    Source, SourceChunk, ChunkEmbedding, Query,
+    Account, Source, SourceChunk, ChunkEmbedding, Query,
     GeneratedBrief, FeedbackEvent, RetrievalRun, RetrievalResult,
     RiskScoreRun,
 )
@@ -900,6 +900,32 @@ def underwriter_narrative(payload: UnderwriterNarrativeRequest, db: Session = De
 
 # --- Accounts ---
 
+
+@router.get("/accounts/search", tags=["accounts"])
+def search_accounts(q: str = "", limit: int = 20, db: Session = Depends(get_db)):
+    """Search accounts by name, named insured, or industry."""
+    if not q or len(q) < 2:
+        return {"accounts": [], "total": 0}
+
+    pattern = f"%{q}%"
+    results = (
+        db.query(Account)
+        .filter(
+            (Account.account_name.ilike(pattern))
+            | (Account.named_insured.ilike(pattern))
+            | (Account.industry.ilike(pattern))
+        )
+        .order_by(Account.updated_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "accounts": [AccountResponse.model_validate(a).model_dump() for a in results],
+        "total": len(results),
+    }
+
+
 @router.post("/accounts", response_model=AccountResponse, tags=["accounts"])
 def create_account_endpoint(payload: AccountCreate, db: Session = Depends(get_db)):
     """Create a new account."""
@@ -1639,6 +1665,8 @@ def create_outcome(body: dict, db: Session = Depends(get_db)):
         premium=body.get("premium"),
         outcome=outcome.lower(),
         outcome_reason=body.get("outcome_reason"),
+        competitor=body.get("competitor"),
+        notes=body.get("notes"),
     )
     db.add(deal)
 
@@ -1704,4 +1732,277 @@ def account_timeline(account_id: str, db: Session = Depends(get_db)):
             for e in events
         ],
         "count": len(events),
+    }
+
+
+# ============================================================
+# MVP: CAPTURE, DASHBOARD, SEARCH, INSIGHTS, ARTIFACT GENERATE
+# ============================================================
+
+from app.models.models import Account, IngestionEvent, AccountHealth, SavedArtifact as SAModel
+from app.schemas.capture import CaptureResponse, ManualAccountCreate, AccountFromCaptureRequest
+from app.schemas.health import AccountHealthResponse
+from app.schemas.insight import InsightItem, InsightFeedResponse
+from app.services.health_service import compute_account_health
+from app.services.insight_service import generate_insights
+from app.services.artifact_engine import generate_artifact, generate_all_artifacts
+from app.schemas.artifact_schemas import ARTIFACT_PRIORITY
+
+
+@router.post("/capture", tags=["capture"])
+def capture_endpoint(
+    file: UploadFile | None = File(None),
+    plain_text: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Capture a screenshot, file, or text and extract insurance signals."""
+    file_bytes = None
+    filename = None
+    content_type = None
+
+    if file:
+        file_bytes = file.file.read()
+        filename = file.filename
+        content_type = file.content_type
+
+    result = process_capture(
+        file_bytes=file_bytes,
+        filename=filename,
+        content_type=content_type,
+        plain_text=plain_text or None,
+    )
+
+    # Store ingestion event
+    event = IngestionEvent(
+        source_type=result["source_type"],
+        filename=filename,
+        raw_text=result["extracted_text"][:10000] if result["extracted_text"] else None,
+        extraction_json=result["signals"],
+    )
+    db.add(event)
+    db.commit()
+
+    log_event(db, "capture_completed", payload={
+        "source_type": result["source_type"],
+        "signal_count": len(result["signals"]),
+    })
+
+    return {
+        "ingestion_event_id": str(event.id),
+        "source_type": result["source_type"],
+        "extracted_text": result["extracted_text"],
+        "signals": result["signals"],
+    }
+
+
+@router.post("/accounts/from-capture", tags=["capture"])
+def account_from_capture(body: AccountFromCaptureRequest, db: Session = Depends(get_db)):
+    """Create an account from capture signals. Returns account + health card."""
+    signals = body.signals or {}
+
+    # If ingestion_event_id provided, load signals from it
+    if body.ingestion_event_id:
+        ie = db.query(IngestionEvent).filter(IngestionEvent.id == body.ingestion_event_id).first()
+        if ie and ie.extraction_json:
+            signals = {**ie.extraction_json, **(body.signals or {})}
+
+    # Build account from signals + explicit fields
+    account_name = body.account_name or signals.get("carrier", "New Account")
+    account = Account(
+        account_name=account_name,
+        named_insured=body.named_insured,
+        industry=(body.industry or "").lower() or None,
+        state=(body.state or "").upper() or None,
+        employee_count=signals.get("employee_count"),
+        workers_comp_mod=signals.get("mod"),
+        current_coverages=[signals["coverage"]] if signals.get("coverage") else [],
+        current_carriers=[signals["carrier"]] if signals.get("carrier") else [],
+        extracted_text=None,
+    )
+    db.add(account)
+    db.flush()
+
+    # Link ingestion event
+    if body.ingestion_event_id:
+        ie = db.query(IngestionEvent).filter(IngestionEvent.id == body.ingestion_event_id).first()
+        if ie:
+            ie.account_id = account.id
+            account.extracted_text = ie.raw_text
+
+    # Compute health card (fast, deterministic)
+    health = compute_account_health(account, db)
+    db.commit()
+
+    # Try to enqueue background artifact generation
+    from app.workers.artifact_worker import enqueue_artifact_generation
+    enqueued = enqueue_artifact_generation(account.id)
+    if not enqueued:
+        # Fallback: generate artifacts synchronously (deterministic only, no LLM)
+        try:
+            generate_all_artifacts(account.id, db, use_llm=False)
+            db.commit()
+        except Exception:
+            logger.exception("Sync artifact generation failed for %s", account.id)
+
+    log_event(db, "account_from_capture", payload={
+        "account_id": str(account.id),
+        "account_name": account_name,
+    })
+
+    return {
+        "account": AccountResponse.model_validate(account).model_dump(),
+        "health": AccountHealthResponse.from_orm_model(health).model_dump(),
+    }
+
+
+@router.post("/accounts/manual", tags=["capture"])
+def create_manual_account(body: ManualAccountCreate, db: Session = Depends(get_db)):
+    """Create account from manual entry. Returns account + health card."""
+    account = Account(
+        account_name=body.account_name,
+        named_insured=body.named_insured,
+        industry=(body.industry or "").lower() or None,
+        state=(body.state or "").upper() or None,
+        employee_count=body.employee_count,
+        annual_revenue=body.annual_revenue,
+        payroll_estimate=body.payroll_estimate,
+        workers_comp_mod=body.workers_comp_mod,
+        current_coverages=body.current_coverages or [],
+        current_carriers=body.current_carriers or [],
+        claims_summary=body.claims_summary,
+        vehicle_count=body.vehicle_count,
+        uses_subcontractors=body.uses_subcontractors,
+        website_url=body.website_url,
+        notes=body.notes,
+    )
+    db.add(account)
+    db.flush()
+
+    # Store ingestion event
+    ie = IngestionEvent(
+        account_id=account.id,
+        source_type="manual",
+    )
+    db.add(ie)
+
+    # Compute health card
+    health = compute_account_health(account, db)
+    db.commit()
+
+    # Try background artifact generation
+    from app.workers.artifact_worker import enqueue_artifact_generation
+    enqueued = enqueue_artifact_generation(account.id)
+    if not enqueued:
+        try:
+            generate_all_artifacts(account.id, db, use_llm=False)
+            db.commit()
+        except Exception:
+            logger.exception("Sync artifact generation failed for %s", account.id)
+
+    log_event(db, "account_manual_created", payload={
+        "account_id": str(account.id),
+        "account_name": body.account_name,
+    })
+
+    return {
+        "account": AccountResponse.model_validate(account).model_dump(),
+        "health": AccountHealthResponse.from_orm_model(health).model_dump(),
+    }
+
+
+
+@router.get("/accounts/{account_id}/dashboard", tags=["dashboard"])
+def account_dashboard(account_id: UUID, db: Session = Depends(get_db)):
+    """Get unified dashboard payload for an account.
+
+    Returns account + health card + artifacts + insights in one call.
+    Health card is computed on the fly if not cached.
+    """
+    # Check cache
+    from app.core.cache import cache_get, cache_set
+
+    cache_key = f"dashboard:{account_id}"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(404, "Account not found")
+
+    # Health card — compute if missing
+    health = db.query(AccountHealth).filter(AccountHealth.account_id == account_id).first()
+    if not health:
+        health = compute_account_health(account, db)
+        db.commit()
+
+    # Artifacts
+    artifacts = (
+        db.query(SAModel)
+        .filter(SAModel.account_id == account_id)
+        .order_by(SAModel.created_at.desc())
+        .all()
+    )
+
+    # Insights
+    insight_items = generate_insights(account, health, db)
+
+    dashboard = {
+        "account": AccountResponse.model_validate(account).model_dump(),
+        "health": AccountHealthResponse.from_orm_model(health).model_dump(),
+        "artifacts": [ArtifactResponse.model_validate(a).model_dump() for a in artifacts],
+        "insights": insight_items,
+    }
+
+    cache_set(cache_key, dashboard, ttl=120)
+    return dashboard
+
+
+@router.post("/artifacts/generate", tags=["artifacts"])
+def generate_artifacts_endpoint(
+    body: dict,
+    db: Session = Depends(get_db),
+):
+    """Generate artifacts for an account. Enqueues background generation."""
+    account_id = body.get("account_id")
+    if not account_id:
+        raise HTTPException(422, "account_id is required")
+
+    account_id = UUID(account_id) if isinstance(account_id, str) else account_id
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(404, "Account not found")
+
+    artifact_type = body.get("artifact_type")
+
+    # Try background
+    from app.workers.artifact_worker import enqueue_artifact_generation
+    enqueued = enqueue_artifact_generation(account_id, artifact_type)
+
+    if not enqueued:
+        # Sync fallback
+        if artifact_type:
+            generate_artifact(account_id, artifact_type, db, use_llm=False)
+        else:
+            generate_all_artifacts(account_id, db, use_llm=False)
+        db.commit()
+        return {"status": "completed", "account_id": str(account_id)}
+
+    return {"status": "queued", "account_id": str(account_id)}
+
+
+@router.get("/accounts/{account_id}/insights", tags=["insights"])
+def account_insights(account_id: UUID, db: Session = Depends(get_db)):
+    """Get insight feed for an account."""
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise HTTPException(404, "Account not found")
+
+    health = db.query(AccountHealth).filter(AccountHealth.account_id == account_id).first()
+    items = generate_insights(account, health, db)
+
+    return {
+        "account_id": str(account_id),
+        "insights": items,
+        "total": len(items),
     }
