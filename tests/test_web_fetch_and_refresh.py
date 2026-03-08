@@ -1,5 +1,6 @@
 """Tests for Phase 7: Web Fetcher, Public Web Intel Fetch, Account Refresh."""
 
+import socket
 import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
@@ -127,7 +128,10 @@ def _make_artifact_obj(**overrides):
 
 class TestWebFetcher:
 
-    def test_fetch_successful(self):
+    @patch("app.services.url_guard.socket.getaddrinfo", return_value=[
+        (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+    ])
+    def test_fetch_successful(self, _mock_dns):
         import httpx
         from app.services.web_fetcher import fetch_public_page_text
 
@@ -183,7 +187,10 @@ class TestWebFetcher:
         assert result["success"] is False
         assert any("blocked" in w.lower() for w in result["fetch_warnings"])
 
-    def test_fetch_timeout_handled(self):
+    @patch("app.services.url_guard.socket.getaddrinfo", return_value=[
+        (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+    ])
+    def test_fetch_timeout_handled(self, _mock_dns):
         import httpx
         from app.services.web_fetcher import fetch_public_page_text
 
@@ -202,7 +209,10 @@ class TestWebFetcher:
         assert result["success"] is False
         assert any("Timeout" in w or "No readable" in w for w in result["fetch_warnings"])
 
-    def test_fetch_http_error_handled(self):
+    @patch("app.services.url_guard.socket.getaddrinfo", return_value=[
+        (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+    ])
+    def test_fetch_http_error_handled(self, _mock_dns):
         import httpx
         from app.services.web_fetcher import fetch_public_page_text
 
@@ -259,52 +269,6 @@ class TestWebFetcher:
             })
 
         assert len(result["raw_text"]) <= 100
-
-
-# ============================================================
-# URL VALIDATION TESTS
-# ============================================================
-
-
-class TestURLValidation:
-
-    def test_valid_https_url(self):
-        from app.services.web_fetcher import _validate_url
-        assert _validate_url("https://example.com") is None
-
-    def test_valid_http_url(self):
-        from app.services.web_fetcher import _validate_url
-        assert _validate_url("http://example.com") is None
-
-    def test_ftp_rejected(self):
-        from app.services.web_fetcher import _validate_url
-        result = _validate_url("ftp://example.com")
-        assert result is not None
-        assert "scheme" in result.lower()
-
-    def test_private_ip_rejected(self):
-        from app.services.web_fetcher import _validate_url
-        result = _validate_url("http://10.0.0.1")
-        assert result is not None
-
-    def test_loopback_rejected(self):
-        from app.services.web_fetcher import _validate_url
-        result = _validate_url("http://127.0.0.1")
-        assert result is not None
-
-    def test_localhost_rejected(self):
-        from app.services.web_fetcher import _validate_url
-        result = _validate_url("http://localhost")
-        assert result is not None
-
-    def test_metadata_endpoint_rejected(self):
-        from app.services.web_fetcher import _validate_url
-        result = _validate_url("http://metadata.google.internal")
-        assert result is not None
-
-    def test_url_without_scheme_accepted(self):
-        from app.services.web_fetcher import _validate_url
-        assert _validate_url("example.com") is None
 
 
 # ============================================================

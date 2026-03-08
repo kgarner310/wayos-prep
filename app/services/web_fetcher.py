@@ -165,7 +165,7 @@ def _fetch_single_page(client: httpx.Client, url: str) -> tuple[str | None, str 
 
     # Reject redirects explicitly — do not follow to unvalidated targets
     if response.is_redirect or response.status_code in (301, 302, 303, 307, 308):
-        return None, f"Redirect ({response.status_code}) from {url} rejected for security"
+        return None, f"URL returned redirect ({response.status_code}). Redirects disabled for security."
 
     content_type = response.headers.get("content-type", "")
     if "text/html" not in content_type and "text/plain" not in content_type:
