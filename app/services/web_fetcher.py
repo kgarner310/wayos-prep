@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import logging
 import re
-from ipaddress import ip_address
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+
+from app.services.url_guard import validate_external_url
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,6 @@ _NOISE_PATTERNS = [
     re.compile(r"©\s*\d{4}", re.IGNORECASE),
     re.compile(r"all\s+rights\s+reserved", re.IGNORECASE),
 ]
-
-# Private/internal network ranges to block (SSRF protection)
-_BLOCKED_HOSTNAMES = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal"}
-
 
 def fetch_public_page_text(input_data: dict) -> dict:
     """Fetch public website content and return normalized text.
@@ -76,14 +73,18 @@ def fetch_public_page_text(input_data: dict) -> dict:
         result["fetch_warnings"].append("No website_url provided")
         return result
 
-    validation_error = _validate_url(website_url)
-    if validation_error:
-        result["fetch_warnings"].append(validation_error)
-        return result
-
-    # Normalize URL
+    # Normalize URL before validation (validate_external_url requires a scheme)
     if not website_url.startswith(("http://", "https://")):
         website_url = f"https://{website_url}"
+
+    # SECURITY: SSRF protection — validate_external_url() MUST run before any
+    # outbound request. Redirects are rejected in _fetch_single_page. Do not set
+    # follow_redirects=True unless every redirect target is also revalidated.
+    try:
+        validate_external_url(website_url)
+    except ValueError as e:
+        result["fetch_warnings"].append(str(e))
+        return result
 
     # --- Build list of URLs to fetch ---
     urls_to_fetch = [website_url]
@@ -93,6 +94,7 @@ def fetch_public_page_text(input_data: dict) -> dict:
     for subpath in _USEFUL_SUBPATHS:
         candidate = urljoin(base_url, subpath)
         if candidate not in urls_to_fetch and len(urls_to_fetch) < max_pages:
+            # Subpaths share the same validated origin, no re-validation needed
             urls_to_fetch.append(candidate)
 
     # --- Fetch pages ---
@@ -101,7 +103,7 @@ def fetch_public_page_text(input_data: dict) -> dict:
 
     with httpx.Client(
         timeout=timeout,
-        follow_redirects=True,
+        follow_redirects=False,
         headers={"User-Agent": _USER_AGENT},
     ) as client:
         for url in urls_to_fetch:
@@ -149,50 +151,6 @@ def fetch_public_page_text(input_data: dict) -> dict:
 # ============================================================
 
 
-def _validate_url(url: str) -> str | None:
-    """Validate URL for safety. Returns error string or None if valid."""
-    try:
-        parsed = urlparse(url)
-    except Exception:
-        return f"Invalid URL format: {url}"
-
-    # If URL has an explicit scheme, it must be http or https
-    if parsed.scheme and parsed.scheme not in ("http", "https"):
-        return f"URL scheme must be http or https, got: {parsed.scheme}"
-
-    # Re-parse with scheme for hostname extraction if no scheme was given
-    check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
-    parsed = urlparse(check_url)
-
-    hostname = parsed.hostname or ""
-
-    # Block empty hostname
-    if not hostname:
-        return "URL has no hostname"
-
-    # Block known internal hostnames
-    if hostname.lower() in _BLOCKED_HOSTNAMES:
-        return f"Internal/private hostname blocked: {hostname}"
-
-    # Block private IP ranges (SSRF protection)
-    try:
-        addr = ip_address(hostname)
-        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
-            return f"Private/internal IP address blocked: {hostname}"
-    except ValueError:
-        # Not an IP address — that's fine, it's a domain name
-        pass
-
-    # Block common internal patterns
-    if any(
-        pattern in hostname.lower()
-        for pattern in ("internal", "intranet", "169.254", "10.", "192.168")
-    ):
-        return f"Potentially internal hostname blocked: {hostname}"
-
-    return None
-
-
 def _fetch_single_page(client: httpx.Client, url: str) -> tuple[str | None, str | None]:
     """Fetch a single page and extract text. Returns (text, warning)."""
     try:
@@ -204,6 +162,10 @@ def _fetch_single_page(client: httpx.Client, url: str) -> tuple[str | None, str 
         return None, f"HTTP {e.response.status_code} fetching {url}"
     except httpx.RequestError as e:
         return None, f"Request error fetching {url}: {type(e).__name__}"
+
+    # Reject redirects explicitly — do not follow to unvalidated targets
+    if response.is_redirect or response.status_code in (301, 302, 303, 307, 308):
+        return None, f"Redirect ({response.status_code}) from {url} rejected for security"
 
     content_type = response.headers.get("content-type", "")
     if "text/html" not in content_type and "text/plain" not in content_type:
