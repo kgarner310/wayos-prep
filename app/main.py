@@ -1,6 +1,7 @@
 """WAYOS PREP - Main FastAPI application."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
@@ -69,6 +70,11 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/admin")
+
+# Serve React frontend from /app if built
+_frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.isdir(_frontend_dist):
+    app.mount("/app", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
 
 
 @app.get("/health")
