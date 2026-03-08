@@ -8,6 +8,7 @@ It handles deduplication and category validation in one place.
 """
 
 import logging
+import re
 from collections import Counter
 from typing import Optional
 
@@ -293,6 +294,98 @@ def write_memory_safe(
 
 
 # ============================================================
+# DISPLAY FORMATTING
+# ============================================================
+
+
+def format_memory_for_display(summary: str, category: str | None = None) -> str:
+    """Rewrite a canonical memory summary for dashboard display.
+
+    Deterministic rules only — no LLM. Falls back to the original
+    summary (with underscores cleaned) if no rule matches.
+    """
+    if not summary:
+        return summary or ""
+
+    for rewriter in _REWRITE_RULES:
+        result = rewriter(summary)
+        if result is not None:
+            return result
+
+    # Fallback: clean underscores
+    return summary.replace("_", " ")
+
+
+def _rewrite_coverage_gap(summary: str) -> str | None:
+    """'Coverage gaps identified: workers_comp, umbrella'
+    → 'Workers comp and umbrella gaps found'"""
+    m = re.match(r"(?i)coverage gaps? identified:\s*(.+)", summary)
+    if not m:
+        return None
+    items = [i.strip().replace("_", " ") for i in m.group(1).split(",") if i.strip()]
+    if not items:
+        return None
+    if len(items) == 1:
+        label = items[0].capitalize()
+    else:
+        label = ", ".join(i.capitalize() for i in items[:-1]) + " and " + items[-1]
+    return f"{label} gaps found"
+
+
+def _rewrite_outcome(summary: str) -> str | None:
+    """'Won — Travelers. Competitive pricing' → 'Won with Travelers on competitive pricing'
+    'Lost — Hartford. Price was higher' → 'Lost to Hartford on price was higher'"""
+    m = re.match(r"(?i)(won|lost|renewed)\s*[—–-]\s*([^.]+?)(?:\.\s*(.+))?$", summary)
+    if not m:
+        return None
+    verb = m.group(1).capitalize()
+    carrier = m.group(2).strip()
+    reason = (m.group(3) or "").strip()
+
+    if verb.lower() == "won":
+        prep = "with"
+    elif verb.lower() == "lost":
+        prep = "to"
+    else:
+        prep = "with"
+
+    base = f"{verb} {prep} {carrier}"
+    if reason:
+        return f"{base} on {reason[0].lower()}{reason[1:]}" if len(reason) > 1 else f"{base} on {reason.lower()}"
+    return base
+
+
+def _rewrite_declined(summary: str) -> str | None:
+    """'declined_umbrella_2026' → 'Declined umbrella in 2026'"""
+    m = re.match(r"(?i)declined[_ ](.+?)[_ ](\d{4})$", summary)
+    if not m:
+        return None
+    thing = m.group(1).replace("_", " ")
+    year = m.group(2)
+    return f"Declined {thing} in {year}"
+
+
+def _rewrite_coverages_updated(summary: str) -> str | None:
+    """'Coverages updated: general_liability, workers_comp'
+    → 'Coverages: general liability, workers comp'"""
+    m = re.match(r"(?i)coverages? updated:\s*(.+)", summary)
+    if not m:
+        return None
+    items = [i.strip().replace("_", " ") for i in m.group(1).split(",") if i.strip()]
+    if not items:
+        return None
+    return "Coverages: " + ", ".join(items)
+
+
+_REWRITE_RULES = [
+    _rewrite_coverage_gap,
+    _rewrite_outcome,
+    _rewrite_declined,
+    _rewrite_coverages_updated,
+]
+
+
+# ============================================================
 # SERIALIZATION
 # ============================================================
 
@@ -300,6 +393,7 @@ def write_memory_safe(
 def _entry_to_dict(entry: AccountMemoryEntry) -> dict:
     """Serialize an AccountMemoryEntry to JSON-compatible dict."""
     payload = entry.payload_json or {}
+    summary = entry.summary or ""
     return {
         "id": str(entry.id),
         "account_id": entry.account_id,
@@ -307,7 +401,8 @@ def _entry_to_dict(entry: AccountMemoryEntry) -> dict:
         "session_id": entry.session_id,
         "industry": entry.industry,
         "entry_type": entry.entry_type,
-        "summary": entry.summary,
+        "summary": summary,
+        "display_summary": format_memory_for_display(summary, payload.get("category")),
         "category": payload.get("category"),
         "confidence": payload.get("confidence"),
         "payload_json": entry.payload_json,

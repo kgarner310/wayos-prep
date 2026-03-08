@@ -18,6 +18,7 @@ from app.models.models import AccountMemoryEntry
 from app.services.account_memory_service import (
     record_memory,
     list_account_memory,
+    format_memory_for_display,
     MEMORY_CATEGORIES,
     VALID_ENTRY_TYPES,
     _normalize_summary,
@@ -315,3 +316,123 @@ class TestSerializationWithCategory:
         result = _entry_to_dict(entry)
         assert result["category"] is None
         assert result["confidence"] is None
+
+    def test_entry_dict_includes_display_summary(self):
+        entry = _make_entry(summary="Won — Travelers. Competitive pricing")
+        from app.services.account_memory_service import _entry_to_dict
+
+        result = _entry_to_dict(entry)
+        assert result["summary"] == "Won — Travelers. Competitive pricing"
+        assert result["display_summary"] == "Won with Travelers on competitive pricing"
+
+
+# ============================================================
+# UNIT: format_memory_for_display
+# ============================================================
+
+
+class TestFormatMemoryForDisplay:
+    def test_coverage_gap_rewrite(self):
+        assert (
+            format_memory_for_display("Coverage gaps identified: workers_comp, umbrella")
+            == "Workers comp and umbrella gaps found"
+        )
+
+    def test_coverage_gap_single(self):
+        assert (
+            format_memory_for_display("Coverage gaps identified: cyber_liability")
+            == "Cyber liability gaps found"
+        )
+
+    def test_coverage_gap_three_items(self):
+        result = format_memory_for_display(
+            "Coverage gaps identified: workers_comp, umbrella, cyber"
+        )
+        assert result == "Workers comp, Umbrella and cyber gaps found"
+
+    def test_outcome_won(self):
+        assert (
+            format_memory_for_display("Won — Travelers. Competitive pricing")
+            == "Won with Travelers on competitive pricing"
+        )
+
+    def test_outcome_lost(self):
+        assert (
+            format_memory_for_display("Lost — Hartford. Price was higher")
+            == "Lost to Hartford on price was higher"
+        )
+
+    def test_outcome_renewed(self):
+        assert (
+            format_memory_for_display("Renewed — Travelers")
+            == "Renewed with Travelers"
+        )
+
+    def test_outcome_no_reason(self):
+        assert (
+            format_memory_for_display("Won — Travelers")
+            == "Won with Travelers"
+        )
+
+    def test_declined_slug(self):
+        assert (
+            format_memory_for_display("declined_umbrella_2026")
+            == "Declined umbrella in 2026"
+        )
+
+    def test_coverages_updated(self):
+        assert (
+            format_memory_for_display("Coverages updated: general_liability, workers_comp")
+            == "Coverages: general liability, workers comp"
+        )
+
+    def test_plain_summary_passthrough(self):
+        assert (
+            format_memory_for_display("Client prefers bundled policies")
+            == "Client prefers bundled policies"
+        )
+
+    def test_underscore_cleanup_fallback(self):
+        assert (
+            format_memory_for_display("some_machine_generated_note")
+            == "some machine generated note"
+        )
+
+    def test_empty_string(self):
+        assert format_memory_for_display("") == ""
+
+    def test_none_returns_empty(self):
+        assert format_memory_for_display(None) == ""
+
+
+# ============================================================
+# INTEGRATION: dashboard memory includes display_summary
+# ============================================================
+
+
+class TestDashboardMemoryDisplay:
+    @pytest.fixture
+    def mock_db(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def test_client(self, mock_db):
+        from fastapi.testclient import TestClient
+        from app.db.session import get_db
+        from app.main import app
+
+        app.dependency_overrides[get_db] = lambda: mock_db
+        yield TestClient(app)
+        app.dependency_overrides.clear()
+
+    def test_memory_list_includes_display_summary(self, test_client, mock_db):
+        entry = _make_entry(summary="Coverage gaps identified: workers_comp, umbrella")
+        mock_db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = [entry]
+
+        resp = test_client.get("/api/v1/account-memory/acct-1")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+        mem = data["entries"][0]
+        assert mem["summary"] == "Coverage gaps identified: workers_comp, umbrella"
+        assert mem["display_summary"] == "Workers comp and umbrella gaps found"
