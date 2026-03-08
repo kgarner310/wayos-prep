@@ -1,8 +1,9 @@
 """Tests for SSRF protection in url_guard module."""
 
 import socket
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from app.services.url_guard import validate_external_url
@@ -123,3 +124,98 @@ class TestDNSResolutionFailure:
     def test_raises_on_dns_failure(self, _mock):
         with pytest.raises(ValueError, match="Cannot resolve hostname"):
             validate_external_url("http://nonexistent.example.invalid/page")
+
+
+class TestIngestUrlIntegration:
+    """Prove the guard actually prevents fetches, not just sits imported."""
+
+    @patch("app.services.ingestion.httpx.get")
+    @patch("app.services.url_guard.socket.getaddrinfo")
+    def test_blocked_url_never_reaches_httpx(self, mock_getaddrinfo, mock_httpx_get):
+        """Guard raises before httpx.get is ever called."""
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443)),
+        ]
+        from app.services.ingestion import ingest_url
+
+        with pytest.raises(ValueError, match="blocked IP"):
+            ingest_url(
+                db=MagicMock(),
+                url="http://127.0.0.1/admin",
+            )
+        mock_httpx_get.assert_not_called()
+
+    @patch("app.services.ingestion.httpx.get")
+    @patch("app.services.url_guard.socket.getaddrinfo")
+    def test_metadata_endpoint_never_reaches_httpx(self, mock_getaddrinfo, mock_httpx_get):
+        """169.254.169.254 blocked before any network request."""
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", 80)),
+        ]
+        from app.services.ingestion import ingest_url
+
+        with pytest.raises(ValueError, match="blocked IP"):
+            ingest_url(
+                db=MagicMock(),
+                url="http://169.254.169.254/latest/meta-data/",
+            )
+        mock_httpx_get.assert_not_called()
+
+    @patch("app.services.ingestion.httpx.get")
+    @patch("app.services.url_guard.socket.getaddrinfo")
+    def test_redirect_302_explicitly_rejected(self, mock_getaddrinfo, mock_httpx_get):
+        """A public URL that returns 302 is rejected with clear error."""
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        mock_response = MagicMock()
+        mock_response.status_code = 302
+        mock_response.is_redirect = True
+        mock_response.raise_for_status = MagicMock()
+        mock_httpx_get.return_value = mock_response
+
+        from app.services.ingestion import ingest_url
+
+        with pytest.raises(ValueError, match="redirect"):
+            ingest_url(
+                db=MagicMock(),
+                url="http://example.com/sneaky",
+            )
+
+    @patch("app.services.ingestion.httpx.get")
+    @patch("app.services.url_guard.socket.getaddrinfo")
+    def test_redirect_to_loopback_rejected(self, mock_getaddrinfo, mock_httpx_get):
+        """302 with Location: http://127.0.0.1 is rejected (redirect check fires first)."""
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        mock_response = MagicMock()
+        mock_response.status_code = 302
+        mock_response.is_redirect = True
+        mock_response.headers = {"Location": "http://127.0.0.1/internal"}
+        mock_response.raise_for_status = MagicMock()
+        mock_httpx_get.return_value = mock_response
+
+        from app.services.ingestion import ingest_url
+
+        with pytest.raises(ValueError, match="redirect"):
+            ingest_url(db=MagicMock(), url="http://example.com/bounce")
+
+    @patch("app.services.ingestion.httpx.get")
+    @patch("app.services.url_guard.socket.getaddrinfo")
+    def test_redirect_to_metadata_rejected(self, mock_getaddrinfo, mock_httpx_get):
+        """302 targeting cloud metadata endpoint is rejected."""
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        mock_response = MagicMock()
+        mock_response.status_code = 302
+        mock_response.is_redirect = True
+        mock_response.headers = {"Location": "http://169.254.169.254/latest/meta-data/"}
+        mock_response.raise_for_status = MagicMock()
+        mock_httpx_get.return_value = mock_response
+
+        from app.services.ingestion import ingest_url
+
+        with pytest.raises(ValueError, match="redirect"):
+            ingest_url(db=MagicMock(), url="http://example.com/sneaky-metadata")

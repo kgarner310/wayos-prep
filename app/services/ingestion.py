@@ -68,6 +68,12 @@ def ingest_url(
     except httpx.HTTPError as e:
         raise ValueError(f"Failed to fetch URL: {e}")
 
+    # Reject redirects explicitly — do not rely on downstream checks
+    if resp.is_redirect or resp.status_code in (301, 302, 303, 307, 308):
+        raise ValueError(
+            f"URL returned redirect ({resp.status_code}). Redirects disabled for security."
+        )
+
     html = resp.text
     soup = BeautifulSoup(html, "lxml")
 
