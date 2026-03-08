@@ -216,11 +216,11 @@ export default function AccountDashboard() {
           />
         ) : null)}
 
-      {/* Insights */}
-      {insights && insights.length > 0 && <InsightFeed insights={insights} />}
-
       {/* Account Memory */}
       {memory && memory.length > 0 && <AccountMemory memory={memory} />}
+
+      {/* Insights */}
+      {insights && insights.length > 0 && <InsightFeed insights={insights} />}
 
       {/* Outcome Button */}
       <Pressable
