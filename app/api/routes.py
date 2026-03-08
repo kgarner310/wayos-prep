@@ -3,10 +3,13 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.api.deps import get_current_user, get_optional_user, CurrentUser
 from app.core.enums import SourceStatus
 from app.models.models import (
     Account, Source, SourceChunk, ChunkEmbedding, Query,
@@ -121,6 +124,7 @@ from app.schemas.producer_style import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 # --- Source Ingestion ---
@@ -162,12 +166,15 @@ def ingest_source_url(payload: SourceIngestURL, db: Session = Depends(get_db)):
 
 
 @router.post("/sources/ingest/file", response_model=SourceResponse, tags=["sources"])
+@limiter.limit("10/minute")
 def ingest_source_file(
+    request: Request,
     file: UploadFile = File(...),
     source_type: str = Form("article"),
     authority_level: str = Form("trade"),
     jurisdiction_state: str | None = Form(None),
     db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
 ):
     """Ingest a source from file upload."""
     content = file.file.read().decode("utf-8", errors="replace")
@@ -927,7 +934,13 @@ def search_accounts(q: str = "", limit: int = 20, db: Session = Depends(get_db))
 
 
 @router.post("/accounts", response_model=AccountResponse, tags=["accounts"])
-def create_account_endpoint(payload: AccountCreate, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def create_account_endpoint(
+    request: Request,
+    payload: AccountCreate,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Create a new account."""
     log_event(db, "account_created", payload={"account_name": payload.account_name, "industry": payload.industry})
     account = create_account(db, payload.model_dump())
@@ -951,7 +964,12 @@ def get_account_endpoint(account_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.put("/accounts/{account_id}", response_model=AccountResponse, tags=["accounts"])
-def update_account_endpoint(account_id: UUID, payload: AccountUpdate, db: Session = Depends(get_db)):
+def update_account_endpoint(
+    account_id: UUID,
+    payload: AccountUpdate,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Update an account."""
     data = {k: v for k, v in payload.model_dump().items() if v is not None}
     account = update_account(db, account_id, data)
@@ -990,7 +1008,11 @@ def update_account_endpoint(account_id: UUID, payload: AccountUpdate, db: Sessio
 
 
 @router.delete("/accounts/{account_id}", tags=["accounts"])
-def delete_account_endpoint(account_id: UUID, db: Session = Depends(get_db)):
+def delete_account_endpoint(
+    account_id: UUID,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Delete an account."""
     deleted = delete_account(db, account_id)
     if not deleted:
@@ -1167,7 +1189,10 @@ def get_recent_sessions(hours: int = 24, limit: int = 20, db: Session = Depends(
 # --- Demo Admin (Internal-Only) ---
 
 @router.post("/demo/seed", tags=["demo-admin"])
-def seed_demo_data_endpoint(db: Session = Depends(get_db)):
+def seed_demo_data_endpoint(
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Seed demo accounts with realistic data. Internal-only."""
     results = seed_demo_accounts(db)
     created = sum(1 for r in results if r["status"] == "created")
@@ -1187,7 +1212,10 @@ def seed_demo_data_endpoint(db: Session = Depends(get_db)):
 
 
 @router.post("/demo/reset", tags=["demo-admin"])
-def reset_demo_data_endpoint(db: Session = Depends(get_db)):
+def reset_demo_data_endpoint(
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Reset all demo data (accounts, artifacts, feedback, events). Internal-only."""
     summary = reset_demo_data(db)
     return {"status": "reset_complete", **summary}
@@ -1614,18 +1642,24 @@ def get_account_memory_summary(account_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/capture", tags=["capture"])
+@limiter.limit("10/minute")
 async def capture_endpoint(
+    request: Request,
     account_id: str | None = Form(None),
     plain_text: str | None = Form(None),
     file: UploadFile | None = File(None),
     db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
 ):
     """Ingest a screenshot, PDF, or plain text and extract insurance signals."""
+    from app.security.upload import validate_upload
+
     file_bytes = None
     filename = None
     content_type = None
 
     if file:
+        validate_upload(file)
         file_bytes = await file.read()
         filename = file.filename
         content_type = file.content_type
@@ -1667,8 +1701,14 @@ async def capture_endpoint(
 
 
 @router.post("/edge-score", tags=["edge-score"])
-def edge_score_endpoint(body: dict):
+@limiter.limit("60/minute")
+def edge_score_endpoint(
+    request: Request,
+    body: dict,
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Calculate competitive edge score for an account."""
+    logger.info("Edge score calculation requested for: %s", body.get("account_id", "unknown"))
     return calculate_edge_score(body)
 
 
@@ -1678,23 +1718,38 @@ def edge_score_endpoint(body: dict):
 
 
 @router.post("/outcomes", tags=["outcomes"])
-def create_outcome(body: dict, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def create_outcome(
+    request: Request,
+    body: dict,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Record a deal outcome for market intelligence."""
+    # Validate required fields
     account_id = body.get("account_id")
     outcome = body.get("outcome")
     if not account_id or not outcome:
         raise HTTPException(422, "account_id and outcome are required")
+    if len(str(account_id)) > 500 or len(str(outcome)) > 100:
+        raise HTTPException(422, "Field length exceeds limit")
+
+    log_event(db, "outcome_submitted", payload={
+        "account_id": str(account_id)[:500],
+        "outcome": outcome,
+        "carrier": body.get("carrier"),
+    })
 
     deal = DealOutcome(
-        account_id=account_id,
-        industry=(body.get("industry") or "").lower() or None,
-        state=(body.get("state") or "").upper() or None,
-        carrier=body.get("carrier"),
+        account_id=str(account_id)[:500],
+        industry=(body.get("industry") or "").lower()[:100] or None,
+        state=(body.get("state") or "").upper()[:10] or None,
+        carrier=str(body.get("carrier") or "")[:200] or None,
         premium=body.get("premium"),
-        outcome=outcome.lower(),
-        outcome_reason=body.get("outcome_reason"),
-        competitor=body.get("competitor"),
-        notes=body.get("notes"),
+        outcome=outcome.lower()[:50],
+        outcome_reason=str(body.get("outcome_reason") or "")[:200] or None,
+        competitor=str(body.get("competitor") or "")[:200] or None,
+        notes=str(body.get("notes") or "")[:2000] or None,
     )
     db.add(deal)
 
@@ -1754,19 +1809,25 @@ def create_outcome(body: dict, db: Session = Depends(get_db)):
 
 
 @router.get("/market-signals", tags=["outcomes"])
+@limiter.limit("60/minute")
 def market_signals_endpoint(
+    request: Request,
     industry: str | None = None,
     state: str | None = None,
     db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
 ):
     """Get aggregated market signals from deal outcomes."""
     return get_market_signals(db, industry=industry, state=state)
 
 
 @router.get("/accounts/{account_id}/market-edge", tags=["outcomes"])
+@limiter.limit("60/minute")
 def market_edge_endpoint(
+    request: Request,
     account_id: str,
     db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
 ):
     """Market Edge intelligence panel for an account's industry + state."""
     from app.models.models import Account as AccountModel
@@ -1823,17 +1884,23 @@ from app.schemas.artifact_schemas import ARTIFACT_PRIORITY
 
 
 @router.post("/capture", tags=["capture"])
-def capture_endpoint(
+@limiter.limit("10/minute")
+def capture_endpoint_mvp(
+    request: Request,
     file: UploadFile | None = File(None),
     plain_text: str = Form(""),
     db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
 ):
     """Capture a screenshot, file, or text and extract insurance signals."""
+    from app.security.upload import validate_upload
+
     file_bytes = None
     filename = None
     content_type = None
 
     if file:
+        validate_upload(file)
         file_bytes = file.file.read()
         filename = file.filename
         content_type = file.content_type
@@ -1869,7 +1936,13 @@ def capture_endpoint(
 
 
 @router.post("/accounts/from-capture", tags=["capture"])
-def account_from_capture(body: AccountFromCaptureRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def account_from_capture(
+    request: Request,
+    body: AccountFromCaptureRequest,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Create an account from capture signals. Returns account + health card."""
     signals = body.signals or {}
 
@@ -1929,7 +2002,13 @@ def account_from_capture(body: AccountFromCaptureRequest, db: Session = Depends(
 
 
 @router.post("/accounts/manual", tags=["capture"])
-def create_manual_account(body: ManualAccountCreate, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def create_manual_account(
+    request: Request,
+    body: ManualAccountCreate,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
     """Create account from manual entry. Returns account + health card."""
     account = Account(
         account_name=body.account_name,

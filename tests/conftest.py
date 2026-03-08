@@ -2,9 +2,10 @@
 
 import os
 import pytest
+from uuid import uuid4
 
 # Override database URL before any imports
-os.environ.setdefault("DATABASE_URL", "postgresql://wayos:wayos_dev_password@localhost:5432/wayos_prep_test")
+os.environ.setdefault("DATABASE_URL", "postgresql://wayos:wayos@localhost:5432/wayos_prep_test")
 
 
 @pytest.fixture(scope="session")
@@ -64,3 +65,25 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _bypass_auth():
+    """Provide a mock authenticated user for all tests.
+
+    Tests that specifically test auth behavior (test_auth.py) can
+    override this by clearing dependency_overrides in their fixtures.
+    """
+    from app.api.deps import get_current_user, CurrentUser
+    from app.main import app
+
+    mock_user = CurrentUser(
+        user_id=uuid4(),
+        agency_id=uuid4(),
+        role="admin",
+        email="test@wayos.ai",
+        full_name="Test User",
+    )
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    yield mock_user
+    app.dependency_overrides.pop(get_current_user, None)

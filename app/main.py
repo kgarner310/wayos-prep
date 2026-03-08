@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.api.routes import router as api_router
 from app.api.admin import router as admin_router
 from app.api.auth_routes import router as auth_router
+from app.security.headers import SecurityHeadersMiddleware
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL, logging.INFO),
@@ -26,7 +27,9 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("WAYOS PREP starting up")
+    logger.info("WAYOS PREP starting up (env=%s)", settings.APP_ENV)
+    if settings.is_production and "unsafe" in settings.JWT_SECRET_KEY:
+        logger.warning("JWT_SECRET_KEY appears to be the dev default — set a secure key for production!")
     # Load industry knowledge profiles at startup
     from app.knowledge.industry_profiles import INDUSTRY_PROFILES
     logger.info("Industry profiles loaded: %d industries", len(INDUSTRY_PROFILES))
@@ -42,18 +45,23 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="WAYOS PREP",
     description="Account-centric insurance intelligence for commercial P&C producers",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Security headers (outermost middleware — runs on every response)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS — use configured origins, not wildcard
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ORIGINS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    allow_credentials=True,
 )
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

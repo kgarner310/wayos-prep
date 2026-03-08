@@ -16,6 +16,9 @@ class OutcomeCreate(BaseModel):
     competitor: Optional[str] = None
     notes: Optional[str] = None
 
+    class Config:
+        str_max_length = 500
+
 
 class OutcomeResponse(BaseModel):
     status: str = "ok"

@@ -207,6 +207,9 @@ class TestAuthEndpoints:
 
     @pytest.fixture
     def client(self, mock_db):
+        # Remove the conftest auth bypass so real JWT auth is tested
+        from app.api.deps import get_current_user
+        app.dependency_overrides.pop(get_current_user, None)
         app.dependency_overrides[get_db] = lambda: mock_db
         yield TestClient(app)
         app.dependency_overrides.clear()

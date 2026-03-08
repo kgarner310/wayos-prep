@@ -300,8 +300,13 @@ class TestPhase13Regressions:
         })
         assert resp.status_code == 200
 
-    def test_auth_me_still_requires_token(self, client, mock_db):
-        resp = client.get("/api/v1/auth/me")
+    def test_auth_me_still_requires_token(self, mock_db):
+        # Use a client without the conftest auth bypass
+        from app.api.deps import get_current_user
+        app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides[get_db] = lambda: mock_db
+        c = TestClient(app)
+        resp = c.get("/api/v1/auth/me")
         assert resp.status_code == 401
 
     def test_demo_event_still_works(self, client, mock_db):

@@ -1,4 +1,7 @@
-"""Admin UI routes - server-rendered HTML pages."""
+"""Admin UI routes - server-rendered HTML pages.
+
+All admin routes require authentication via JWT Bearer token.
+"""
 
 import logging
 from uuid import UUID
@@ -14,9 +17,10 @@ from app.models.models import (
     GeneratedBrief, FeedbackEvent, RetrievalRun, RetrievalResult,
 )
 from app.core.enums import SourceType, AuthorityLevel, SourceStatus
+from app.api.deps import get_current_user, CurrentUser
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 templates = Jinja2Templates(directory="app/templates")
 
 

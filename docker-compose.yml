@@ -4,9 +4,9 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: wayos
-      POSTGRES_PASSWORD: wayos_dev_password
-      POSTGRES_DB: wayos_prep
+      POSTGRES_USER: ${POSTGRES_USER:-wayos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-wayos_prep}
     ports:
       - "5432:5432"
     volumes:
@@ -34,10 +34,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://wayos:wayos_dev_password@db:5432/wayos_prep
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wayos:${POSTGRES_PASSWORD}@db:5432/wayos_prep}
       REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -63,8 +66,10 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql://wayos:wayos_dev_password@db:5432/wayos_prep
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wayos:${POSTGRES_PASSWORD}@db:5432/wayos_prep}
       REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
