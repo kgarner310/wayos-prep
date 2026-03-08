@@ -11,10 +11,13 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from datetime import datetime, timezone
+
 from app.models.models import Account, EventLog, DemoFeedback, SavedArtifact, DealOutcome, AccountHealth
 from app.services.instrumentation import log_event
 from app.services.health_service import compute_account_health
 from app.services.artifact_engine import generate_all_artifacts
+from app.services.artifact_service import save_artifact
 
 logger = logging.getLogger(__name__)
 
@@ -155,10 +158,14 @@ def seed_demo_accounts(db: Session) -> list[dict]:
         db.add(account)
         db.flush()
 
+        # Seed public web intel so Operations Signals show on first workspace load
+        intel_seeded = _seed_public_intel(db, account)
+
         results.append({
             "account_id": str(account.id),
             "account_name": account.account_name,
             "status": "created",
+            "public_intel_seeded": intel_seeded,
         })
 
     db.commit()
@@ -441,6 +448,205 @@ def get_demo_accounts(db: Session) -> list[dict]:
         }
         for a in accounts
     ]
+
+
+# ============================================================
+# PRE-BUILT PUBLIC WEB INTEL FOR DEMO ACCOUNTS
+# ============================================================
+# Synthetic intel that would normally come from a live website fetch.
+# Keyed by account_name to match DEMO_ACCOUNTS entries.
+
+_DEMO_PUBLIC_INTEL: dict[str, dict] = {
+    "Summit Ridge Roofing LLC": {
+        "company_identity": {
+            "company_name": "Summit Ridge Roofing LLC",
+            "founded_year": 2011,
+            "service_area": ["Charlotte metro", "Raleigh-Durham", "Western NC"],
+        },
+        "operations_signals": [
+            "Offers residential and commercial roofing services",
+            "Performs full tear-off and re-roof projects",
+            "Provides emergency storm damage repairs",
+            "Advertises metal roofing and standing seam installation",
+            "Uses subcontractors for large commercial projects",
+        ],
+        "safety_signals": [
+            "OSHA 10-hour training referenced for all crew members",
+            "Fall protection program mentioned on careers page",
+            "Ladder safety and harness protocols highlighted",
+        ],
+        "scale_signals": [
+            "12 service vehicles listed on fleet page",
+            "Serves 3-county region from single office location",
+            "Seasonal crews scale to 50+ during storm season",
+        ],
+        "carrier_relevant_signals": [
+            "Uses 1099 subcontractors for commercial tear-off work",
+            "Recent storm damage repair volume suggests CAT exposure",
+            "Height work across all project types — consistent fall risk",
+            "Tool and material staging on-site — inland marine exposure",
+        ],
+        "observed_signals": [
+            "Recent project activity posted",
+            "Active hiring activity",
+            "Storm/weather response activity",
+        ],
+        "cautions": [
+            "Public content may reflect marketing language and should not be treated as independently verified fact",
+        ],
+    },
+    "GreenScape Landscapes Inc": {
+        "company_identity": {
+            "company_name": "GreenScape Landscapes Inc",
+            "founded_year": 2016,
+            "service_area": ["Dallas-Fort Worth", "North Texas"],
+        },
+        "operations_signals": [
+            "Commercial and residential landscape design and installation",
+            "Hardscaping services including retaining walls and patios",
+            "Irrigation system installation and maintenance",
+            "Seasonal lawn care and mowing programs",
+            "Tree trimming and removal services advertised",
+        ],
+        "safety_signals": [
+            "Pesticide applicator licensing mentioned",
+            "Heat illness prevention program referenced",
+        ],
+        "scale_signals": [
+            "8 trucks and trailers listed on about page",
+            "Workforce doubles in spring/summer per careers page",
+            "Serves residential HOAs and commercial property managers",
+        ],
+        "carrier_relevant_signals": [
+            "Operates heavy equipment (skid steers, mini excavators) on client sites",
+            "Chemical application for weed and pest control — pollution exposure",
+            "Seasonal workforce surge creates hiring/training risk",
+            "Equipment transported on open trailers — theft and transit exposure",
+        ],
+        "observed_signals": [
+            "Recent project activity posted",
+            "Community involvement activity",
+        ],
+        "cautions": [
+            "Public content may reflect marketing language and should not be treated as independently verified fact",
+        ],
+    },
+    "Precision Air HVAC Services": {
+        "company_identity": {
+            "company_name": "Precision Air HVAC Services LLC",
+            "founded_year": 2008,
+            "service_area": ["South Florida", "Miami-Dade", "Broward", "Palm Beach"],
+        },
+        "operations_signals": [
+            "Commercial HVAC installation for office and retail buildings",
+            "Rooftop unit (RTU) installation and replacement",
+            "Refrigeration system service for restaurants and cold storage",
+            "24/7 emergency repair service advertised",
+            "Preventive maintenance contracts offered",
+        ],
+        "safety_signals": [
+            "EPA Section 608 Universal certification required for all techs",
+            "Rooftop safety protocols mentioned for RTU work",
+            "Electrical lockout/tagout procedures referenced",
+        ],
+        "scale_signals": [
+            "18 service vans in branded fleet",
+            "45 employees across installation and service divisions",
+            "3 locations across South Florida",
+        ],
+        "carrier_relevant_signals": [
+            "Refrigerant handling creates pollution/environmental liability exposure",
+            "Rooftop work on commercial buildings — fall exposure",
+            "Fleet of 18 vehicles with daily windshield time — auto frequency risk",
+            "Subcontractors used for ductwork fabrication — sub default exposure",
+            "Customer data from maintenance contracts — potential cyber exposure",
+        ],
+        "observed_signals": [
+            "Active hiring activity",
+            "Expansion or growth signals",
+            "Training or safety event activity",
+        ],
+        "cautions": [
+            "Public content may reflect marketing language and should not be treated as independently verified fact",
+        ],
+    },
+    "Bella Cucina Restaurant Group": {
+        "company_identity": {
+            "company_name": "Bella Cucina Restaurant Group Inc",
+            "founded_year": 2014,
+            "service_area": ["Los Angeles", "Santa Monica", "Pasadena"],
+        },
+        "operations_signals": [
+            "Three full-service Italian restaurant locations",
+            "Full bar and cocktail program at all locations",
+            "Catering services with on-site delivery offered",
+            "Private event and banquet hosting advertised",
+            "Online ordering and delivery partnerships active",
+        ],
+        "safety_signals": [
+            "Food safety certifications mentioned (ServSafe)",
+            "Kitchen fire suppression systems referenced",
+        ],
+        "scale_signals": [
+            "65 employees across three locations",
+            "2 catering/delivery vehicles",
+            "Open 7 days with lunch and dinner service",
+        ],
+        "carrier_relevant_signals": [
+            "Full liquor service at 3 locations — dram shop exposure",
+            "Catering delivery creates off-premises auto and GL exposure",
+            "High employee turnover in food service — EPLI exposure",
+            "Customer credit card processing — PCI/cyber exposure",
+            "Commercial cooking at scale — fire and property damage risk",
+        ],
+        "observed_signals": [
+            "Recent project activity posted",
+            "Community involvement activity",
+            "Awards or recognition posted",
+        ],
+        "cautions": [
+            "Public content may reflect marketing language and should not be treated as independently verified fact",
+        ],
+    },
+}
+
+
+def _seed_public_intel(db: Session, account) -> bool:
+    """Seed pre-built public web intel artifact for a demo account.
+
+    Creates a SavedArtifact with artifact_type='public_web_intel' containing
+    realistic pre-built intel, so the workspace Operations Signals section
+    is populated immediately without requiring a live web fetch.
+
+    Returns True if artifact was created, False otherwise.
+    """
+    intel_data = _DEMO_PUBLIC_INTEL.get(account.account_name)
+    if not intel_data:
+        return False
+
+    try:
+        save_artifact(db, {
+            "account_id": account.id,
+            "artifact_type": "public_web_intel",
+            "artifact_subtype": "demo_seed",
+            "title": f"Public Web Intel — {account.account_name}",
+            "content_json": {
+                "public_web_intel": intel_data,
+                "fetch_metadata": {
+                    "source_url": account.website_url or "",
+                    "fetched_urls": [account.website_url] if account.website_url else [],
+                    "fetch_warnings": ["Pre-seeded demo data — not from live web fetch"],
+                    "refresh_timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            },
+        })
+        return True
+    except Exception:
+        logger.warning(
+            "Failed to seed public intel artifact for %s",
+            account.account_name, exc_info=True,
+        )
+        return False
 
 
 def _get_key_exposures(industry: str) -> list[str]:
