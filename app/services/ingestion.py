@@ -59,6 +59,10 @@ def ingest_url(
     jurisdiction_state: str | None = None,
 ) -> Source:
     """Fetch URL, extract text, and create source."""
+    # SECURITY: SSRF protection — validate_external_url() MUST run before any
+    # outbound request. It blocks private IPs, loopback, link-local, and internal
+    # hostnames. Redirects are rejected explicitly after fetch. Do not set
+    # follow_redirects=True unless every redirect target is also revalidated.
     validated_url = validate_external_url(url)
     try:
         resp = httpx.get(validated_url, timeout=10, follow_redirects=False, headers={
