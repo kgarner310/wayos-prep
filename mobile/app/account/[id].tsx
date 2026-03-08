@@ -26,6 +26,7 @@ import MeetingBriefCard from '../../components/MeetingBriefCard';
 import WorkersCompCard from '../../components/WorkersCompCard';
 import WinnabilityCard from '../../components/WinnabilityCard';
 import InsightFeed from '../../components/InsightFeed';
+import AccountMemory from '../../components/AccountMemory';
 import LoadingCard from '../../components/LoadingCard';
 
 function findArtifact(artifacts: Artifact[], type: string): Artifact | undefined {
@@ -117,7 +118,7 @@ export default function AccountDashboard() {
     );
   }
 
-  const { account, health, artifacts, insights } = dashboard;
+  const { account, health, artifacts, insights, memory } = dashboard;
 
   const coverageGap = findArtifact(artifacts, 'coverage_gap');
   const meetingBrief = findArtifact(artifacts, 'meeting_brief');
@@ -217,6 +218,9 @@ export default function AccountDashboard() {
 
       {/* Insights */}
       {insights && insights.length > 0 && <InsightFeed insights={insights} />}
+
+      {/* Account Memory */}
+      {memory && memory.length > 0 && <AccountMemory memory={memory} />}
 
       {/* Outcome Button */}
       <Pressable

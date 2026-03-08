@@ -1947,11 +1947,17 @@ def account_dashboard(account_id: UUID, db: Session = Depends(get_db)):
     # Insights
     insight_items = generate_insights(account, health, db)
 
+    # Memory entries
+    from app.services.account_memory_service import list_account_memory
+
+    memory_entries = list_account_memory(db, str(account_id))
+
     dashboard = {
         "account": AccountResponse.model_validate(account).model_dump(),
         "health": AccountHealthResponse.from_orm_model(health).model_dump(),
         "artifacts": [ArtifactResponse.model_validate(a).model_dump() for a in artifacts],
         "insights": insight_items,
+        "memory": memory_entries,
     }
 
     cache_set(cache_key, dashboard, ttl=120)

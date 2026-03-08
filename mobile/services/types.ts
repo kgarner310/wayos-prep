@@ -95,6 +95,18 @@ export interface InsightItem {
   timestamp: string;
 }
 
+// ── Memory ───────────────────────────────────────────────────────────────────
+
+export interface MemoryEntry {
+  id: string;
+  account_id: string;
+  entry_type: string;
+  summary: string;
+  payload_json: Record<string, any> | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 // ── API Responses ────────────────────────────────────────────────────────────
 
 export interface DashboardResponse {
@@ -102,6 +114,7 @@ export interface DashboardResponse {
   health: AccountHealth;
   artifacts: Artifact[];
   insights: InsightItem[];
+  memory: MemoryEntry[];
 }
 
 export interface CaptureResponse {
