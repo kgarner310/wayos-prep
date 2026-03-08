@@ -3,8 +3,11 @@ import type {
   AuthResponse,
   DashboardResponse,
   EdgeScoreResponse,
+  MarketSignalsResponse,
   RenewalWorkspaceResponse,
   SubmissionPacketResponse,
+  SubmissionReadinessResponse,
+  TimelineResponse,
 } from './types'
 
 const API_BASE = '/api/v1'
@@ -104,6 +107,34 @@ export async function buildSubmissionPacket(accountId: string): Promise<Submissi
 
 export async function refreshPublicIntel(accountId: string): Promise<unknown> {
   return request(`/accounts/${accountId}/refresh-public-intel`, { method: 'POST' })
+}
+
+// ── Timeline ─────────────────────────────────────────────────────────────────
+
+export async function getTimeline(accountId: string): Promise<TimelineResponse> {
+  return request(`/accounts/${accountId}/timeline`)
+}
+
+// ── Market Signals ───────────────────────────────────────────────────────────
+
+export async function getMarketSignals(industry?: string, state?: string): Promise<MarketSignalsResponse> {
+  const params = new URLSearchParams()
+  if (industry) params.set('industry', industry)
+  if (state) params.set('state', state)
+  const qs = params.toString()
+  return request(`/market-signals${qs ? `?${qs}` : ''}`)
+}
+
+// ── Submission Readiness ─────────────────────────────────────────────────────
+
+export async function checkSubmissionReadiness(
+  industry: string,
+  submissionData: Record<string, unknown> = {},
+): Promise<SubmissionReadinessResponse> {
+  return request('/submission/readiness', {
+    method: 'POST',
+    body: JSON.stringify({ industry, submission_data: submissionData }),
+  })
 }
 
 // ── Demo Events ──────────────────────────────────────────────────────────────

@@ -52,7 +52,15 @@ export function AccountList({ selectedId, onSelect }: AccountListProps) {
         {isLoading ? (
           <div className="px-3 py-4 text-xs text-slate-600">Loading...</div>
         ) : accounts.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-slate-600">No accounts yet</div>
+          <div className="px-3 py-8 text-center">
+            <svg className="mx-auto mb-2 text-slate-700" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            <div className="text-xs text-slate-600 mb-1">No accounts yet</div>
+            <div className="text-[10px] text-slate-700">Load demo data below to get started</div>
+          </div>
         ) : (
           accounts.map((account) => (
             <AccountCard

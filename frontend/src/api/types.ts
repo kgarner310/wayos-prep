@@ -204,3 +204,43 @@ export interface User {
   user_id: string
   email: string
 }
+
+// ── Timeline ─────────────────────────────────────────────────────────────────
+
+export interface TimelineEvent {
+  id: string
+  event_type: string
+  notes: string | null
+  created_at: string | null
+}
+
+export interface TimelineResponse {
+  account_id: string
+  events: TimelineEvent[]
+  count: number
+}
+
+// ── Market Signals ───────────────────────────────────────────────────────────
+
+export interface MarketSignalsResponse {
+  carrier_win_rates: Record<string, number>
+  loss_reasons: Record<string, number>
+  total_outcomes: number
+  win_rate_overall: number
+  top_carrier: string | null
+}
+
+// ── Submission Readiness ─────────────────────────────────────────────────────
+
+export interface SubmissionReadinessResponse {
+  industry: string
+  jurisdiction: string
+  readiness_score: number
+  readiness_level: 'strong' | 'good' | 'fair' | 'poor'
+  missing_critical_fields: string[]
+  missing_recommended_fields: string[]
+  weak_fields: string[]
+  strengths: string[]
+  next_steps: string[]
+  explanation: string
+}

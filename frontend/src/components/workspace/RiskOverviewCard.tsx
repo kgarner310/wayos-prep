@@ -7,7 +7,7 @@ interface RiskOverviewCardProps {
 
 export function RiskOverviewCard({ risk }: RiskOverviewCardProps) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors">
       <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-3">Risk Assessment</div>
 
       <div className="flex items-center gap-3 mb-3">

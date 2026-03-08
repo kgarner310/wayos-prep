@@ -66,7 +66,7 @@ function SubScore({ label, value }: { label: string; value: number }) {
 
 export function HealthScoreCard({ health }: HealthScoreCardProps) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors">
       <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-3">Account Health</div>
       <div className="flex items-center gap-4">
         <ScoreCircle value={health.overall_score} />

@@ -10,7 +10,7 @@ export function CoverageGapCard({ gap }: CoverageGapCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${riskBg(gap.risk_level)}`}>
+    <div className={`border rounded-lg overflow-hidden transition-all duration-200 ${riskBg(gap.risk_level)}`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full text-left px-3 py-2.5 flex items-center justify-between cursor-pointer"
