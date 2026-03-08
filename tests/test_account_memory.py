@@ -97,7 +97,7 @@ class TestListEntries:
     def test_list_by_account(self):
         db = MagicMock()
         entries = [_make_entry(), _make_entry(entry_type="account_created")]
-        db.query.return_value.filter.return_value.order_by.return_value.all.return_value = entries
+        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = entries
 
         result = list_account_memory(db, "acct-1")
         assert len(result) == 2
@@ -105,7 +105,7 @@ class TestListEntries:
 
     def test_empty_list(self):
         db = MagicMock()
-        db.query.return_value.filter.return_value.order_by.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
 
         result = list_account_memory(db, "acct-nonexistent")
         assert result == []
@@ -217,7 +217,7 @@ class TestAccountMemoryEndpoints:
         assert resp.status_code == 422
 
     def test_get_memory_list(self, test_client, mock_db):
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [
+        mock_db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = [
             _make_entry(),
         ]
         resp = test_client.get("/api/v1/account-memory/acct-1")

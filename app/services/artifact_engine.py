@@ -370,6 +370,10 @@ def generate_artifact(
         artifact.confidence = Decimal(str(confidence))
         db.flush()
 
+        # Record durable memory for coverage gap conclusions
+        if artifact_type == "coverage_gap" and content.get("gaps"):
+            _record_coverage_memory(db, account, content)
+
     except Exception:
         logger.exception("Artifact generation failed for %s/%s", account_id, artifact_type)
         artifact.status = "failed"
@@ -379,6 +383,29 @@ def generate_artifact(
         db.flush()
 
     return artifact
+
+
+def _record_coverage_memory(db: Session, account: Account, content: dict) -> None:
+    """Record durable memory entries from coverage gap analysis."""
+    from app.services.account_memory_service import record_memory
+
+    gaps = content.get("gaps", [])
+    if not gaps:
+        return
+
+    top_gaps = gaps[:3]
+    summary = f"Coverage gaps identified: {', '.join(top_gaps)}"
+
+    record_memory(
+        db,
+        account_id=str(account.id),
+        entry_type="brief_generated",
+        summary=summary,
+        category="coverage_history",
+        confidence="high" if len(gaps) <= 3 else "medium",
+        industry=account.industry,
+        payload_json={"gaps": gaps, "risk_level": content.get("risk_level")},
+    )
 
 
 def generate_all_artifacts(

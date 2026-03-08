@@ -958,6 +958,34 @@ def update_account_endpoint(account_id: UUID, payload: AccountUpdate, db: Sessio
     if not account:
         raise HTTPException(404, "Account not found")
     log_event(db, "account_updated", payload={"account_id": str(account_id)})
+
+    # Record durable memory for meaningful field changes
+    from app.services.account_memory_service import record_memory
+
+    if "notes" in data and data["notes"]:
+        record_memory(
+            db,
+            account_id=str(account_id),
+            entry_type="producer_edited",
+            summary=data["notes"][:200],
+            category="client_behavior",
+            confidence="high",
+            industry=getattr(account, "industry", None),
+        )
+    if "current_coverages" in data:
+        cov_list = data["current_coverages"] or []
+        if cov_list:
+            record_memory(
+                db,
+                account_id=str(account_id),
+                entry_type="producer_edited",
+                summary=f"Coverages updated: {', '.join(cov_list[:5])}",
+                category="coverage_history",
+                confidence="high",
+                industry=getattr(account, "industry", None),
+            )
+    db.commit()
+
     return account
 
 
@@ -1680,6 +1708,35 @@ def create_outcome(body: dict, db: Session = Depends(get_db)):
         db.add(event)
     except Exception:
         logger.exception("Failed to add timeline event for outcome")
+
+    # Record durable memory entry
+    from app.services.account_memory_service import record_memory
+
+    carrier = body.get("carrier", "unknown carrier")
+    reason = body.get("outcome_reason") or body.get("notes") or ""
+    competitor = body.get("competitor")
+    summary_parts = [f"{outcome.capitalize()} — {carrier}"]
+    if competitor:
+        summary_parts.append(f"competitor: {competitor}")
+    if reason:
+        summary_parts.append(reason)
+    memory_summary = ". ".join(summary_parts)
+
+    record_memory(
+        db,
+        account_id=str(account_id),
+        entry_type="outcome_logged",
+        summary=memory_summary,
+        category="outcome_history",
+        confidence="high",
+        industry=body.get("industry"),
+        payload_json={
+            "outcome": outcome,
+            "carrier": carrier,
+            "competitor": competitor,
+            "premium": body.get("premium"),
+        },
+    )
 
     db.commit()
 
