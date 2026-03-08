@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.models import Source
 from app.core.enums import SourceStatus
 from app.services.scoring import compute_authority_score, compute_freshness_score
+from app.services.url_guard import validate_external_url
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,9 @@ def ingest_url(
     jurisdiction_state: str | None = None,
 ) -> Source:
     """Fetch URL, extract text, and create source."""
+    validated_url = validate_external_url(url)
     try:
-        resp = httpx.get(url, timeout=30, follow_redirects=True, headers={
+        resp = httpx.get(validated_url, timeout=10, follow_redirects=False, headers={
             "User-Agent": "WAYOS-PREP/1.0 (internal research tool)"
         })
         resp.raise_for_status()
