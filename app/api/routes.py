@@ -1763,6 +1763,22 @@ def market_signals_endpoint(
     return get_market_signals(db, industry=industry, state=state)
 
 
+@router.get("/accounts/{account_id}/market-edge", tags=["outcomes"])
+def market_edge_endpoint(
+    account_id: str,
+    db: Session = Depends(get_db),
+):
+    """Market Edge intelligence panel for an account's industry + state."""
+    from app.models.models import Account as AccountModel
+    from app.services.outcome_learning_service import get_market_edge
+
+    account = db.query(AccountModel).filter(AccountModel.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    return get_market_edge(db, industry=account.industry, state=account.state)
+
+
 # ============================================================
 # ACCOUNT TIMELINE
 # ============================================================
@@ -2009,12 +2025,18 @@ def account_dashboard(account_id: UUID, db: Session = Depends(get_db)):
 
     memory_entries = list_account_memory(db, str(account_id))
 
+    # Market Edge
+    from app.services.outcome_learning_service import get_market_edge
+
+    market_edge = get_market_edge(db, industry=account.industry, state=account.state)
+
     dashboard = {
         "account": AccountResponse.model_validate(account).model_dump(),
         "health": AccountHealthResponse.from_orm_model(health).model_dump(),
         "artifacts": [ArtifactResponse.model_validate(a).model_dump() for a in artifacts],
         "insights": insight_items,
         "memory": memory_entries,
+        "market_edge": market_edge,
     }
 
     cache_set(cache_key, dashboard, ttl=120)

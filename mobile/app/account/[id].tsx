@@ -27,6 +27,7 @@ import WorkersCompCard from '../../components/WorkersCompCard';
 import WinnabilityCard from '../../components/WinnabilityCard';
 import InsightFeed from '../../components/InsightFeed';
 import AccountMemory from '../../components/AccountMemory';
+import MarketEdgeCard from '../../components/MarketEdgeCard';
 import LoadingCard from '../../components/LoadingCard';
 
 function findArtifact(artifacts: Artifact[], type: string): Artifact | undefined {
@@ -118,7 +119,7 @@ export default function AccountDashboard() {
     );
   }
 
-  const { account, health, artifacts, insights, memory } = dashboard;
+  const { account, health, artifacts, insights, memory, market_edge } = dashboard;
 
   const coverageGap = findArtifact(artifacts, 'coverage_gap');
   const meetingBrief = findArtifact(artifacts, 'meeting_brief');
@@ -215,6 +216,9 @@ export default function AccountDashboard() {
             content={winnability.content_json as unknown as WinnabilityArtifact}
           />
         ) : null)}
+
+      {/* Market Edge */}
+      {market_edge && <MarketEdgeCard marketEdge={market_edge} />}
 
       {/* Account Memory */}
       {memory && memory.length > 0 && <AccountMemory memory={memory} />}

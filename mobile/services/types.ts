@@ -84,6 +84,29 @@ export interface WinnabilityArtifact {
   next_actions: string[];
 }
 
+// ── Market Edge ─────────────────────────────────────────────────────────────
+
+export interface CarrierWinRate {
+  carrier: string;
+  win_rate: number;
+  wins: number;
+  losses: number;
+}
+
+export interface LossReason {
+  reason: string;
+  count: number;
+}
+
+export interface MarketEdge {
+  industry: string;
+  state: string;
+  sample_size: number;
+  carrier_win_rates: CarrierWinRate[];
+  top_loss_reasons: LossReason[];
+  confidence: 'low' | 'normal';
+}
+
 // ── Insights ─────────────────────────────────────────────────────────────────
 
 export interface InsightItem {
@@ -115,6 +138,7 @@ export interface DashboardResponse {
   artifacts: Artifact[];
   insights: InsightItem[];
   memory: MemoryEntry[];
+  market_edge: MarketEdge;
 }
 
 export interface CaptureResponse {
