@@ -17,11 +17,11 @@ def get_engine():
     global _engine
     if _engine is None:
         db_url = settings.DATABASE_URL
-        connect_args = {}
+        connect_args = {"connect_timeout": 10}
 
-        # Railway internal networking uses IPv6 — force connect timeout
-        # so failed connections don't hang forever
-        connect_args["connect_timeout"] = 10
+        # Supabase and other managed Postgres require SSL for external connections
+        if "supabase" in db_url or "neon" in db_url:
+            connect_args["sslmode"] = "require"
 
         _engine = create_engine(
             db_url,
