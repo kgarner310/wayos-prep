@@ -80,12 +80,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: >
-      python -c
-      "from app.workers.settings import WorkerSettings;
-      WorkerSettings.configure();
-      import arq;
-      arq.run_worker(WorkerSettings)"
+    command: ["bash", "worker_entrypoint.sh"]
 
 volumes:
   pgdata:
