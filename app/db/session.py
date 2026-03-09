@@ -1,7 +1,11 @@
+import logging
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -12,12 +16,21 @@ _session_factory = None
 def get_engine():
     global _engine
     if _engine is None:
+        db_url = settings.DATABASE_URL
+        connect_args = {}
+
+        # Railway internal networking uses IPv6 — force connect timeout
+        # so failed connections don't hang forever
+        connect_args["connect_timeout"] = 10
+
         _engine = create_engine(
-            settings.DATABASE_URL,
+            db_url,
             pool_size=10,
             max_overflow=20,
             pool_pre_ping=True,
+            connect_args=connect_args,
         )
+        logger.info("Database engine created (pool_pre_ping=True, connect_timeout=10)")
     return _engine
 
 
