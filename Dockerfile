@@ -27,11 +27,11 @@ COPY . .
 COPY --from=frontend-build /frontend/dist /code/frontend/dist
 
 # Make scripts executable
-RUN chmod +x worker_entrypoint.sh
+RUN chmod +x start.sh worker_entrypoint.sh
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD curl -f http://localhost:8000/health || exit 1
+  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "start.sh"]
