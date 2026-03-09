@@ -7,20 +7,15 @@ def get_redis_settings():
     """Get arq RedisSettings from environment."""
     try:
         from arq.connections import RedisSettings
+        from urllib.parse import urlparse
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-        # Parse redis URL
-        if redis_url.startswith("redis://"):
-            parts = redis_url.replace("redis://", "").split("/")
-            host_port = parts[0]
-            database = int(parts[1]) if len(parts) > 1 else 0
-            if ":" in host_port:
-                host, port = host_port.split(":")
-                port = int(port)
-            else:
-                host = host_port
-                port = 6379
-            return RedisSettings(host=host, port=port, database=database)
-        return RedisSettings()
+        parsed = urlparse(redis_url)
+        return RedisSettings(
+            host=parsed.hostname or "localhost",
+            port=parsed.port or 6379,
+            database=int(parsed.path.lstrip("/") or 0),
+            password=parsed.password,
+        )
     except ImportError:
         return None
 
