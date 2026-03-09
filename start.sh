@@ -16,7 +16,8 @@ if [ -n "$DATABASE_URL" ]; then
   # DNS resolution check (helps debug Railway internal networking)
   if command -v getent &>/dev/null; then
     echo "DNS resolution for $DB_HOST:"
-    getent hosts "$DB_HOST" 2>&1 || echo "  DNS lookup failed for $DB_HOST"
+    getent ahostsv4 "$DB_HOST" 2>&1 | head -1 || echo "  IPv4 DNS lookup failed for $DB_HOST"
+    getent ahostsv6 "$DB_HOST" 2>&1 | head -1 || echo "  IPv6 DNS lookup failed for $DB_HOST"
   fi
 
   # Quick TCP connectivity test
