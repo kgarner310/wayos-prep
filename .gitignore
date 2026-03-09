@@ -5,11 +5,7 @@ __pycache__/
 dist/
 .venv/
 venv/
-
-# Node
-node_modules/
-*.tsbuildinfo
-frontend/dist/
+.pytest_cache/
 
 # Environment
 .env
@@ -28,3 +24,10 @@ Thumbs.db
 
 # SQLite
 *.db
+
+# Postgres
+pgdata/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

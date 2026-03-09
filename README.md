@@ -1,165 +1,181 @@
 # WAYOS PREP
 
-**Better meetings. Better coverage.**
+**Standalone meeting-prep and account-review app for commercial insurance producers.**
 
-WAYOS PREP is a meeting preparation engine for commercial insurance producers, delivered as an **Outlook Add-in**. It generates structured client risk briefs for any industry — right inside the tool producers already use all day.
+WAYOS PREP is a standalone web application that gives producers a dedicated workspace for meeting prep, risk discovery, coverage gap analysis, and underwriting submission sharpening.
 
-## Tech Stack
+Ingest insurance-related sources, run a prep query, and get back a structured brief with loss drivers, coverage gap detection, producer ammo, and actionable questions.
 
-- **Frontend:** Outlook Add-in (Office.js + React + Vite)
-- **Backend:** Python + FastAPI + Pydantic + SQLAlchemy + Alembic
-- **Database:** PostgreSQL
-- **LLM:** OpenAI / Anthropic / None (deterministic mode)
+## What It Does
+
+- **Pre-Meeting Briefs** — Structured loss drivers, coverage blind spots, and questions-to-ask with source citations
+- **Coverage Gap Detector** — Deterministic gap analysis based on industry, state, mod, fleet exposure, and account traits
+- **Producer Ammo** — Sharp, meeting-ready talking points: renewal leverage, underwriting hot buttons, cross-sell openings, and hard questions
+- **Risk Scoring** — 6-layer deterministic risk scoring with explainable components and risk band assignment
+- **Risk Theme Graph** — Industry/department-aware graph expansion for intelligent risk discovery
+- **Source Intelligence** — Ingests, chunks, tags, and embeds insurance documents for retrieval-augmented analysis
 
 ## Quick Start
 
-### 1. Clone and configure
+### 1. Configure
 
 ```bash
 cp .env.example .env
-# Edit .env if you want to use an LLM provider (optional)
+# Optional: add your OPENAI_API_KEY for embeddings + LLM brief generation
+# The app works without it — tag-based retrieval + deterministic briefs
 ```
 
-### 2. Start everything with Docker
+### 2. Start
 
 ```bash
-cd infra
 docker compose up --build
 ```
 
-This starts:
-- **PostgreSQL** on port 5432
-- **FastAPI backend** on port 8000 (runs migrations + seeds 20 industries)
-- **Vite dev server** on port 3000 (serves the Outlook Add-in)
+This runs:
+- **PostgreSQL 16 + pgvector** on port 5432
+- **Alembic migrations** (creates all tables, HNSW vector index)
+- **Seed script** (demo sources: roofing, trucking, manufacturing — parsed, chunked, tagged, ready)
+- **FastAPI app** on port 8000 with hot reload
 
 ### 3. Verify
 
 ```bash
 curl http://localhost:8000/health
-# {"status":"ok","service":"wayos-prep","database":"connected"}
-
-# Open the task pane standalone in a browser:
-open http://localhost:3000
+# {"status":"ok","service":"wayos-prep"}
 ```
 
-### 4. Sideload into Outlook
+### 4. Use It
 
-**For Outlook on the web (easiest for testing):**
+Open **http://localhost:8000/admin/** in your browser.
 
-1. Open Outlook at https://outlook.office.com
-2. Click the **Get Add-ins** button (or **Manage Add-ins** from the ... menu)
-3. Click **My add-ins** → **Add a custom add-in** → **Add from file**
-4. Upload `frontend/public/manifest.xml`
-5. The **WAYOS PREP** button appears in the ribbon
+**Full demo flow (no OpenAI key needed):**
 
-**For Outlook desktop:**
+1. Go to http://localhost:8000/admin/prep
+2. Enter: Industry `roofing`, State `NC`, Employees `22`, Mod `1.15`
+3. Click **Generate Brief**
+4. Get back a structured brief with:
+   - Top loss drivers with confidence levels
+   - Coverage blind spots
+   - Questions to ask
+   - **Coverage Gap Detector** — specific gaps with severity, reasoning, and suggested actions
+   - **Producer Ammo** — renewal pressure points, underwriting hot buttons, cross-sell openings, hard questions
+5. Switch tabs: Markdown | Coverage Gaps | Producer Ammo | JSON
+6. Click a feedback button (thumbs up/down, flag hallucination, etc.)
+7. Go to http://localhost:8000/admin/briefs — click into the brief detail for full retrieval debug
 
-1. Open Outlook → File → Manage Add-ins
-2. Under **Custom add-ins**, click **Add from file**
-3. Select `frontend/public/manifest.xml`
+**If you have an OpenAI key:**
 
-**Note:** For production, update the URLs in `manifest.xml` from `https://localhost:3000` to your deployed domain.
+Set `OPENAI_API_KEY` in `.env`, restart, then:
+1. Click "Embed" on each source in the admin to generate vector embeddings
+2. Queries now use vector similarity search + blended reranking
+3. Brief generation uses GPT-4o-mini for richer, source-grounded output
 
-### 5. Standalone browser mode
+### 5. API Docs
 
-The add-in also works as a standalone web app at `http://localhost:3000`. Outside Outlook, the Send Pack buttons copy to clipboard instead of opening compose windows.
+Interactive Swagger docs at http://localhost:8000/docs
 
-## How It Works in Outlook
+### 6. Run Tests
 
-1. **Open a calendar invite** for a client meeting → Click **WAYOS PREP** in the ribbon
-2. The add-in reads the appointment subject and suggests the industry
-3. **Generate a brief** with one click
-4. **Send Pack** opens a new email compose window pre-filled with the underwriter email or CSR note
-5. The producer never leaves Outlook
+```bash
+# Unit tests — no database needed
+pip install -r requirements.txt
+pytest tests/ -v -k "not test_api"
+
+# API tests — requires a running Postgres with pgvector
+DATABASE_URL=postgresql://wayos:wayos_dev_password@localhost:5432/wayos_prep pytest tests/test_api.py -v
+```
+
+### 7. Tear Down
+
+```bash
+docker compose down        # stop containers
+docker compose down -v     # stop + delete database volume
+```
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Backend | Python 3.12, FastAPI, SQLAlchemy, Alembic |
+| Database | PostgreSQL 16 + pgvector (HNSW index) |
+| LLM/Embeddings | OpenAI API (optional — works without it) |
+| Admin UI | Jinja2 templates + vanilla CSS |
+| Dev | Docker Compose |
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check (includes DB status) |
-| GET | `/industries` | List all industries |
-| GET | `/industries/{id}` | Get industry detail |
-| POST | `/briefs/ask` | Generate brief from a question |
-| POST | `/briefs/prep` | Generate brief from account details |
-| GET | `/briefs/{id}` | Retrieve a generated brief |
-| POST | `/feedback` | Submit brief feedback |
+| `GET` | `/health` | Health check |
+| `POST` | `/api/v1/sources/ingest` | Ingest source from raw text |
+| `POST` | `/api/v1/sources/ingest/url` | Ingest source from URL |
+| `POST` | `/api/v1/sources/ingest/file` | Ingest source from file upload |
+| `POST` | `/api/v1/sources/{id}/parse` | Parse, clean, and tag source |
+| `POST` | `/api/v1/sources/{id}/chunk` | Chunk source text |
+| `POST` | `/api/v1/sources/{id}/embed` | Generate embeddings (requires OpenAI key) |
+| `GET` | `/api/v1/sources` | List sources |
+| `GET` | `/api/v1/sources/{id}` | Source detail with tags and chunks |
+| `POST` | `/api/v1/prep/query` | Submit query, get brief + risk score |
+| `GET` | `/api/v1/prep/brief/{id}` | Get stored brief |
+| `POST` | `/api/v1/feedback` | Submit feedback on a brief |
+| `GET` | `/api/v1/retrieval/debug/{query_id}` | Retrieval debug info |
+| `POST` | `/api/v1/risk-score` | Run standalone risk scoring |
+| `GET` | `/api/v1/risk-score/{query_id}` | Get risk score for a query |
 
-## Core Features
+## Pipeline
 
-### 1. Ask Risk Question
-Ask a natural language question like "What risks should I discuss with a roofing contractor?" and get a full client brief.
-
-### 2. Prep This Account
-Enter industry, location, employee count, MOD, and vehicle exposure to generate a tailored brief.
-
-### 3. Industry Lookup
-Browse and search 20 seeded industries. View risk profiles and generate briefs.
-
-### Brief Output
-Each brief includes:
-- **Top Claim Drivers** — what actually hurts in this industry
-- **Regional Risk Notes** — location-specific considerations
-- **Coverage Exposures** — what to stress-test
-- **Conversation Starters** — questions producers can ask
-- **Quick Docs to Request** — standard document checklist
-
-### Send Pack (Outlook-Native Sharing)
-From any brief, launch pre-formatted messages:
-- **Underwriter Email** — opens Outlook compose with subject line and body pre-filled
-- **Internal Note** — opens compose with CSR-ready account prep summary
-
-When running outside Outlook (standalone browser), Send Pack copies to clipboard instead.
-
-## LLM Configuration
-
-Set `LLM_PROVIDER` in `.env`:
-
-| Value | Behavior |
-|-------|----------|
-| `none` | Deterministic briefs from seed data (default, no API key needed) |
-| `openai` | Uses GPT-4o-mini for industry matching and regional notes |
-| `anthropic` | Uses Claude Haiku for industry matching and regional notes |
-
-The system works fully without any LLM — the seed data provides complete risk profiles.
-
-## Running Tests
-
-```bash
-cd backend
-pip install -r requirements.txt
-DATABASE_URL=sqlite:///test.db pytest tests/ -v
 ```
+Ingest → Parse/Clean → Chunk → Tag → Embed (optional) → Ready
+                                                           ↓
+Query → Normalize → Filter → Vector or Tag Search → Rerank → Brief Generation
+                                                               ↓
+                                              JSON Brief + Coverage Gaps + Producer Ammo
+                                                               ↓
+                                                    Risk Scoring (6-layer deterministic)
+```
+
+## Brief Output Structure
+
+Each brief includes:
+- **Top Loss Drivers** — risk themes with confidence and source attribution
+- **Coverage Blind Spots** — missing or under-covered lines
+- **Questions to Ask** — producer questions with purpose
+- **Watchouts** — operational warnings
+- **Coverage Gap Detector** — deterministic gap analysis with severity, reasoning, suggested questions, and actions
+- **Producer Ammo** — renewal pressure points, underwriting hot buttons, cross-sell openings, hard questions
+- **Confidence Notes** — source quality and coverage warnings
+- **Citation Map** — source attribution
 
 ## Project Structure
 
 ```
-/wayos-prep
-  /backend
-    /app
-      /models        # SQLAlchemy models
-      /services      # Business logic (matching, brief rendering, LLM)
-      /api           # FastAPI routes
-    /tests           # pytest tests
-    /alembic         # Database migrations
-  /frontend
-    /public          # manifest.xml (Office Add-in), taskpane.html
-    /src
-      /components    # Button, Card, Input, Section
-      /screens       # Home, Ask, Prep, Lookup, IndustryDetail, Brief
-      /services      # API client, Office.js helpers, theme
-  /infra
-    docker-compose.yml
-  /docs
-    demo.md
+app/
+  api/routes.py              # REST API endpoints
+  api/admin.py               # Admin UI pages (server-rendered HTML)
+  core/config.py             # Settings from env vars
+  core/enums.py              # Controlled values + starter tag lists
+  db/session.py              # SQLAlchemy session
+  models/models.py           # Database tables (pgvector for embeddings)
+  schemas/schemas.py         # Pydantic request/response validation
+  services/
+    ingestion.py             # Text, URL, file ingestion
+    parser.py                # Text cleaning
+    chunker.py               # Heading-aware chunking
+    tagging.py               # Rule-based + optional LLM tag extraction
+    embeddings.py            # OpenAI embedding generation
+    retrieval.py             # Vector search + tag fallback + blended reranking
+    brief_generator.py       # LLM brief generation + deterministic fallback
+    coverage_gap_detector.py # Deterministic coverage gap analysis
+    producer_ammo.py         # Producer meeting ammo generation
+    risk_scoring.py          # 6-layer account risk scoring
+    graph_expansion.py       # Risk theme graph traversal
+    producer_questions.py    # DB-backed producer question library
+    scoring.py               # Authority + freshness scoring
+  templates/                 # Jinja2 HTML pages
+  static/style.css           # Admin CSS
+  main.py                    # FastAPI app entry point
+alembic/                     # Database migrations
+tests/                       # Unit tests
+seed_data.py                 # Demo sources (roofing, trucking, manufacturing)
+seed_graph.py                # Risk theme graph + producer question seeding
 ```
-
-## Manifest Configuration
-
-The add-in manifest (`frontend/public/manifest.xml`) registers WAYOS PREP for:
-
-- **Message Read** — prep while reading client emails
-- **Message Compose** — insert brief content into emails
-- **Appointment Organizer** — prep before meetings you scheduled
-- **Appointment Attendee** — prep before meetings you're invited to
-
-Update `<SourceLocation>` URLs for production deployment.

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Run Prep Query - WAYOS PREP{% endblock %}
+{% block content %}
+<h1 style="font-size:20px; margin-bottom:16px;">Run Prep Query</h1>
+
+<div class="card">
+  <form id="prep-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Industry</label>
+        <input type="text" id="prep-industry" required placeholder="e.g. roofing, trucking, manufacturing">
+      </div>
+      <div class="form-group">
+        <label>State</label>
+        <input type="text" id="prep-state" required placeholder="e.g. NC, SC, GA">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Employee Count</label>
+        <input type="number" id="prep-employees" value="10" min="1">
+      </div>
+      <div class="form-group">
+        <label>Current Mod (optional)</label>
+        <input type="number" id="prep-mod" step="0.001" placeholder="e.g. 1.15">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Entity Type</label>
+        <select id="prep-entity-type">
+          <option value="">Private Business (default)</option>
+          <option value="public_entity">Public Entity</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department (public entity only)</label>
+        <select id="prep-department">
+          <option value="">None</option>
+          <option value="law_enforcement">Law Enforcement</option>
+          <option value="fire_department">Fire Department</option>
+          <option value="public_works">Public Works</option>
+          <option value="utilities">Utilities</option>
+          <option value="parks_recreation">Parks & Recreation</option>
+          <option value="administration">Administration</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Additional Context (optional)</label>
+      <textarea id="prep-query" rows="3" placeholder="e.g. Uses subcontractors for residential re-roofs, 6 vehicles in fleet"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Generate Brief</button>
+  </form>
+</div>
+
+<div id="result-area" style="display:none;">
+  <div class="card">
+    <div class="flex justify-between items-center mb-2">
+      <h2>Brief Result</h2>
+      <div class="btn-group">
+        <button class="btn btn-sm btn-outline" onclick="showTab('markdown')">Markdown</button>
+        <button class="btn btn-sm btn-outline" onclick="showTab('gaps')">Coverage Gaps</button>
+        <button class="btn btn-sm btn-outline" onclick="showTab('ammo')">Producer Ammo</button>
+        <button class="btn btn-sm btn-outline" onclick="showTab('json')">JSON</button>
+      </div>
+    </div>
+    <div id="tab-markdown" class="brief-markdown"></div>
+    <div id="tab-gaps" style="display:none; padding:12px;"></div>
+    <div id="tab-ammo" style="display:none; padding:12px;"></div>
+    <div id="tab-json" class="brief-output" style="display:none;"></div>
+    <div class="feedback-bar" id="feedback-bar" style="display:none;">
+      <button class="btn btn-sm btn-success" onclick="sendFeedback('thumbs_up')">Thumbs Up</button>
+      <button class="btn btn-sm btn-danger" onclick="sendFeedback('thumbs_down')">Thumbs Down</button>
+      <button class="btn btn-sm btn-warning" onclick="sendFeedback('flag_hallucination')">Flag Hallucination</button>
+      <button class="btn btn-sm btn-warning" onclick="sendFeedback('flag_wrong_state')">Wrong State</button>
+      <button class="btn btn-sm btn-outline" onclick="sendFeedback('flag_weak_source')">Weak Source</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentBriefId = null;
+let currentQueryId = null;
+
+function showTab(tab) {
+  ['markdown', 'json', 'gaps', 'ammo'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function renderGaps(gaps) {
+  if (!gaps || gaps.length === 0) return '<p class="text-muted text-sm">No coverage gaps detected.</p>';
+  return gaps.map(g => `
+    <div class="gap-card gap-card-${g.severity}">
+      <div class="gap-header">
+        <h4>${g.title}</h4>
+        <span class="badge badge-${g.severity}">${g.severity.toUpperCase()}</span>
+      </div>
+      <div class="gap-reason">${g.reason}</div>
+      ${g.why_now ? `<div class="gap-detail"><strong>Why now:</strong> ${g.why_now}</div>` : ''}
+      ${g.suggested_question ? `<div class="gap-detail"><strong>Ask:</strong> ${g.suggested_question}</div>` : ''}
+      ${g.suggested_coverage_or_action ? `<div class="gap-detail"><strong>Action:</strong> ${g.suggested_coverage_or_action}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderAmmo(ammo) {
+  if (!ammo) return '<p class="text-muted text-sm">No producer ammo generated.</p>';
+  let html = '';
+  const sections = [
+    ['renewal_pressure_points', 'Renewal Pressure Points'],
+    ['underwriting_hot_buttons', 'Underwriting Hot Buttons'],
+    ['cross_sell_openings', 'Cross-Sell Openings'],
+    ['hard_questions_to_ask', 'Hard Questions to Ask'],
+  ];
+  sections.forEach(([key, label]) => {
+    const items = ammo[key] || [];
+    if (items.length > 0) {
+      html += `<div class="ammo-section"><h4>${label}</h4><ul>`;
+      items.forEach(item => { html += `<li>${item}</li>`; });
+      html += '</ul></div>';
+    }
+  });
+  return html || '<p class="text-muted text-sm">No producer ammo generated.</p>';
+}
+
+document.getElementById('prep-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = {
+    industry: document.getElementById('prep-industry').value,
+    state: document.getElementById('prep-state').value,
+    employee_count: parseInt(document.getElementById('prep-employees').value) || 10,
+    current_mod: parseFloat(document.getElementById('prep-mod').value) || null,
+    raw_query: document.getElementById('prep-query').value || null,
+    entity_type: document.getElementById('prep-entity-type').value || null,
+    department: document.getElementById('prep-department').value || null,
+  };
+
+  const result = await apiPost('/api/v1/prep/query', data);
+  if (result.brief) {
+    currentBriefId = result.brief_id;
+    currentQueryId = result.query_id;
+    document.getElementById('tab-markdown').innerHTML = result.rendered_markdown.replace(/\n/g, '<br>');
+    document.getElementById('tab-json').textContent = JSON.stringify(result.brief, null, 2);
+    document.getElementById('tab-gaps').innerHTML = renderGaps(result.brief.coverage_gap_detector || []);
+    document.getElementById('tab-ammo').innerHTML = renderAmmo(result.brief.producer_ammo);
+    document.getElementById('result-area').style.display = 'block';
+    document.getElementById('feedback-bar').style.display = 'flex';
+  } else {
+    alert('Error: ' + JSON.stringify(result));
+  }
+});
+
+async function sendFeedback(eventType) {
+  if (!currentBriefId || !currentQueryId) return;
+  await apiPost('/api/v1/feedback', {
+    brief_id: currentBriefId,
+    query_id: currentQueryId,
+    event_type: eventType,
+  });
+  alert('Feedback submitted: ' + eventType);
+}
+</script>
+{% endblock %}

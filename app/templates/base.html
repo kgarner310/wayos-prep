@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WAYOS PREP{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <span class="brand">WAYOS PREP</span>
+      <a href="/admin/">Dashboard</a>
+      <a href="/admin/workspace">Workspace</a>
+      <a href="/admin/sources">Sources</a>
+      <a href="/admin/prep">Run Prep</a>
+      <a href="/admin/briefs">Briefs</a>
+      <a href="/docs" target="_blank">API Docs</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+
+  <div id="loading-indicator">Processing...</div>
+
+  <script>
+    function showLoading() {
+      document.getElementById('loading-indicator').style.display = 'block';
+    }
+    async function apiPost(url, body) {
+      showLoading();
+      try {
+        const hdrs = {'Content-Type': 'application/json'};
+        const token = typeof authToken !== 'undefined' && authToken;
+        if (token) hdrs['Authorization'] = 'Bearer ' + token;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: hdrs,
+          body: JSON.stringify(body)
+        });
+        return await resp.json();
+      } finally {
+        document.getElementById('loading-indicator').style.display = 'none';
+      }
+    }
+    async function apiAction(url) {
+      showLoading();
+      try {
+        const resp = await fetch(url, {method: 'POST'});
+        if (resp.ok) { location.reload(); }
+        else { alert('Action failed: ' + resp.status); }
+      } finally {
+        document.getElementById('loading-indicator').style.display = 'none';
+      }
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,77 +1,51 @@
-import React, { useState, useCallback } from 'react';
-import { HomeScreen } from './screens/HomeScreen';
-import { AskScreen } from './screens/AskScreen';
-import { PrepScreen } from './screens/PrepScreen';
-import { LookupScreen } from './screens/LookupScreen';
-import { IndustryDetailScreen } from './screens/IndustryDetailScreen';
-import { BriefScreen } from './screens/BriefScreen';
-import { LossRunScreen } from './screens/LossRunScreen';
-import { ExperienceModScreen } from './screens/ExperienceModScreen';
-import { AccountReviewScreen } from './screens/AccountReviewScreen';
+import { useState } from 'react'
+import { AuthContext, useAuthState } from './hooks/useAuth'
+import { LoginForm } from './components/auth/LoginForm'
+import { AppShell } from './components/layout/AppShell'
+import { AccountList } from './components/accounts/AccountList'
+import { WorkspacePage } from './components/workspace/WorkspacePage'
+import type { Account } from './api/types'
 
-interface NavState {
-  screen: string;
-  params?: any;
+function AuthenticatedApp() {
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+
+  return (
+    <AppShell
+      sidebar={
+        <AccountList
+          selectedId={selectedAccount?.id ?? null}
+          onSelect={setSelectedAccount}
+        />
+      }
+    >
+      {selectedAccount ? (
+        <WorkspacePage account={selectedAccount} />
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-lg font-bold text-slate-300 mb-2">
+              WAYOS <span className="text-blue-400">PREP</span>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Select an account or load demo data to begin
+            </p>
+            <div className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+              Insurance intelligence terminal for commercial P&amp;C producers.
+              Coverage gaps, risk scoring, underwriter narratives, and competitive positioning — all in one screen.
+            </div>
+          </div>
+        </div>
+      )}
+    </AppShell>
+  )
 }
 
 export default function App() {
-  const [navStack, setNavStack] = useState<NavState[]>([{ screen: 'home' }]);
+  const auth = useAuthState()
 
-  const current = navStack[navStack.length - 1];
-
-  const navigate = useCallback(
-    (screen: string, params?: any) => {
-      setNavStack((prev) => [...prev, { screen, params }]);
-    },
-    []
-  );
-
-  const goBack = useCallback(() => {
-    setNavStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
-  }, []);
-
-  const goHome = useCallback(() => {
-    setNavStack([{ screen: 'home' }]);
-  }, []);
-
-  switch (current.screen) {
-    case 'home':
-      return <HomeScreen onNavigate={navigate} />;
-    case 'ask':
-      return (
-        <AskScreen
-          onNavigate={navigate}
-          onBack={goBack}
-          prefill={current.params?.prefill}
-        />
-      );
-    case 'prep':
-      return <PrepScreen onNavigate={navigate} onBack={goBack} />;
-    case 'lookup':
-      return <LookupScreen onNavigate={navigate} onBack={goBack} />;
-    case 'industryDetail':
-      return (
-        <IndustryDetailScreen
-          industryId={current.params?.industryId}
-          onNavigate={navigate}
-          onBack={goBack}
-        />
-      );
-    case 'brief':
-      return (
-        <BriefScreen
-          briefId={current.params?.briefId}
-          onBack={goHome}
-          onNavigate={navigate}
-        />
-      );
-    case 'lossRuns':
-      return <LossRunScreen onNavigate={navigate} onBack={goBack} />;
-    case 'experienceMod':
-      return <ExperienceModScreen onNavigate={navigate} onBack={goBack} />;
-    case 'accountReview':
-      return <AccountReviewScreen onNavigate={navigate} onBack={goBack} />;
-    default:
-      return <HomeScreen onNavigate={navigate} />;
-  }
+  return (
+    <AuthContext.Provider value={auth}>
+      {auth.isAuthenticated ? <AuthenticatedApp /> : <LoginForm />}
+    </AuthContext.Provider>
+  )
 }

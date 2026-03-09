@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Briefs - WAYOS PREP{% endblock %}
+{% block content %}
+<h1 style="font-size:20px; margin-bottom:16px;">Generated Briefs</h1>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Industry</th>
+        <th>State</th>
+        <th>Employees</th>
+        <th>Model</th>
+        <th>Status</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in briefs %}
+      <tr>
+        <td><a href="/admin/briefs/{{ item.brief.id }}">{{ item.query.requested_industry if item.query else 'N/A' }}</a></td>
+        <td>{{ item.query.requested_state if item.query else 'N/A' }}</td>
+        <td>{{ item.query.employee_count if item.query else '—' }}</td>
+        <td class="text-sm">{{ item.brief.model_name }}</td>
+        <td><span class="badge">{{ item.brief.quality_status }}</span></td>
+        <td class="text-muted text-sm">{{ item.brief.created_at.strftime('%Y-%m-%d %H:%M') if item.brief.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+      {% if not briefs %}
+      <tr><td colspan="6" class="text-muted" style="text-align:center; padding:24px;">No briefs yet. Run a prep query first.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

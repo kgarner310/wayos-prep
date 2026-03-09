@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}WAYOS PREP - Dashboard{% endblock %}
+{% block content %}
+<h1 style="font-size:20px; margin-bottom:16px;">Dashboard</h1>
+
+<div class="stats">
+  <div class="stat">
+    <div class="number">{{ source_count }}</div>
+    <div class="label">Sources</div>
+  </div>
+  <div class="stat">
+    <div class="number">{{ ready_count }}</div>
+    <div class="label">Ready</div>
+  </div>
+  <div class="stat">
+    <div class="number">{{ chunk_count }}</div>
+    <div class="label">Chunks</div>
+  </div>
+  <div class="stat">
+    <div class="number">{{ embedding_count }}</div>
+    <div class="label">Embeddings</div>
+  </div>
+  <div class="stat">
+    <div class="number">{{ query_count }}</div>
+    <div class="label">Queries</div>
+  </div>
+  <div class="stat">
+    <div class="number">{{ brief_count }}</div>
+    <div class="label">Briefs</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Quick Actions</h2>
+  <div class="btn-group">
+    <a href="/admin/sources" class="btn btn-primary">Manage Sources</a>
+    <a href="/admin/prep" class="btn btn-primary">Run Prep Query</a>
+    <a href="/admin/briefs" class="btn btn-outline">View Briefs</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Add Source (Paste Text)</h2>
+  <form id="ingest-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="src-title" required placeholder="Source title">
+      </div>
+      <div class="form-group">
+        <label>Source Type</label>
+        <select id="src-type">
+          <option value="article">Article</option>
+          <option value="bulletin">Bulletin</option>
+          <option value="report">Report</option>
+          <option value="research">Research</option>
+          <option value="regulatory_guidance">Regulatory Guidance</option>
+          <option value="carrier_material">Carrier Material</option>
+          <option value="trade_publication">Trade Publication</option>
+          <option value="internal_note">Internal Note</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Authority Level</label>
+        <select id="src-authority">
+          <option value="trade_association">Trade Association</option>
+          <option value="regulator">Regulator</option>
+          <option value="court">Court</option>
+          <option value="standards_body">Standards Body</option>
+          <option value="carrier">Carrier</option>
+          <option value="journalist">Journalist</option>
+          <option value="research_org">Research Org</option>
+          <option value="internal">Internal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Jurisdiction State (optional)</label>
+        <input type="text" id="src-state" placeholder="e.g. NC">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Raw Text</label>
+      <textarea id="src-text" rows="6" required placeholder="Paste source text here..."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Ingest Source</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('ingest-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = {
+    title: document.getElementById('src-title').value,
+    raw_text: document.getElementById('src-text').value,
+    source_type: document.getElementById('src-type').value,
+    authority_level: document.getElementById('src-authority').value,
+    jurisdiction_state: document.getElementById('src-state').value || null,
+  };
+  const result = await apiPost('/api/v1/sources/ingest', data);
+  if (result.id) {
+    window.location.href = '/admin/sources/' + result.id;
+  } else {
+    alert('Error: ' + JSON.stringify(result));
+  }
+});
+</script>
+{% endblock %}

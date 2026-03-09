@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sources - WAYOS PREP{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h1 style="font-size:20px;">Sources</h1>
+  <a href="/admin/" class="btn btn-outline btn-sm">+ Add Source</a>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Authority</th>
+        <th>State</th>
+        <th>Status</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for source in sources %}
+      <tr>
+        <td><a href="/admin/sources/{{ source.id }}">{{ source.title[:60] }}</a></td>
+        <td>{{ source.source_type }}</td>
+        <td>{{ source.authority_level }}</td>
+        <td>{{ source.jurisdiction_state or '—' }}</td>
+        <td><span class="badge badge-{{ source.status }}">{{ source.status }}</span></td>
+        <td class="text-muted text-sm">{{ source.created_at.strftime('%Y-%m-%d %H:%M') if source.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+      {% if not sources %}
+      <tr><td colspan="6" class="text-muted" style="text-align:center; padding:24px;">No sources yet. Add one from the dashboard.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

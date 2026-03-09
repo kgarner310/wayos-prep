@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Brief Detail - WAYOS PREP{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h1 style="font-size:20px;">Brief Detail</h1>
+  <div class="btn-group">
+    <a href="/admin/briefs" class="btn btn-outline btn-sm">All Briefs</a>
+    {% if query %}
+    <a href="/api/v1/retrieval/debug/{{ query.id }}" target="_blank" class="btn btn-outline btn-sm">Debug JSON</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Query Info</h2>
+  {% if query %}
+  <table>
+    <tr><th style="width:150px;">Query ID</th><td class="text-sm" style="font-family:var(--mono);">{{ query.id }}</td></tr>
+    <tr><th>Industry</th><td>{{ query.requested_industry }}</td></tr>
+    <tr><th>State</th><td>{{ query.requested_state }}</td></tr>
+    <tr><th>Employees</th><td>{{ query.employee_count or '—' }}</td></tr>
+    <tr><th>Mod</th><td>{{ query.current_mod or '—' }}</td></tr>
+    <tr><th>Raw Query</th><td>{{ query.raw_query }}</td></tr>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="flex justify-between items-center mb-2">
+    <h2>Brief Output <span class="text-sm text-muted">(model: {{ brief.model_name }})</span></h2>
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline" onclick="showTab('md')">Rendered</button>
+      <button class="btn btn-sm btn-outline" onclick="showTab('js')">JSON</button>
+    </div>
+  </div>
+  <div id="tab-md" class="brief-markdown">{{ brief.rendered_markdown | replace('\n', '<br>') | safe }}</div>
+  <div id="tab-js" class="brief-output" style="display:none;">{{ brief.brief_json | tojson(indent=2) }}</div>
+
+  <div class="feedback-bar">
+    <span class="text-sm text-muted" style="margin-right:8px;">Feedback:</span>
+    <button class="btn btn-sm btn-success" onclick="fb('thumbs_up')">Thumbs Up</button>
+    <button class="btn btn-sm btn-danger" onclick="fb('thumbs_down')">Thumbs Down</button>
+    <button class="btn btn-sm btn-warning" onclick="fb('flag_hallucination')">Flag Hallucination</button>
+    <button class="btn btn-sm btn-warning" onclick="fb('flag_wrong_state')">Wrong State</button>
+    <button class="btn btn-sm btn-outline" onclick="fb('flag_weak_source')">Weak Source</button>
+  </div>
+</div>
+
+{% set gaps = brief.brief_json.get('coverage_gap_detector', []) if brief.brief_json else [] %}
+{% if gaps %}
+<div class="card">
+  <h2>Coverage Gap Detector <span class="text-sm text-muted">({{ gaps|length }} gaps)</span></h2>
+  {% for g in gaps %}
+  <div class="gap-card gap-card-{{ g.severity }}">
+    <div class="gap-header">
+      <h4>{{ g.title }}</h4>
+      <span class="badge badge-{{ g.severity }}">{{ g.severity|upper }}</span>
+    </div>
+    <div class="gap-reason">{{ g.reason }}</div>
+    {% if g.why_now %}<div class="gap-detail"><strong>Why now:</strong> {{ g.why_now }}</div>{% endif %}
+    {% if g.suggested_question %}<div class="gap-detail"><strong>Ask:</strong> {{ g.suggested_question }}</div>{% endif %}
+    {% if g.suggested_coverage_or_action %}<div class="gap-detail"><strong>Action:</strong> {{ g.suggested_coverage_or_action }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% set ammo = brief.brief_json.get('producer_ammo') if brief.brief_json else None %}
+{% if ammo %}
+<div class="card">
+  <h2>Producer Ammo</h2>
+  {% if ammo.renewal_pressure_points %}
+  <div class="ammo-section">
+    <h4>Renewal Pressure Points</h4>
+    <ul>{% for item in ammo.renewal_pressure_points %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.underwriting_hot_buttons %}
+  <div class="ammo-section">
+    <h4>Underwriting Hot Buttons</h4>
+    <ul>{% for item in ammo.underwriting_hot_buttons %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.cross_sell_openings %}
+  <div class="ammo-section">
+    <h4>Cross-Sell Openings</h4>
+    <ul>{% for item in ammo.cross_sell_openings %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if ammo.hard_questions_to_ask %}
+  <div class="ammo-section">
+    <h4>Hard Questions to Ask</h4>
+    <ul>{% for item in ammo.hard_questions_to_ask %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if retrieval_run %}
+<div class="card">
+  <h2>Retrieval Debug</h2>
+  <table>
+    <tr><th style="width:150px;">Run ID</th><td class="text-sm" style="font-family:var(--mono);">{{ retrieval_run.id }}</td></tr>
+    <tr><th>Embedding Model</th><td>{{ retrieval_run.embedding_model or 'none (tag-based)' }}</td></tr>
+    <tr><th>Reranker</th><td>{{ retrieval_run.reranker_name or '—' }}</td></tr>
+    <tr><th>Candidates</th><td>{{ retrieval_run.candidate_count }}</td></tr>
+    <tr><th>Selected</th><td>{{ retrieval_run.selected_count }}</td></tr>
+    <tr><th>Filters</th><td class="text-sm" style="font-family:var(--mono);">{{ retrieval_run.filters_json }}</td></tr>
+  </table>
+
+  {% if retrieval_results %}
+  <h3 class="mt-4 mb-2">Retrieved Chunks ({{ retrieval_results|length }})</h3>
+  {% for item in retrieval_results %}
+  <div class="chunk">
+    <div class="chunk-header">
+      <span>
+        #{{ item.result.rank_position }}
+        — <strong>{{ item.source.title if item.source else 'Unknown' }}</strong>
+      </span>
+      <span>
+        {% if item.result.similarity_score %}sim: {{ '%.4f' | format(item.result.similarity_score | float) }}{% endif %}
+        {% if item.result.rerank_score %} | final: {{ '%.4f' | format(item.result.rerank_score | float) }}{% endif %}
+        {% if item.result.selected %}<span class="badge badge-ready">selected</span>{% else %}<span class="badge">skipped</span>{% endif %}
+      </span>
+    </div>
+    {% if item.chunk %}
+    {% if item.chunk.heading %}<div class="text-sm mb-2"><strong>{{ item.chunk.heading }}</strong></div>{% endif %}
+    <div class="chunk-text">{{ item.chunk.text_content[:400] }}{% if item.chunk.text_content|length > 400 %}...{% endif %}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endif %}
+
+{% if feedback %}
+<div class="card">
+  <h2>Feedback ({{ feedback|length }})</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Value</th><th>User</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for f in feedback %}
+      <tr>
+        <td><span class="badge">{{ f.event_type }}</span></td>
+        <td>{{ f.event_value or '—' }}</td>
+        <td>{{ f.user_id or '—' }}</td>
+        <td class="text-sm text-muted">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tab) {
+  document.getElementById('tab-md').style.display = tab === 'md' ? 'block' : 'none';
+  document.getElementById('tab-js').style.display = tab === 'js' ? 'block' : 'none';
+}
+
+async function fb(eventType) {
+  const result = await apiPost('/api/v1/feedback', {
+    brief_id: '{{ brief.id }}',
+    query_id: '{{ brief.query_id }}',
+    event_type: eventType,
+  });
+  if (result.id) {
+    location.reload();
+  } else {
+    alert('Feedback error: ' + JSON.stringify(result));
+  }
+}
+</script>
+{% endblock %}
