@@ -7,7 +7,8 @@ load_dotenv()
 class Settings:
     APP_ENV: str = os.getenv("APP_ENV", "development")
 
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://wayos:wayos@localhost:5432/wayos_prep")
+    _raw_db_url: str = os.getenv("DATABASE_URL", "postgresql://wayos:wayos@localhost:5432/wayos_prep")
+    DATABASE_URL: str = _raw_db_url.replace("postgres://", "postgresql://", 1) if _raw_db_url.startswith("postgres://") else _raw_db_url
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")

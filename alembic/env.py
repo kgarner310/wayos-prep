@@ -16,6 +16,8 @@ if config.config_file_name is not None:
 # Override URL from environment
 db_url = os.getenv("DATABASE_URL")
 if db_url:
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
     config.set_main_option("sqlalchemy.url", db_url)
 
 from app.db.session import Base
