@@ -14,8 +14,7 @@ WORKDIR /code
 # Install system deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev curl bash \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo 'precedence ::ffff:0:0/96  100' >> /etc/gai.conf
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python deps
 COPY requirements.txt .

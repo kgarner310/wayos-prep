@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars and fill in values
+
+aws_region  = "us-east-1"
+environment = "production"
+
+# ECS sizing (512 CPU = 0.25 vCPU, 1024 memory = 1 GB)
+ecs_cpu           = 512
+ecs_memory        = 1024
+ecs_desired_count = 1
+
+# ACM certificate ARN for HTTPS (leave empty for HTTP-only)
+certificate_arn = ""
+
+# Create these secrets in AWS Secrets Manager first, then paste ARNs:
+#   aws secretsmanager create-secret --name wayos-prep/database-url --secret-string "postgresql://..."
+#   aws secretsmanager create-secret --name wayos-prep/redis-url --secret-string "redis://..."
+#   aws secretsmanager create-secret --name wayos-prep/jwt-secret --secret-string "$(openssl rand -hex 32)"
+#   aws secretsmanager create-secret --name wayos-prep/openai-api-key --secret-string "sk-..."
+database_url_secret_arn    = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:wayos-prep/database-url-XXXXXX"
+redis_url_secret_arn       = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:wayos-prep/redis-url-XXXXXX"
+jwt_secret_arn             = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:wayos-prep/jwt-secret-XXXXXX"
+openai_api_key_secret_arn  = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:wayos-prep/openai-api-key-XXXXXX"
