@@ -96,7 +96,7 @@ def run_ai_triage(db: Session, triage_id: UUID) -> ServiceTriageRequest:
 
 
 def approve_triage(db: Session, triage_id: UUID, approved_by: UUID) -> ServiceTriageRequest:
-    """Mark a triage request as approved."""
+    """Mark a triage request as approved and trigger PIT dispatch orchestration."""
     triage = db.query(ServiceTriageRequest).filter(
         ServiceTriageRequest.id == triage_id
     ).first()
@@ -107,6 +107,11 @@ def approve_triage(db: Session, triage_id: UUID, approved_by: UUID) -> ServiceTr
     triage.approved_at = datetime.now(timezone.utc)
     triage.approved_by_user_id = approved_by
     db.flush()
+
+    # Trigger PIT orchestrator: creates dispatch records + account memory entry
+    from app.services.pit_orchestrator import on_triage_approved
+    on_triage_approved(db, triage_id, approved_by)
+
     return triage
 
 

@@ -4,10 +4,10 @@ import { LoginForm } from './components/auth/LoginForm'
 import { AppShell } from './components/layout/AppShell'
 import { AccountList } from './components/accounts/AccountList'
 import { WorkspacePage } from './components/workspace/WorkspacePage'
-import { TriageInbox } from './components/triage/TriageInbox'
+import { PITDashboard } from './components/pit/PITDashboard'
 import type { Account } from './api/types'
 
-type AppView = 'workspace' | 'triage'
+type AppView = 'workspace' | 'pit'
 
 function AuthenticatedApp() {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
@@ -31,14 +31,14 @@ function AuthenticatedApp() {
                 Workspace
               </button>
               <button
-                onClick={() => setView('triage')}
+                onClick={() => setView('pit')}
                 className={`flex-1 px-2 py-1.5 text-[11px] font-medium rounded transition-colors cursor-pointer ${
-                  view === 'triage'
+                  view === 'pit'
                     ? 'bg-blue-600/20 text-blue-400'
                     : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                Service Triage
+                PIT
               </button>
             </div>
           </div>
@@ -49,18 +49,18 @@ function AuthenticatedApp() {
               onSelect={setSelectedAccount}
             />
           )}
-          {view === 'triage' && (
+          {view === 'pit' && (
             <div className="flex-1 flex items-center justify-center p-4">
               <p className="text-[10px] text-slate-600 text-center leading-relaxed">
-                Service Triage Inbox — AI-powered request triage with one-click draft messages
+                Producer Intel Terminal — Triage, dispatch, and document service requests in one screen
               </p>
             </div>
           )}
         </div>
       }
     >
-      {view === 'triage' ? (
-        <TriageInbox />
+      {view === 'pit' ? (
+        <PITDashboard />
       ) : selectedAccount ? (
         <WorkspacePage account={selectedAccount} />
       ) : (

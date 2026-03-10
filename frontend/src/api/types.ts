@@ -275,6 +275,51 @@ export interface TriageListResponse {
   total: number
 }
 
+// ── PIT Dispatch ─────────────────────────────────────────────────────────────
+
+export interface DispatchRecord {
+  id: string
+  triage_request_id: string | null
+  account_id: string | null
+  agency_id: string | null
+  recipient_type: string
+  channel: string
+  subject: string | null
+  body: string
+  dispatched_by_user_id: string | null
+  dispatched_at: string
+  status: string
+  created_at: string
+}
+
+export interface DispatchListResponse {
+  dispatches: DispatchRecord[]
+  total: number
+}
+
+export interface PITFeedItem {
+  item_type: 'triage' | 'dispatch'
+  item_id: string
+  timestamp: string
+  summary: string
+  urgency: string | null
+  status: string
+  recipient_type: string | null
+  request_type: string | null
+}
+
+export interface PITFeedResponse {
+  items: PITFeedItem[]
+  total: number
+}
+
+export interface PITStats {
+  pending_triage: number
+  urgent_count: number
+  dispatches_today: number
+  accounts_touched: number
+}
+
 // ── Submission Readiness ─────────────────────────────────────────────────────
 
 export interface SubmissionReadinessResponse {

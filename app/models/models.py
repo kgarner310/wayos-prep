@@ -764,6 +764,40 @@ class ServiceTriageRequest(Base):
     )
 
 
+class DispatchRecord(Base):
+    """Tracks a dispatched message — what was sent, to whom, via what channel."""
+
+    __tablename__ = "dispatch_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    triage_request_id = Column(UUID(as_uuid=True), ForeignKey("service_triage_requests.id", ondelete="SET NULL"), nullable=True)
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
+
+    # What was sent
+    recipient_type = Column(Text, nullable=False)   # insured | carrier | internal
+    channel = Column(Text, nullable=False)           # email | ams_note | manual
+    subject = Column(Text, nullable=True)
+    body = Column(Text, nullable=False)
+
+    # Who dispatched it
+    dispatched_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    dispatched_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    # Status
+    status = Column(Text, nullable=False, default="logged", server_default="logged")  # sent | failed | logged
+
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_dispatch_records_triage_request_id", "triage_request_id"),
+        Index("ix_dispatch_records_account_id", "account_id"),
+        Index("ix_dispatch_records_agency_id", "agency_id"),
+        Index("ix_dispatch_records_dispatched_at", "dispatched_at"),
+        Index("ix_dispatch_records_recipient_type", "recipient_type"),
+    )
+
+
 class IngestionEvent(Base):
     """Tracks file/text ingestion into the system."""
 

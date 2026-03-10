@@ -2355,3 +2355,116 @@ def retriage_request_endpoint(
     db.commit()
     db.refresh(triage)
     return TriageRequestResponse.model_validate(triage)
+
+
+# ── Producer Intel Terminal (PIT) ──────────────────────────────────────────────
+
+
+@router.get("/pit/feed", tags=["pit"])
+def pit_feed(
+    request: Request,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Unified PIT feed: recent triage items + dispatches, sorted by time."""
+    from app.services.triage_service import list_triage_requests
+    from app.services.dispatch_service import list_dispatches
+    from app.schemas.triage import TriageRequestResponse
+    from app.schemas.dispatch import PITFeedItem, PITFeedResponse
+
+    triage_results, _ = list_triage_requests(db=db, agency_id=_user.agency_id, limit=limit)
+    dispatch_results, _ = list_dispatches(db=db, agency_id=_user.agency_id, limit=limit)
+
+    items = []
+
+    for t in triage_results:
+        items.append(PITFeedItem(
+            item_type="triage",
+            item_id=str(t.id),
+            timestamp=t.created_at,
+            summary=t.summary or t.input_text[:120],
+            urgency=t.urgency,
+            status=t.status,
+            request_type=t.request_type,
+        ))
+
+    for d in dispatch_results:
+        items.append(PITFeedItem(
+            item_type="dispatch",
+            item_id=str(d.id),
+            timestamp=d.dispatched_at,
+            summary=d.subject or d.body[:120],
+            status=d.status,
+            recipient_type=d.recipient_type,
+        ))
+
+    items.sort(key=lambda x: x.timestamp, reverse=True)
+    items = items[:limit]
+
+    return PITFeedResponse(items=items, total=len(items))
+
+
+@router.get("/pit/dispatches", tags=["pit"])
+def pit_dispatches(
+    request: Request,
+    account_id: str = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """List dispatch records for the user's agency."""
+    from app.services.dispatch_service import list_dispatches
+    from app.schemas.dispatch import DispatchRecordResponse, DispatchListResponse
+
+    acct_id = UUID(account_id) if account_id else None
+    results, total = list_dispatches(
+        db=db,
+        account_id=acct_id,
+        agency_id=_user.agency_id,
+        limit=limit,
+    )
+    return DispatchListResponse(
+        dispatches=[DispatchRecordResponse.model_validate(r) for r in results],
+        total=total,
+    )
+
+
+@router.get("/pit/stats", tags=["pit"])
+def pit_stats(
+    request: Request,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """PIT dashboard stats: pending triage, urgent count, dispatches today, accounts touched."""
+    from datetime import datetime, timezone
+    from app.models.models import ServiceTriageRequest, DispatchRecord
+    from app.schemas.dispatch import PITStatsResponse
+
+    base_triage = db.query(ServiceTriageRequest).filter(
+        ServiceTriageRequest.agency_id == _user.agency_id
+    )
+    pending_triage = base_triage.filter(ServiceTriageRequest.status == "pending").count()
+    urgent_count = base_triage.filter(
+        ServiceTriageRequest.urgency == "urgent",
+        ServiceTriageRequest.status.in_(["pending", "triaged"]),
+    ).count()
+
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    dispatches_today = db.query(DispatchRecord).filter(
+        DispatchRecord.agency_id == _user.agency_id,
+        DispatchRecord.dispatched_at >= today_start,
+    ).count()
+
+    from sqlalchemy import func as sa_func
+    accounts_touched = db.query(sa_func.count(sa_func.distinct(DispatchRecord.account_id))).filter(
+        DispatchRecord.agency_id == _user.agency_id,
+        DispatchRecord.account_id.isnot(None),
+    ).scalar() or 0
+
+    return PITStatsResponse(
+        pending_triage=pending_triage,
+        urgent_count=urgent_count,
+        dispatches_today=dispatches_today,
+        accounts_touched=accounts_touched,
+    )

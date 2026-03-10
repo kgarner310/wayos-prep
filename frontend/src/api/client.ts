@@ -2,8 +2,11 @@ import type {
   Account,
   AuthResponse,
   DashboardResponse,
+  DispatchListResponse,
   EdgeScoreResponse,
   MarketSignalsResponse,
+  PITFeedResponse,
+  PITStats,
   RenewalWorkspaceResponse,
   SubmissionPacketResponse,
   SubmissionReadinessResponse,
@@ -196,6 +199,23 @@ export async function approveTriageRequest(id: string): Promise<TriageRequest> {
 
 export async function retriageRequest(id: string): Promise<TriageRequest> {
   return request(`/triage/${id}/retriage`, { method: 'POST' })
+}
+
+// ── PIT (Producer Intel Terminal) ────────────────────────────────────────────
+
+export async function getPITFeed(limit = 50): Promise<PITFeedResponse> {
+  return request(`/pit/feed?limit=${limit}`)
+}
+
+export async function getPITDispatches(accountId?: string, limit = 50): Promise<DispatchListResponse> {
+  const params = new URLSearchParams()
+  if (accountId) params.set('account_id', accountId)
+  params.set('limit', String(limit))
+  return request(`/pit/dispatches?${params.toString()}`)
+}
+
+export async function getPITStats(): Promise<PITStats> {
+  return request('/pit/stats')
 }
 
 export { ApiError }
