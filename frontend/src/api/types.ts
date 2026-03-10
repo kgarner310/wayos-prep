@@ -230,6 +230,51 @@ export interface MarketSignalsResponse {
   top_carrier: string | null
 }
 
+// ── Service Triage ──────────────────────────────────────────────────────────
+
+export type TriageStatus = 'pending' | 'triaged' | 'approved' | 'rejected'
+export type TriageUrgency = 'urgent' | 'high' | 'medium' | 'low'
+
+export interface DraftMessage {
+  subject: string
+  body: string
+}
+
+export interface DraftAmsNote {
+  summary: string
+  action_items: string[]
+  category: string
+}
+
+export interface TriageRequest {
+  id: string
+  account_id: string | null
+  agency_id: string | null
+  created_by_user_id: string | null
+  input_type: string
+  input_text: string
+  input_filename: string | null
+  input_extracted_text: string | null
+  status: TriageStatus
+  request_type: string | null
+  urgency: TriageUrgency | null
+  summary: string | null
+  draft_insured: DraftMessage | null
+  draft_carrier: DraftMessage | null
+  draft_ams_note: DraftAmsNote | null
+  approved_at: string | null
+  approved_by_user_id: string | null
+  confidence: number | null
+  model_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TriageListResponse {
+  requests: TriageRequest[]
+  total: number
+}
+
 // ── Submission Readiness ─────────────────────────────────────────────────────
 
 export interface SubmissionReadinessResponse {

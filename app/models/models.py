@@ -712,6 +712,58 @@ class AccountHealth(Base):
 # ============================================================
 
 
+# ============================================================
+# SERVICE TRIAGE INBOX
+# ============================================================
+
+
+class ServiceTriageRequest(Base):
+    """Incoming service request with AI-generated triage and draft messages."""
+
+    __tablename__ = "service_triage_requests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=func.gen_random_uuid())
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
+    agency_id = Column(UUID(as_uuid=True), ForeignKey("agencies.id", ondelete="CASCADE"), nullable=True)
+    created_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Input
+    input_type = Column(Text, nullable=False, default="text", server_default="text")
+    input_text = Column(Text, nullable=False)
+    input_filename = Column(Text, nullable=True)
+    input_extracted_text = Column(Text, nullable=True)
+
+    # Triage results
+    status = Column(Text, nullable=False, default="pending", server_default="pending")
+    request_type = Column(Text, nullable=True)
+    urgency = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+
+    # Drafted messages
+    draft_insured = Column(JSONB, nullable=True)
+    draft_carrier = Column(JSONB, nullable=True)
+    draft_ams_note = Column(JSONB, nullable=True)
+
+    # Approval
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    approved_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # AI metadata
+    confidence = Column(Numeric(4, 3), nullable=True)
+    model_name = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+    __table_args__ = (
+        Index("ix_service_triage_account_id", "account_id"),
+        Index("ix_service_triage_agency_id", "agency_id"),
+        Index("ix_service_triage_status", "status"),
+        Index("ix_service_triage_created_at", "created_at"),
+        Index("ix_service_triage_urgency", "urgency"),
+    )
+
+
 class IngestionEvent(Base):
     """Tracks file/text ingestion into the system."""
 

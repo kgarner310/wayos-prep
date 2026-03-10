@@ -2170,3 +2170,188 @@ def account_insights(account_id: UUID, db: Session = Depends(get_db)):
         "insights": items,
         "total": len(items),
     }
+
+
+# ── Service Triage Inbox ─────────────────────────────────────────────────────
+
+
+@router.post("/triage", tags=["triage"])
+@limiter.limit("30/minute")
+def create_triage_request_endpoint(
+    request: Request,
+    payload: dict,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Create a new service triage request and run AI triage."""
+    from app.schemas.triage import TriageRequestCreate
+    from app.services.triage_service import create_triage_request, run_ai_triage
+    from app.workers.triage_worker import enqueue_triage
+
+    data = TriageRequestCreate(**payload)
+
+    triage = create_triage_request(
+        db=db,
+        input_text=data.input_text,
+        input_type=data.input_type,
+        account_id=data.account_id,
+        agency_id=_user.agency_id,
+        created_by_user_id=_user.id,
+        input_filename=data.input_filename,
+        input_extracted_text=data.input_extracted_text,
+    )
+    db.flush()
+
+    # Try background triage, fall back to sync
+    enqueued = enqueue_triage(triage.id)
+    if not enqueued:
+        run_ai_triage(db, triage.id)
+
+    db.commit()
+    db.refresh(triage)
+
+    from app.schemas.triage import TriageRequestResponse
+    return TriageRequestResponse.model_validate(triage)
+
+
+@router.post("/triage/upload", tags=["triage"])
+@limiter.limit("10/minute")
+def create_triage_from_file(
+    request: Request,
+    file: UploadFile = File(...),
+    input_text: str = Form(""),
+    account_id: str = Form(None),
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Create a triage request from a file upload (image, PDF, text)."""
+    from app.services.triage_service import create_triage_request, run_ai_triage
+    from app.workers.triage_worker import enqueue_triage
+
+    file_bytes = file.file.read()
+    capture_result = process_capture(
+        file_bytes=file_bytes,
+        filename=file.filename,
+        content_type=file.content_type,
+    )
+
+    # Use input_text if provided, otherwise use extracted text
+    final_text = input_text or capture_result.get("extracted_text", "")
+    if not final_text.strip():
+        raise HTTPException(400, "No text could be extracted from the file. Please provide input_text.")
+
+    acct_id = UUID(account_id) if account_id else None
+
+    triage = create_triage_request(
+        db=db,
+        input_text=final_text,
+        input_type="file",
+        account_id=acct_id,
+        agency_id=_user.agency_id,
+        created_by_user_id=_user.id,
+        input_filename=file.filename,
+        input_extracted_text=capture_result.get("extracted_text"),
+    )
+    db.flush()
+
+    enqueued = enqueue_triage(triage.id)
+    if not enqueued:
+        run_ai_triage(db, triage.id)
+
+    db.commit()
+    db.refresh(triage)
+
+    from app.schemas.triage import TriageRequestResponse
+    return TriageRequestResponse.model_validate(triage)
+
+
+@router.get("/triage", tags=["triage"])
+def list_triage_requests_endpoint(
+    request: Request,
+    status: str = None,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """List triage requests for the user's agency."""
+    from app.services.triage_service import list_triage_requests
+    from app.schemas.triage import TriageRequestResponse, TriageRequestListResponse
+
+    results, total = list_triage_requests(
+        db=db,
+        agency_id=_user.agency_id,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+    return TriageRequestListResponse(
+        requests=[TriageRequestResponse.model_validate(r) for r in results],
+        total=total,
+    )
+
+
+@router.get("/triage/{triage_id}", tags=["triage"])
+def get_triage_request_endpoint(
+    triage_id: UUID,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Get a single triage request."""
+    from app.services.triage_service import get_triage_request
+    from app.schemas.triage import TriageRequestResponse
+
+    triage = get_triage_request(db, triage_id)
+    if not triage:
+        raise HTTPException(404, "Triage request not found")
+    return TriageRequestResponse.model_validate(triage)
+
+
+@router.put("/triage/{triage_id}", tags=["triage"])
+def update_triage_request_endpoint(
+    triage_id: UUID,
+    payload: dict,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Update triage drafts or metadata (AM editing before approval)."""
+    from app.schemas.triage import TriageRequestUpdate, TriageRequestResponse
+    from app.services.triage_service import update_triage_drafts
+
+    data = TriageRequestUpdate(**payload)
+    triage = update_triage_drafts(db, triage_id, data.model_dump(exclude_none=True))
+    db.commit()
+    db.refresh(triage)
+    return TriageRequestResponse.model_validate(triage)
+
+
+@router.post("/triage/{triage_id}/approve", tags=["triage"])
+def approve_triage_endpoint(
+    triage_id: UUID,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Approve a triaged request (marks as approved, records who approved)."""
+    from app.services.triage_service import approve_triage
+    from app.schemas.triage import TriageRequestResponse
+
+    triage = approve_triage(db, triage_id, _user.id)
+    db.commit()
+    db.refresh(triage)
+    return TriageRequestResponse.model_validate(triage)
+
+
+@router.post("/triage/{triage_id}/retriage", tags=["triage"])
+def retriage_request_endpoint(
+    triage_id: UUID,
+    db: Session = Depends(get_db),
+    _user: CurrentUser = Depends(get_current_user),
+):
+    """Re-run AI triage on a request (e.g., after editing input)."""
+    from app.services.triage_service import run_ai_triage
+    from app.schemas.triage import TriageRequestResponse
+
+    triage = run_ai_triage(db, triage_id)
+    db.commit()
+    db.refresh(triage)
+    return TriageRequestResponse.model_validate(triage)

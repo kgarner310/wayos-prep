@@ -32,6 +32,11 @@ class WorkerSettings:
             generate_artifact_task,
             generate_all_artifacts_task,
         )
-        cls.functions = [generate_artifact_task, generate_all_artifacts_task]
+        from app.workers.triage_worker import triage_request_task
+        cls.functions = [
+            generate_artifact_task,
+            generate_all_artifacts_task,
+            triage_request_task,
+        ]
         cls.redis_settings = get_redis_settings()
         return cls
