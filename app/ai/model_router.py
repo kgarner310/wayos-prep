@@ -18,6 +18,7 @@ _DEFAULT_ROUTES: dict[str, str] = {
     "meeting_summary": "claude",
     "explanation": "claude",
     "experimental": "claude",
+    "service_triage": "claude",
 }
 
 

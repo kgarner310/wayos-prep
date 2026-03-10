@@ -8,6 +8,8 @@ import type {
   SubmissionPacketResponse,
   SubmissionReadinessResponse,
   TimelineResponse,
+  TriageRequest,
+  TriageListResponse,
 } from './types'
 
 const API_BASE = '/api/v1'
@@ -148,6 +150,52 @@ export async function trackDemoEvent(event: string, data?: Record<string, unknow
   } catch {
     // non-critical
   }
+}
+
+// ── Service Triage ──────────────────────────────────────────────────────────
+
+export async function listTriageRequests(
+  status?: string,
+  limit = 50,
+): Promise<TriageListResponse> {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  params.set('limit', String(limit))
+  const qs = params.toString()
+  return request(`/triage?${qs}`)
+}
+
+export async function getTriageRequest(id: string): Promise<TriageRequest> {
+  return request(`/triage/${id}`)
+}
+
+export async function createTriageRequest(body: {
+  input_text: string
+  input_type?: string
+  account_id?: string
+}): Promise<TriageRequest> {
+  return request('/triage', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateTriageRequest(
+  id: string,
+  updates: Record<string, unknown>,
+): Promise<TriageRequest> {
+  return request(`/triage/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function approveTriageRequest(id: string): Promise<TriageRequest> {
+  return request(`/triage/${id}/approve`, { method: 'POST' })
+}
+
+export async function retriageRequest(id: string): Promise<TriageRequest> {
+  return request(`/triage/${id}/retriage`, { method: 'POST' })
 }
 
 export { ApiError }
